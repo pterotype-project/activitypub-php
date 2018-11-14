@@ -1,0 +1,28 @@
+{
+    "name": "pterotype/activitypub-php",
+    "description": "An ActivityPub library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jeremy Dormitzer",
+            "email": "jeremy@dormitzer.net",
+            "homepage": "https://jeremydormitzer.com",
+            "role": "Developer"
+        },
+    ],
+    "repositories": [
+	{
+	    "type": "vcs",
+	    "url": "https://git.friendi.ca/friendica/php-json-ld"
+	}
+    ],
+    "require": {
+	"friendica/json-ld": "^1.1"
+    },
+    "require-dev": {
+	"phpunit/phpunit": "^7.4"
+    },
+    "config": {
+	"sort-packages": true
+    }
+}
