@@ -20,7 +20,8 @@
 	}
     ],
     "require": {
-	"friendica/json-ld": "^1.1"
+        "doctrine/orm": "^2.6",
+        "friendica/json-ld": "^1.1"
     },
     "require-dev": {
 	"phpunit/phpunit": "^7.4"
