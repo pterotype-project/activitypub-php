@@ -8,8 +8,11 @@
             "email": "jeremy@dormitzer.net",
             "homepage": "https://jeremydormitzer.com",
             "role": "Developer"
-        },
+        }
     ],
+    "scripts": {
+	"test": "phpunit test"
+    },
     "repositories": [
 	{
 	    "type": "vcs",
@@ -21,6 +24,11 @@
     },
     "require-dev": {
 	"phpunit/phpunit": "^7.4"
+    },
+    "autoload": {
+	"psr-4": {
+	    "ActivityPub\\": "src/"
+	}
     },
     "config": {
 	"sort-packages": true
