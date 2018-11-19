@@ -1,11 +1,12 @@
 <?php
-require_once __DIR__ . '../vendor/autoload.php';
-
-use Doctrine\ORM\Tools\Setup;
-use Doctrine\ORM\EntityManager;
-use ActivityPub\Database\PrefixNamingStrategy;
-
 namespace ActivityPub;
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\Tools\SchemaTool;
+use Doctrine\ORM\Tools\Setup;
+use ActivityPub\Database\PrefixNamingStrategy;
 
 class ActivityPub
 {
@@ -19,30 +20,31 @@ class ActivityPub
      */
     public function __construct( $opts )
     {
-        $this->validateOptions( $opts );
         $defaults = array(
             'isDevMode' => false,
-            'dbprefix' => '',
+            'dbPrefix' => '',
         );
         $options = array_merge( $defaults, $opts );
+        $this->validateOptions( $options );
         $dbConfig = Setup::createAnnotationMetadataConfiguration(
-            array( __DIR__ . '/src/Entities' ), $options['isDevMode']
+            array( __DIR__ . '/Entities' ), $options['isDevMode']
         );
-        $namingStrategy = new PrefixNamingStrategy( $options['dbprefix'] );
+        $namingStrategy = new PrefixNamingStrategy( $options['dbPrefix'] );
         $dbConfig->setNamingStrategy( $namingStrategy );
-        $dbParams = array(
-            'driver' => 'pdo_mysql',
-            'user' => $options['dbuser'],
-            'password' => $options['dbpass'],
-            'dbname' => $options['dbname'],
-        );
+        $dbParams = $options['dbOptions'];
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
-        // TODO create tables
+    }
+
+    public function updateSchema()
+    {
+        $schemaTool = new SchemaTool( $this->entityManager );
+        $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
+        $schemaTool->updateSchema( $classes );
     }
 
     private function validateOptions( $opts )
     {
-        $required = array( 'dbuser', 'dbpass', 'dbname' );
+        $required = array( 'dbOptions' );
         $actual = array_keys( $opts );
         $missing = array_diff( $required, $actual );
         if ( count( $missing ) > 0 ) {

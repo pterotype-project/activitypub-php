@@ -17,7 +17,7 @@ class PrefixNamingStrategy implements NamingStrategy
         return $this->prefix . substr($className, strrpos($className, '\\') + 1);
     }
 
-    public function propertyToColumnName($propertyName)
+    public function propertyToColumnName($propertyName, $className = null)
     {
         return $propertyName;
     }
@@ -42,6 +42,11 @@ class PrefixNamingStrategy implements NamingStrategy
     {
         return strtolower($this->classToTableName($entityName) . '_' .
                 ($referencedColumnName ?: $this->referenceColumnName()));
+    }
+
+    public function embeddedFieldToColumnName($propertyName, $embeddedColumnName, $className = null, $embeddedClassName = null)
+    {
+        return $propertyName.'_'.$embeddedColumnName;
     }
 }
 ?>
