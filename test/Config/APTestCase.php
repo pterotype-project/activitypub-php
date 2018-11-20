@@ -10,15 +10,15 @@ abstract class APTestCase extends TestCase
 
     private static $pdo = null;
     private $conn = null;
-    private $dbPath = '';
+    protected $dbPath = '';
 
     final public function getConnection() {
         if ( $this->conn === null ) {
             if ( self::$pdo === null ) {
-                $this->dbPath = dirname( __FILE__ ) . '../db.sqlite';
+                $this->dbPath = dirname( __FILE__ ) . '/../db.sqlite';
                 self::$pdo = new \PDO( "sqlite:{$this->dbPath}" );
             }
-            $this->conn = $this->createDefaultConnection( self::$pdo, $this->dbPath );
+            $this->conn = $this->createDefaultDBConnection( self::$pdo, $this->dbPath );
         }
         return $this->conn;
     }
