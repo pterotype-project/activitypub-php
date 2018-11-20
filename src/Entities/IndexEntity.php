@@ -12,11 +12,12 @@ namespace ActivityPub\Entities;
  * is a static value, like { "url": "https://example.com" }. An object is another foreign
  * key into the objects table that represents the value of the JSON-LD field if the
  * field is another JSON-LD object, like { "inReplyTo": { <another object } }.
+ * A subject can have multiple values for the same predicate - this represents a JSON-LD
+ * array.
  */
 class IndexEntity
 {
-    // subject and predicate form a composite primary key (https://www.doctrine-project.org/projects/doctrine-orm/en/2.6/tutorials/composite-primary-keys.html)
-    // value and object are mutually exclusive, but for portability's sake this should be implmeneted in code
+    // TODO what should the primary key be?
     protected $subject;
     protected $predicate;
     protected $value;

@@ -10,7 +10,7 @@ abstract class APTestCase extends TestCase
 
     private static $pdo = null;
     private $conn = null;
-    protected $dbPath = '';
+    private $dbPath = '';
 
     final public function getConnection() {
         if ( $this->conn === null ) {

@@ -16,7 +16,7 @@ class ActivityPub
      * Constructs a new ActivityPub instance
      *
      * @param array $opts Array of options. Valid keys are
-     *     'dbuser', 'dbpass', 'dbname', 'dbprefix', and 'isDevMode'.
+     *     'dbOptions', 'dbprefix', and 'isDevMode'.
      */
     public function __construct( $opts )
     {

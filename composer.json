@@ -11,7 +11,7 @@
         }
     ],
     "scripts": {
-	"test": "phpunit --bootstrap ./test/Config/bootstrap.php test"
+	"test": "phpunit -c ./test/config/config.xml test"
     },
     "repositories": [
 	{

@@ -1,7 +1,8 @@
 <?php
-require_once dirname( __FILE__ ) . '/Config/APTestCase.php';
-require_once dirname( __FILE__ ) . '/Config/ArrayDataSet.php';
+require_once dirname( __FILE__ ) . '/config/APTestCase.php';
+require_once dirname( __FILE__ ) . '/config/ArrayDataSet.php';
     
+use ActivityPub\ActivityPub;
 use ActivityPub\Config\APTestCase;
 use ActivityPub\Config\ArrayDataSet;
 
@@ -12,7 +13,25 @@ class ActivityPubTest extends APTestCase
     }
     
     public function testItCreatesSchema() {
-        $this->assertTrue( file_exists( $this->dbPath ) );
+        $this->assertTrue( file_exists( $this->getDbPath() ) );
+    }
+
+    /**
+     * @depends testItCreatesSchema
+     */
+    public function testItUpdatesSchema() {
+        $activityPub = new ActivityPub(array(
+            'dbOptions' => array(
+                'driver' => 'pdo_sqlite',
+                'path' => $this->getDbPath(),
+            ),
+        ) );
+        $activityPub->updateSchema();
+        $this->assertTrue( file_exists( $this->getDbPath() ) );
+    }
+
+    private function getDbPath() {
+        return dirname( __FILE__ ) . '/db.sqlite';
     }
 }
 ?>
