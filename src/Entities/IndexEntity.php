@@ -14,9 +14,19 @@ namespace ActivityPub\Entities;
  * field is another JSON-LD object, like { "inReplyTo": { <another object } }.
  * A subject can have multiple values for the same predicate - this represents a JSON-LD
  * array.
+ *
+ * @Entity @Table(name="indices")
  */
 class IndexEntity
 {
+    /**
+     * @Id
+     * @Column(type="integer")
+     * @GeneratedValue
+     * @var int
+     */
+    protected $id;
+
     /**
      * @ManyToOne(targetEntity="ObjectEntity", inversedBy="subjectIndices")
      * @var ObjectEntity The subject of the index row

@@ -18,7 +18,7 @@ class ActivityPub
      * @param array $opts Array of options. Valid keys are
      *     'dbOptions', 'dbprefix', and 'isDevMode'.
      */
-    public function __construct( $opts )
+    public function __construct( array $opts )
     {
         $defaults = array(
             'isDevMode' => false,

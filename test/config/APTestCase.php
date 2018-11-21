@@ -12,6 +12,11 @@ abstract class APTestCase extends TestCase
     private $conn = null;
     private $dbPath = '';
 
+    protected function setUp()
+    {
+        parent::setUp();
+    }
+
     final public function getConnection() {
         if ( $this->conn === null ) {
             if ( self::$pdo === null ) {
