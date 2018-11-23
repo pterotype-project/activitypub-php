@@ -1,12 +1,12 @@
 <?php
-require_once dirname( __FILE__ ) . '/config/APTestCase.php';
+require_once dirname( __FILE__ ) . '/config/SQLiteTestCase.php';
 require_once dirname( __FILE__ ) . '/config/ArrayDataSet.php';
     
 use ActivityPub\ActivityPub;
-use ActivityPub\Config\APTestCase;
+use ActivityPub\Config\SQLiteTestCase;
 use ActivityPub\Config\ArrayDataSet;
 
-class ActivityPubTest extends APTestCase
+class ActivityPubTest extends SQLiteTestCase
 {
     public function getDataSet() {
         return new ArrayDataSet( array() );

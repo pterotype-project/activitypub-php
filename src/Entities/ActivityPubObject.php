@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Entities;
 
+use ActivityPub\Utils\Util;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
@@ -36,18 +37,46 @@ class ActivityPubObject
         $this->referencingFields = new ArrayCollection();
     }
 
+    /**
+     * Returns the object represented as an array
+     *
+     * @return array
+     */
     public function asArray() {
         $arr = array();
         foreach ( $this->getFields() as $field ) {
             $key = $field->getName();
             $value = $field->getValueOrTargetObject();
             if ( is_string( $value ) ) {
-                $arr[$key] = $value;
+                self::addItemToObjectArray( $arr, $key, $value );
             } else if ( $value instanceof ActivityPubObject ) {
-                $arr[$key] = $value->asArray();
+                self::addItemToObjectArray( $arr, $key, $value->asArray() );
             }
         }
         return $arr;
+    }
+
+    /**
+     * Adds an item to the array representing this object
+     *
+     * If the key already exists in the array, the value becomes an array with the
+     *   new item appended. Otherwise, the value is just the item.
+     *
+     * @param array $arr The array (modified by this function)
+     * @param string $key The key for the new item
+     * @param string|array $item The new item
+     */
+    private static function addItemToObjectArray( &$arr, $key, $item ) {
+        if ( array_key_exists( $key, $arr ) ) {
+            $existing= $arr[$key];
+            if ( is_array( $existing ) && ! Util::isAssoc( $existing ) ) {
+                $arr[$key][] = $item;
+            } else {
+                $arr[$key] = array( $existing, $item );
+            }
+        } else {
+            $arr[$key] = $item;
+        }
     }
 
     public function getId()

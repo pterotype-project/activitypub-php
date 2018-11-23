@@ -11,7 +11,8 @@
         }
     ],
     "scripts": {
-	"test": "phpunit -c ./test/config/config.xml test"
+	"test": "phpunit -c ./test/config/config.xml test",
+	"test-debug": "XDEBUG_CONFIG='idekey=ap_session' php ./vendor/bin/phpunit test"
     },
     "repositories": [
 	{
