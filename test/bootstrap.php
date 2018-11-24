@@ -1,4 +1,6 @@
 <?php
+namespace ActivityPub\Test;
+
 use ActivityPub\ActivityPub;
 
 $dbPath = dirname( __FILE__ ) . '/../db.sqlite';

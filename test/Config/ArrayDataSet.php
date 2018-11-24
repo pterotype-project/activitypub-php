@@ -1,5 +1,5 @@
 <?php
-namespace ActivityPub\Config;
+namespace ActivityPub\Test\Config;
 
 use PHPUnit\DbUnit\DataSet\AbstractDataSet;
 use PHPUnit\DbUnit\DataSet\DefaultTableMetadata;

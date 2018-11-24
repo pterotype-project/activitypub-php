@@ -1,10 +1,8 @@
 <?php
-require_once dirname( __FILE__ ) . '/config/SQLiteTestCase.php';
-require_once dirname( __FILE__ ) . '/config/ArrayDataSet.php';
-require_once dirname( __FILE__ ) . '/../src/Objects/ObjectsService.php';
+namespace ActivityPub\Test;
 
-use ActivityPub\Config\SQLiteTestCase;
-use ActivityPub\Config\ArrayDataSet;
+use ActivityPub\Test\Config\SQLiteTestCase;
+use ActivityPub\Test\Config\ArrayDataSet;
 use ActivityPub\Entities\Field;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;

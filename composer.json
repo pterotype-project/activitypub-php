@@ -11,7 +11,7 @@
         }
     ],
     "scripts": {
-	"test": "phpunit -c ./test/config/config.xml test",
+	"test": "phpunit -c ./test/config.xml test",
 	"test-debug": "XDEBUG_CONFIG='idekey=ap_session' php ./vendor/bin/phpunit test"
     },
     "repositories": [
@@ -31,6 +31,11 @@
     "autoload": {
 	"psr-4": {
 	    "ActivityPub\\": "src/"
+	}
+    },
+    "autoload-dev": {
+	"psr-4": {
+	    "ActivityPub\\Test\\": "test/"
 	}
     },
     "config": {

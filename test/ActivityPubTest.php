@@ -1,10 +1,9 @@
 <?php
-require_once dirname( __FILE__ ) . '/config/SQLiteTestCase.php';
-require_once dirname( __FILE__ ) . '/config/ArrayDataSet.php';
+namespace ActivityPub\Test;
     
 use ActivityPub\ActivityPub;
-use ActivityPub\Config\SQLiteTestCase;
-use ActivityPub\Config\ArrayDataSet;
+use ActivityPub\Test\Config\SQLiteTestCase;
+use ActivityPub\Test\Config\ArrayDataSet;
 
 class ActivityPubTest extends SQLiteTestCase
 {

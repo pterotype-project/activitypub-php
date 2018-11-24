@@ -1,5 +1,5 @@
 <?php
-namespace ActivityPub\Config;
+namespace ActivityPub\Test\Config;
 
 use ActivityPub\ActivityPub;
 use PHPUnit\Framework\TestCase;
