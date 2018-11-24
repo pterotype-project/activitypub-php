@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Entities;
 
+use DateTime;
 use ActivityPub\Utils\Util;
 use Doctrine\Common\Collections\ArrayCollection;
 
@@ -32,9 +33,25 @@ class ActivityPubObject
      */
     protected $referencingFields;
 
+    /**
+     * The object's creation timestamp
+     * @Column(type="datetime")
+     * @var DateTime
+     */
+    protected $created;
+
+    /**
+     * The object's last update timestamp
+     * @Column(type="datetime")
+     * @var DateTime
+     */
+    protected $lastUpdated;
+
     public function __construct() {
         $this->fields = new ArrayCollection();
         $this->referencingFields = new ArrayCollection();
+        $this->created = new DateTime("now");
+        $this->lastUpdated = new DateTime("now");
     }
 
     /**
@@ -104,11 +121,52 @@ class ActivityPubObject
         return $this->referencingFields;
     }
 
-    public function addField(Field $field) {
-        $this->fields[] = $field;
+    /**
+     * Returns the object's creation timestamp
+     *
+     * @return DateTime
+     */
+    public function getCreated()
+    {
+        return $this->created;
     }
 
-    public function addReferencingField(Field $field) {
+    /**
+     * Returns the object's last updated timestamp
+     *
+     * @return DateTime
+     */
+    public function getLastUpdated()
+    {
+        return $this->lastUpdated;
+    }
+
+    /**
+     * Adds a new field on the object
+     *
+     * Don't call this directly; instead, use one of the
+     *   Field constructors and pass in this object as the
+     *   $object.
+     *
+     * @param Field $field
+     */
+    public function addField(Field $field)
+    {
+        $this->fields[] = $field;
+        $this->lastUpdated = new DateTime( "now" );
+    }
+
+    /**
+     * Adds a new field that references this object
+     *
+     * Don't call this directly; instead, use one of the
+     *   Field constructors and pass in this object as the
+     *   $targetObject.
+     *
+     * @param Field $field
+     */
+    public function addReferencingField(Field $field)
+    {
         $this->referencingFields[] = $field;
     }
 }

@@ -69,5 +69,20 @@ class ObjectsService
             }
         }
     }
+
+    /**
+     * Queries for an object with certain field values
+     *
+     * @param array $queryTerms An associative array where the keys are field 
+     *   names and the values are the values to query for. The value for a key
+     *   can also be another associative array, which represents a field
+     *   containing a target object that matches the given nested query.
+     *
+     * @return ActivityPubObject[] The objects that match the query, if any
+     */
+    public function query( $queryTerms )
+    {
+        
+    }
 }
 ?>

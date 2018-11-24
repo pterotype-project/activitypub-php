@@ -1,6 +1,8 @@
 <?php
 namespace ActivityPub\Entities;
 
+use DateTime;
+
 /**
  * The field table hold the JSON-LD object graph.
  * 
@@ -52,6 +54,20 @@ class Field
     protected $targetObject;
 
     /**
+     * The field's creation timestamp
+     * @Column(type="datetime")
+     * @var DateTime The creation timestamp
+     */
+    protected $created;
+
+    /**
+     * The field's last updated timestamp
+     * @Column(type="datetime")
+     * @var DateTime The last updated timestamp
+     */
+    protected $lastUpdated;
+
+    /**
      * Create a new field with a string value
      *
      * @param ActivityPubObject $object The object to which this field belongs
@@ -59,11 +75,15 @@ class Field
      * @param string $value The value of the field
      * @return Field The new field
      */
-    public static function withValue(ActivityPubObject $object, string $name, string $value) {
+    public static function withValue( ActivityPubObject $object, string $name, string $value )
+    {
         $field = new Field();
         $field->setObject( $object );
         $field->setName( $name );
         $field->setValue( $value );
+        $now = new DateTime( "now" );
+        $field->setCreated( $now );
+        $field->setLastUpdated( $now );
         return $field;
     }
 
@@ -75,30 +95,52 @@ class Field
      * @param ActivityPubObject $targetObject The object that this field holds
      * @return Field The new field
      */
-    public static function withObject(ActivityPubObject $object, string $name, Object $targetObject) {
+    public static function withObject( ActivityPubObject $object, string $name, Object $targetObject )
+    {
         $field = new Field();
         $field->setObject( $object);
         $field->setName( $name );
         $field->setTargetObject( $targetObject );
+        $now = new DateTime( "now" );
+        $field->setCreated( $now );
+        $field->setLastUpdated( $now );
         return $field;
     }
 
-    protected function setObject(ActivityPubObject $object) {
+    protected function setObject( ActivityPubObject $object )
+    {
         $object->addField( $this );
         $this->object= $object;
     }
 
-    protected function setTargetObject(ActivityPubObject $targetObject) {
+    protected function setTargetObject( ActivityPubObject $targetObject )
+    {
+        $this->value = null;
         $targetObject->addReferencingField( $this );
         $this->targetObject = $targetObject;
+        $this->lastUpdated = new DateTime( "now" );
     }
 
-    protected function setName(string $name) {
+    protected function setName( string $name )
+    {
         $this->name= $name;
     }
 
-    protected function setValue(string $value) {
+    public function setValue( string $value )
+    {
+        $this->targetObject = null;
         $this->value = $value;
+        $this->lastUpdated = new DateTime( "now" );
+    }
+
+    protected function setCreated( DateTime $timestamp )
+    {
+        $this->created = $timestamp;
+    }
+
+    protected function setLastUpdated( DateTime $timestamp )
+    {
+        $this->lastUpdated = $timestamp;
     }
 
     /**
@@ -106,7 +148,8 @@ class Field
      *
      * @return ActivityPubObject
      */
-    public function getObject() {
+    public function getObject()
+    {
         return $this->object;
     }
 
@@ -115,7 +158,8 @@ class Field
      *
      * @return string
      */
-    public function getName() {
+    public function getName()
+    {
         return $this->name;
     }
 
@@ -124,12 +168,33 @@ class Field
      *
      * @return string|ActivityPubObject
      */
-    public function getValueOrTargetObject() {
+    public function getValueOrTargetObject()
+    {
         if ( ! is_null( $this->targetObject) ) {
             return $this->targetObject;
         } else {
             return $this->value;
         }
+    }
+
+    /**
+     * Returns the field's creation timestamp
+     *
+     * @return DateTime
+     */
+    public function getCreated()
+    {
+        return $this->created;
+    }
+
+    /**
+     * Returns the field's last updated timestamp
+     *
+     * @return DateTime
+     */
+    public function getLastUpdated()
+    {
+        return $this->lastUpdated;
     }
 }
 ?>
