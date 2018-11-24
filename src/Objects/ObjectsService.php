@@ -78,11 +78,24 @@ class ObjectsService
      *   can also be another associative array, which represents a field
      *   containing a target object that matches the given nested query.
      *
-     * @return ActivityPubObject[] The objects that match the query, if any
+     * @return ActivityPubObject[] The objects that match the query, if any,
+     *   ordered by created timestamp from newest to oldest
      */
     public function query( $queryTerms )
     {
-        
+        // TODO make it search for nested objects like the comment says
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select( 'object' )
+            ->from( '\ActivityPub\Entities\ActivityPubObject', 'object' )
+            ->join( 'object.fields', 'field' );
+        foreach ( $queryTerms as $fieldName => $fieldValue ) {
+            $qb->where( $qb->expr()->andX(
+                $qb->expr()->like( 'field.name', $qb->expr()->literal( $fieldName ) ),
+                $qb->expr()->like( 'field.value', $qb->expr()->literal( $fieldValue ) )
+            ) );
+        }
+        $query = $qb->getQuery();
+        return $query->getResult();
     }
 }
 ?>

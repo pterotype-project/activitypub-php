@@ -4,6 +4,7 @@ namespace ActivityPub\Test;
 use DateTime;
 use ActivityPub\Test\Config\SQLiteTestCase;
 use ActivityPub\Test\Config\ArrayDataSet;
+use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
@@ -461,6 +462,47 @@ class ObjectsServiceTest extends SQLiteTestCase
         $object = $this->objectsService->createObject( $fields );
         $arr = $object->asArray();
         $this->assertEquals( $fields, $arr );
+    }
+
+    public function testItQueriesByFieldValue()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $query = array(
+            'type' => 'Note',
+        );
+        $results = $this->objectsService->query( $query );
+        $this->assertCount( 1, $results );
+        $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
+        $this->assertEquals( $object, $results[0] );
+    }
+
+    public function testItFindsMultipleQueryResults()
+    {
+        $fieldsOne = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $objectOne = $this->objectsService->createObject( $fieldsOne );
+        $fieldsTwo = array(
+            'id' => 'https://example.com/notes/2',
+            'type' => 'Note',
+            'content' => 'This is another note',
+        );
+        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $query = array(
+            'type' => 'Note',
+        );
+        $results = $this->objectsService->query( $query );
+        $this->assertCount( 2, $results );
+        $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
+        $this->assertEquals( $objectOne, $results[0] );
+        $this->assertEquals( $objectTwo, $results[1] );
     }
 }
 ?>
