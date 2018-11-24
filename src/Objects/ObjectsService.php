@@ -77,6 +77,9 @@ class ObjectsService
      *   names and the values are the values to query for. The value for a key
      *   can also be another associative array, which represents a field
      *   containing a target object that matches the given nested query.
+     *   Finally, the value could be a sequential array, which represents a field
+     *   containing all of the specified values (the field could also contain more
+     *   values).
      *
      * @return ActivityPubObject[] The objects that match the query, if any,
      *   ordered by created timestamp from newest to oldest
@@ -89,10 +92,19 @@ class ObjectsService
             ->from( '\ActivityPub\Entities\ActivityPubObject', 'object' )
             ->join( 'object.fields', 'field' );
         foreach ( $queryTerms as $fieldName => $fieldValue ) {
-            $qb->where( $qb->expr()->andX(
-                $qb->expr()->like( 'field.name', $qb->expr()->literal( $fieldName ) ),
-                $qb->expr()->like( 'field.value', $qb->expr()->literal( $fieldValue ) )
-            ) );
+            if ( is_array( $fieldValue ) ) {
+                // The following two branches will need to be recursive
+                if ( Util::isAssoc( $fieldValue ) ) {
+                    // TODO support querying for associative arrays (nested objects)
+                } else {
+                    // TODO support querying for sequential arrays
+                }
+            } else {
+                $qb->where( $qb->expr()->andX(
+                    $qb->expr()->like( 'field.name', $qb->expr()->literal( $fieldName ) ),
+                    $qb->expr()->like( 'field.value', $qb->expr()->literal( $fieldValue ) )
+                ) );
+            }
         }
         $query = $qb->getQuery();
         return $query->getResult();
