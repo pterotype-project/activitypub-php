@@ -120,15 +120,18 @@ class ObjectsService
                         ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nextDepth" )
                         ->join( "object$nextDepth.fields", "field$nextDepth" )
                         ->where( $this->getWhereExpr( $subQuery, $fieldValue, $nextDepth ) );
-                    $exprs[] = $qb->expr()->in(
-                        "field$depth.targetObject",
-                        $subQuery->getDql()
+                    $exprs[] = $qb->expr()->andX(
+                        $qb->expr()->like( "field$depth.name", $qb->expr()->literal( $fieldName ) ),
+                        $qb->expr()->in( "field$depth.targetObject", $subQuery->getDql())
                     );
                 } else {
                     $subExprs = array();
-                    foreach ( $fieldValue as $subFieldName => $subFieldValue ) {
-                        $subExprs[] = $this->getWhereExpr(
-                            $qb, array( $subFieldName => $subFieldValue ), $nextDepth
+                    foreach ( $fieldValue as $subQuery ) {
+                        $subExprs[] = $qb->expr()->andX(
+                            $qb->expr()->like(
+                                "field$depth.name", $qb->expr()->literal( $fieldName )
+                            ),
+                            $this->getWhereExpr( $qb, $subQuery, $nextDepth )
                         );
                     }
                     $exprs[] = call_user_func_array(
