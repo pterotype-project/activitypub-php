@@ -527,5 +527,40 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
         $this->assertEquals( $object, $results[0] );
     }
+
+    public function testMultiNestedSequentialObjectQueryResults()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+            'attributedTo' => array(
+                'id' => 'https://example.com/actors/2',
+                'type' => 'Person',
+                'following' => array(
+                    'id' => 'https://example.com/collections/1',
+                    'type' => 'Collection',
+                    'items' => array(
+                        array( 'id' => 'https://example.com/actors/1' ),
+                    ),
+                ),
+            ),
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $query = array(
+            'attributedTo' => array(
+                'following' => array(
+                    'items' => array(
+                        array( 'id' => 'https://example.com/actors/1' )
+                    ),
+                ),
+            ),
+        );
+        $results = $this->objectsService->query( $query );
+        $this->assertCount( 1, $results );
+        $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
+        $this->assertEquals( $object, $results[0] );
+        $this->assertEquals( $fields, $results[0]->asArray() );
+    }
 }
 ?>

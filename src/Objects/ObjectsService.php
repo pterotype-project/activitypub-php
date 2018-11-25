@@ -31,6 +31,7 @@ class ObjectsService
         // TODO validate object fields?
         // TODO don't create the object if it already exists
         // i.e. (an 'id' field exists with the same value as this one)
+        // TODO attempt to fetch and create any values that are URLs
         $object = new ActivityPubObject();
         $this->entityManager->persist( $object );
         foreach ( $fields as $name => $value ) {
@@ -86,28 +87,66 @@ class ObjectsService
      */
     public function query( $queryTerms )
     {
-        // TODO make it search for nested objects like the comment says
         $qb = $this->entityManager->createQueryBuilder();
-        $qb->select( 'object' )
-            ->from( '\ActivityPub\Entities\ActivityPubObject', 'object' )
-            ->join( 'object.fields', 'field' );
-        foreach ( $queryTerms as $fieldName => $fieldValue ) {
-            if ( is_array( $fieldValue ) ) {
-                // The following two branches will need to be recursive
-                if ( Util::isAssoc( $fieldValue ) ) {
-                    // TODO support querying for associative arrays (nested objects)
-                } else {
-                    // TODO support querying for sequential arrays
-                }
-            } else {
-                $qb->where( $qb->expr()->andX(
-                    $qb->expr()->like( 'field.name', $qb->expr()->literal( $fieldName ) ),
-                    $qb->expr()->like( 'field.value', $qb->expr()->literal( $fieldValue ) )
-                ) );
-            }
-        }
+        $depth = 0;
+        $qb->select( "object$depth" )
+            ->from( '\ActivityPub\Entities\ActivityPubObject', "object$depth" )
+            ->join( "object$depth.fields", "field$depth" )
+            ->where( $this->getWhereExpr( $qb, $queryTerms, $depth ) );
         $query = $qb->getQuery();
         return $query->getResult();
+    }
+
+    /**
+     * Generates the expression that gets passed into the query WHERE clause
+     *
+     * This function is recursive; it traverses the query tree to build up the 
+     *   final expression
+     *
+     * @param QueryBuilder $qb The query builder that the WHERE clause will be attached to
+     * @param array $queryTerms The query terms from which to generate the expressions
+     * @param int $depth The recursion depth
+     * @return Expr The expression
+     */
+    protected function getWhereExpr( &$qb, $queryTerms, $depth = 0 )
+    {
+        $nextDepth = $depth + 1;
+        $exprs = array();
+        foreach( $queryTerms as $fieldName => $fieldValue ) {
+            if ( is_array( $fieldValue ) ) {
+                if ( Util::isAssoc( $fieldValue ) ) {
+                    $subQuery = $this->entityManager->createQueryBuilder();
+                    $subQuery->select( "object$nextDepth" )
+                        ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nextDepth" )
+                        ->join( "object$nextDepth.fields", "field$nextDepth" )
+                        ->where( $this->getWhereExpr( $subQuery, $fieldValue, $nextDepth ) );
+                    $exprs[] = $qb->expr()->in(
+                        "field$depth.targetObject",
+                        $subQuery->getDql()
+                    );
+                } else {
+                    $subExprs = array();
+                    foreach ( $fieldValue as $subFieldName => $subFieldValue ) {
+                        $subExprs[] = $this->getWhereExpr(
+                            $qb, array( $subFieldName => $subFieldValue ), $nextDepth
+                        );
+                    }
+                    $exprs[] = call_user_func_array(
+                        array( $qb->expr(), 'orX' ),
+                        $subExprs
+                    );
+                }
+            } else {
+                $exprs[] = $qb->expr()->andX(
+                    $qb->expr()->like( "field$depth.name", $qb->expr()->literal( $fieldName ) ),
+                    $qb->expr()->like( "field$depth.value", $qb->expr()->literal( $fieldValue ) )
+                );
+            }
+        }
+        return call_user_func_array(
+            array( $qb->expr(), 'andX' ),
+            $exprs
+        );
     }
 }
 ?>
