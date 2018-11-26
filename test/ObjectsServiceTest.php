@@ -528,6 +528,42 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertEquals( $object, $results[0] );
     }
 
+    public function testNestedSequentialArrayQueryResults()
+    {
+        $fieldsOne = array(
+            'id' => 'https://example.com/collections/1',
+            'type' => 'Collection',
+            'items' => array(
+                'https://example.com/objects/1',
+                array( 'id' => 'example.com/objects/2' ),
+                'https://example.com/object/3'
+            ),
+        );
+        $fieldsTwo = array(
+            'id' => 'https://example.com/collections/1',
+            'type' => 'Collection',
+            'items' => array(
+                'https://example.com/objects/1',
+                array( 'id' => 'example.com/objects/2' ),
+            ),
+        );
+        $objectOne = $this->objectsService->createObject( $fieldsOne );
+        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $query = array(
+            'items' => array(
+                'https://example.com/objects/1',
+                array( 'id' => 'example.com/objects/2' ),
+                'https://example.com/object/3'
+            ),
+        );
+        $results = $this->objectsService->query( $query );
+        $this->assertCount( 1, $results );
+        $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
+        $this->assertEquals( $objectOne, $results[0] );
+        $this->assertEquals( $fieldsOne, $results[0]->asArray() );
+        $this->assertNotContains( $objectTwo, $results );
+    }
+
     public function testMultiNestedSequentialObjectQueryResults()
     {
         $fields = array(

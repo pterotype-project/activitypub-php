@@ -127,11 +127,8 @@ class ObjectsService
                 } else {
                     $subExprs = array();
                     foreach ( $fieldValue as $subQuery ) {
-                        $subExprs[] = $qb->expr()->andX(
-                            $qb->expr()->like(
-                                "field$depth.name", $qb->expr()->literal( $fieldName )
-                            ),
-                            $this->getWhereExpr( $qb, $subQuery, $nextDepth )
+                        $subExprs[] = $this->getWhereExpr(
+                            $qb, array( $fieldName => $subQuery ), $depth
                         );
                     }
                     $exprs[] = call_user_func_array(
