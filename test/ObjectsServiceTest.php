@@ -244,6 +244,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),
+                array( 'id' => 2, 'created' => $now, 'lastUpdated' => $now ),
             ),
             'fields' => array(
                 array(
@@ -266,8 +267,8 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 3,
-                    'object_id' => 1,
-                    'name' => 'items',
+                    'object_id' => 2,
+                    'name' => '0',
                     'value' => 'https://example.com/notes/1',
                     'created' => $now,
                     'lastUpdated' => $now,
@@ -275,12 +276,21 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 4,
-                    'object_id' => 1,
-                    'name' => 'items',
+                    'object_id' => 2,
+                    'name' => '1',
                     'value' => 'https://example.com/notes/2',
                     'created' => $now,
                     'lastUpdated' => $now,
                     'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 5,
+                    'object_id' => 1,
+                    'name' => 'items',
+                    'value' => null,
+                    'created' => $now,
+                    'lastUpdated' => $now,
+                    'targetObject_id' => 2,
                 ),
             ),
         ) );
@@ -335,6 +345,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                  array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),
                  array( 'id' => 2, 'created' => $now, 'lastUpdated' => $now ),
                  array( 'id' => 3, 'created' => $now, 'lastUpdated' => $now ),
+                 array( 'id' => 4, 'created' => $now, 'lastUpdated' => $now ),
             ),
             'fields' => array(
                 array(
@@ -357,7 +368,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 3,
-                    'object_id' => 2,
+                    'object_id' => 3,
                     'name' => 'id',
                     'value' => 'https://example.com/notes/1',
                     'created' => $now,
@@ -366,7 +377,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 4,
-                    'object_id' => 2,
+                    'object_id' => 3,
                     'name' => 'type',
                     'value' => 'Note',
                     'created' => $now,
@@ -375,7 +386,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 5,
-                    'object_id' => 2,
+                    'object_id' => 3,
                     'name' => 'content',
                     'value' => 'This is a note',
                     'created' => $now,
@@ -384,16 +395,16 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 6,
-                    'object_id' => 1,
-                    'name' => 'items',
+                    'object_id' => 2,
+                    'name' => '0',
                     'value' => null,
                     'created' => $now,
                     'lastUpdated' => $now,
-                    'targetObject_id' => 2,
+                    'targetObject_id' => 3,
                 ),
                 array(
                     'id' => 7,
-                    'object_id' => 3,
+                    'object_id' => 4,
                     'name' => 'id',
                     'value' => 'https://example.com/notes/2',
                     'created' => $now,
@@ -402,7 +413,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 8,
-                    'object_id' => 3,
+                    'object_id' => 4,
                     'name' => 'type',
                     'value' => 'Note',
                     'created' => $now,
@@ -411,7 +422,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 9,
-                    'object_id' => 3,
+                    'object_id' => 4,
                     'name' => 'content',
                     'value' => 'This is another note',
                     'created' => $now,
@@ -420,12 +431,21 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
                 array(
                     'id' => 10,
+                    'object_id' => 2,
+                    'name' => '1',
+                    'value' => null,
+                    'created' => $now,
+                    'lastUpdated' => $now,
+                    'targetObject_id' => 4,
+                ),
+                array(
+                    'id' => 11,
                     'object_id' => 1,
                     'name' => 'items',
                     'value' => null,
                     'created' => $now,
                     'lastUpdated' => $now,
-                    'targetObject_id' => 3,
+                    'targetObject_id' => 2,
                 ),
             ),
         ) );
@@ -536,7 +556,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'items' => array(
                 'https://example.com/objects/1',
                 array( 'id' => 'example.com/objects/2' ),
-                'https://example.com/object/3'
+                'https://example.com/objects/3'
             ),
         );
         $fieldsTwo = array(
@@ -553,7 +573,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'items' => array(
                 'https://example.com/objects/1',
                 array( 'id' => 'example.com/objects/2' ),
-                'https://example.com/object/3'
+                'https://example.com/objects/3'
             ),
         );
         $results = $this->objectsService->query( $query );

@@ -84,6 +84,9 @@ class ActivityPubObject
      * @param string|array $item The new item
      */
     private static function addItemToObjectArray( &$arr, $key, $item ) {
+        // TODO here's the problem: how can I tell the difference between
+        // a field that's an array with one object, or a field that is not
+        // an array?
         if ( array_key_exists( $key, $arr ) ) {
             $existing= $arr[$key];
             if ( is_array( $existing ) && ! Util::isAssoc( $existing ) ) {

@@ -44,9 +44,7 @@ class ObjectsService
     /**
      * Persists a field. 
      *
-     * If the field is a sequential array, persists all the fields in the array.
-     *   If the field is an associative array, create that as a new object 
-     *   (or fetch the existing object) and persist that as the field's target object.
+     * If the field is an array, persist it as a child object
      *
      * @param ActivityPubObject $object
      * @param string $fieldName
@@ -59,15 +57,9 @@ class ObjectsService
             $fieldEntity = Field::withValue( $object, $fieldName, $fieldValue );
             $this->entityManager->persist( $fieldEntity);
         } else if ( is_array( $fieldValue ) ) {
-            if ( Util::isAssoc( $fieldValue ) ) {
-                $referencedObject = $this->createObject( $fieldValue );
-                $fieldEntity = Field::withObject( $object, $fieldName, $referencedObject );
-                $this->entityManager->persist( $fieldEntity );
-            } else {
-                foreach( $fieldValue as $subValue ) {
-                    $this->persistField( $object, $fieldName, $subValue );
-                }
-            }
+            $referencedObject = $this->createObject( $fieldValue );
+            $fieldEntity = Field::withObject( $object, $fieldName, $referencedObject );
+            $this->entityManager->persist( $fieldEntity );
         }
     }
 
@@ -88,11 +80,11 @@ class ObjectsService
     public function query( $queryTerms )
     {
         $qb = $this->entityManager->createQueryBuilder();
-        $depth = 0;
-        $qb->select( "object$depth" )
-            ->from( '\ActivityPub\Entities\ActivityPubObject', "object$depth" )
-            ->join( "object$depth.fields", "field$depth" )
-            ->where( $this->getWhereExpr( $qb, $queryTerms, $depth ) );
+        $nonce = 0;
+        $qb->select( "object$nonce" )
+            ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nonce" )
+            ->join( "object$nonce.fields", "field$nonce" )
+            ->where( $this->getWhereExpr( $qb, $queryTerms, $nonce ) );
         $query = $qb->getQuery();
         return $query->getResult();
     }
@@ -105,41 +97,28 @@ class ObjectsService
      *
      * @param QueryBuilder $qb The query builder that the WHERE clause will be attached to
      * @param array $queryTerms The query terms from which to generate the expressions
-     * @param int $depth The recursion depth
+     * @param int $nonce A nonce value to differentiate field names
      * @return Expr The expression
      */
-    protected function getWhereExpr( &$qb, $queryTerms, $depth = 0 )
+    protected function getWhereExpr( &$qb, $queryTerms, $nonce = 0 )
     {
-        $nextDepth = $depth + 1;
+        $nextNonce = $nonce + 1;
         $exprs = array();
         foreach( $queryTerms as $fieldName => $fieldValue ) {
             if ( is_array( $fieldValue ) ) {
-                if ( Util::isAssoc( $fieldValue ) ) {
-                    $subQuery = $this->entityManager->createQueryBuilder();
-                    $subQuery->select( "object$nextDepth" )
-                        ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nextDepth" )
-                        ->join( "object$nextDepth.fields", "field$nextDepth" )
-                        ->where( $this->getWhereExpr( $subQuery, $fieldValue, $nextDepth ) );
-                    $exprs[] = $qb->expr()->andX(
-                        $qb->expr()->like( "field$depth.name", $qb->expr()->literal( $fieldName ) ),
-                        $qb->expr()->in( "field$depth.targetObject", $subQuery->getDql())
-                    );
-                } else {
-                    $subExprs = array();
-                    foreach ( $fieldValue as $subQuery ) {
-                        $subExprs[] = $this->getWhereExpr(
-                            $qb, array( $fieldName => $subQuery ), $depth
-                        );
-                    }
-                    $exprs[] = call_user_func_array(
-                        array( $qb->expr(), 'orX' ),
-                        $subExprs
-                    );
-                }
+                $subQuery = $this->entityManager->createQueryBuilder();
+                $subQuery->select( "object$nextNonce" )
+                    ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nextNonce" )
+                    ->join( "object$nextNonce.fields", "field$nextNonce" )
+                    ->where( $this->getWhereExpr( $subQuery, $fieldValue, $nextNonce ) );
+                $exprs[] = $qb->expr()->andX(
+                    $qb->expr()->like( "field$nonce.name", $qb->expr()->literal( (string) $fieldName ) ),
+                    $qb->expr()->in( "field$nonce.targetObject", $subQuery->getDql())
+                );
             } else {
                 $exprs[] = $qb->expr()->andX(
-                    $qb->expr()->like( "field$depth.name", $qb->expr()->literal( $fieldName ) ),
-                    $qb->expr()->like( "field$depth.value", $qb->expr()->literal( $fieldValue ) )
+                    $qb->expr()->like( "field$nonce.name", $qb->expr()->literal( (string) $fieldName ) ),
+                    $qb->expr()->like( "field$nonce.value", $qb->expr()->literal( $fieldValue ) )
                 );
             }
         }
