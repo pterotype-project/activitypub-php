@@ -611,7 +611,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $fieldsTwo = array(
-            'id' => 'https://example.com/collections/1',
+            'id' => 'https://example.com/collections/2',
             'type' => 'Collection',
             'items' => array(
                 'https://example.com/objects/1',
@@ -668,6 +668,82 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
         $this->assertEquals( $object, $results[0] );
         $this->assertEquals( $fields, $results[0]->asArray() );
+    }
+
+    public function testItReturnsEmptyArrayForNoMatches()
+    {
+        $fields = array(
+            'id' => 'https://example.com/note/1',
+            'type' => 'Note',
+            'content' => 'This is a note'
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $query = array( 'type' => 'Article' );
+        $result = $this->objectsService->query( $query );
+        $this->assertEmpty( $result );
+        $this->assertNotContains( $object, $result );
+    }
+
+    public function testItDoesNotStoreObjectsWithTheSameId()
+    {
+         $fieldsOne = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+         );
+         $fieldsTwo = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is another note',
+        );
+        $now = self::getNow();
+        $objectOne = $this->objectsService->createObject( $fieldsOne );
+        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $this->assertEquals( $objectOne, $objectTwo );
+        $expected = new ArrayDataSet( array(
+            'objects' => array(
+                array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now )
+            ),
+            'fields' => array(
+                array(
+                    'id' => 1,
+                    'object_id' => 1,
+                    'name' => 'id',
+                    'value' => 'https://example.com/notes/1',
+                    'created' => $now,
+                    'lastUpdated' => $now,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 2,
+                    'object_id' => 1,
+                    'name' => 'type',
+                    'value' => 'Note',
+                    'created' => $now,
+                    'lastUpdated' => $now,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 3,
+                    'object_id' => 1,
+                    'name' => 'content',
+                    'value' => 'This is a note',
+                    'created' => $now,
+                    'lastUpdated' => $now,
+                    'targetObject_id' => null,
+                ),
+            ),
+        ) );
+        $expectedObjectsTable = $expected->getTable('objects');
+        $expectedFieldsTable = $expected->getTable('fields');
+        $objectsQueryTable = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $fieldsQueryTable = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
+        $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
     }
 }
 ?>

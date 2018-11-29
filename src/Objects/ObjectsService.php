@@ -18,7 +18,6 @@ class ObjectsService
     /**
      * Creates a new object with fields defined by $fields
      *
-     // TODO make this happen:
      * If there is an 'id' field, and an object with that id already exists,
      *   this returns the existing object rather than creating the new object.
      *   The existing object will not have its fields modified.
@@ -28,11 +27,14 @@ class ObjectsService
      */
     public function createObject( array $fields )
     {
-        // TODO validate object fields?
-        // TODO don't create the object if it already exists
-        // i.e. (an 'id' field exists with the same value as this one)
         // TODO attempt to fetch and create any values that are URLs
         // TODO JSON-LD compact all objects with the right context before saving them
+        if ( array_key_exists( 'id', $fields ) ) {
+            $existing = $this->query( array( 'id' => $fields['id'] ) );
+            if ( ! empty( $existing ) ) {
+                return $existing[0];
+            }
+        }
         $object = new ActivityPubObject();
         $this->entityManager->persist( $object );
         foreach ( $fields as $name => $value ) {
