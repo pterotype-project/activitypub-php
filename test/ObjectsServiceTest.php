@@ -121,6 +121,17 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertEquals( $fields, $object->asArray() );
     }
 
+    public function testDeSerOneItemArrays()
+    {
+        $fields = array(
+            'id' => 'https://example.com/collections/1',
+            'type' => 'Collection',
+            'items' => array( "https://example.com/items/1" ),
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $this->assertEquals( $fields, $object->asArray() );
+    }
+
     public function testDbStartsEmpty()
     {
         $this->assertSame( 0, $this->getConnection()->getRowCount( 'objects' ) );
@@ -501,6 +512,21 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertEquals( $object, $results[0] );
     }
 
+    public function testDeSerOneItemArrayQuery()
+    {
+        $fields = array(
+            'id' => 'https://example.com/collections/1',
+            'type' => 'Collection',
+            'items' => array( "https://example.com/items/1" ),
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $query = array(
+            'id' => 'https://example.com/collections/1'
+        );
+        $results = $this->objectsService->query( $query );
+        $this->assertEquals( $fields, $results[0]->asArray() );
+    }
+
     public function testItFindsMultipleQueryResults()
     {
         $fieldsOne = array(
@@ -523,6 +549,31 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
         $this->assertEquals( $objectOne, $results[0] );
         $this->assertEquals( $objectTwo, $results[1] );
+    }
+
+    public function testItFindsObjectByMultipleFields()
+    {
+        $fieldsOne = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $objectOne = $this->objectsService->createObject( $fieldsOne );
+        $fieldsTwo = array(
+            'id' => 'https://example.com/notes/2',
+            'type' => 'Note',
+            'content' => 'This is another note',
+        );
+        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $query = array(
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $results = $this->objectsService->query( $query );
+        $this->assertCount( 1, $results );
+        $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
+        $this->assertEquals( $objectOne, $results[0] );
+        $this->assertNotContains( $objectTwo, $results );
     }
 
     public function testItFindsNestedObjectQueryResults()

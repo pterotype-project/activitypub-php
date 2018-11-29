@@ -32,6 +32,7 @@ class ObjectsService
         // TODO don't create the object if it already exists
         // i.e. (an 'id' field exists with the same value as this one)
         // TODO attempt to fetch and create any values that are URLs
+        // TODO JSON-LD compact all objects with the right context before saving them
         $object = new ActivityPubObject();
         $this->entityManager->persist( $object );
         foreach ( $fields as $name => $value ) {
@@ -79,53 +80,60 @@ class ObjectsService
      */
     public function query( $queryTerms )
     {
-        $qb = $this->entityManager->createQueryBuilder();
-        $nonce = 0;
-        $qb->select( "object$nonce" )
-            ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nonce" )
-            ->join( "object$nonce.fields", "field$nonce" )
-            ->where( $this->getWhereExpr( $qb, $queryTerms, $nonce ) );
+        $qb = $this->getObjectQuery( $queryTerms );
         $query = $qb->getQuery();
         return $query->getResult();
     }
 
     /**
-     * Generates the expression that gets passed into the query WHERE clause
+     * Generates the Doctrine QueryBuilder that represents the query
      *
      * This function is recursive; it traverses the query tree to build up the 
      *   final expression
      *
-     * @param QueryBuilder $qb The query builder that the WHERE clause will be attached to
      * @param array $queryTerms The query terms from which to generate the expressions
      * @param int $nonce A nonce value to differentiate field names
-     * @return Expr The expression
+     * @return QueryBuilder The expression
      */
-    protected function getWhereExpr( &$qb, $queryTerms, $nonce = 0 )
+    protected function getObjectQuery( $queryTerms, $nonce = 0 )
     {
-        $nextNonce = $nonce + 1;
+        $qb = $this->entityManager->createQueryBuilder();
         $exprs = array();
         foreach( $queryTerms as $fieldName => $fieldValue ) {
             if ( is_array( $fieldValue ) ) {
-                $subQuery = $this->entityManager->createQueryBuilder();
-                $subQuery->select( "object$nextNonce" )
-                    ->from( '\ActivityPub\Entities\ActivityPubObject', "object$nextNonce" )
-                    ->join( "object$nextNonce.fields", "field$nextNonce" )
-                    ->where( $this->getWhereExpr( $subQuery, $fieldValue, $nextNonce ) );
+                $subQuery = $this->getObjectQuery( $fieldValue, $nonce + 1 );
                 $exprs[] = $qb->expr()->andX(
-                    $qb->expr()->like( "field$nonce.name", $qb->expr()->literal( (string) $fieldName ) ),
+                    $qb->expr()->like(
+                        "field$nonce.name",
+                        $qb->expr()->literal( (string) $fieldName )
+                    ),
                     $qb->expr()->in( "field$nonce.targetObject", $subQuery->getDql())
                 );
             } else {
                 $exprs[] = $qb->expr()->andX(
-                    $qb->expr()->like( "field$nonce.name", $qb->expr()->literal( (string) $fieldName ) ),
-                    $qb->expr()->like( "field$nonce.value", $qb->expr()->literal( $fieldValue ) )
+                    $qb->expr()->like(
+                        "field$nonce.name",
+                        $qb->expr()->literal( (string) $fieldName )
+                    ),
+                    $qb->expr()->like(
+                        "field$nonce.value",
+                        $qb->expr()->literal( $fieldValue )
+                    )
                 );
             }
         }
-        return call_user_func_array(
-            array( $qb->expr(), 'andX' ),
-            $exprs
-        );
+        return $qb->select( "object$nonce" )
+            ->from( 'ActivityPub\Entities\ActivityPubObject', "object$nonce" )
+            ->join( "object{$nonce}.fields", "field$nonce" )
+            ->where( call_user_func_array(
+                array( $qb->expr(), 'orX' ),
+                $exprs
+            ) )
+            ->groupBy( "object$nonce" )
+            ->having( $qb->expr()->eq(
+                $qb->expr()->count( "field$nonce" ),
+                count( $queryTerms )
+            ) );
     }
 }
 ?>
