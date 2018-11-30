@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Objects;
 
+use DateTime;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Utils\Util;
@@ -30,9 +31,9 @@ class ObjectsService
         // TODO attempt to fetch and create any values that are URLs
         // TODO JSON-LD compact all objects with the right context before saving them
         if ( array_key_exists( 'id', $fields ) ) {
-            $existing = $this->query( array( 'id' => $fields['id'] ) );
-            if ( ! empty( $existing ) ) {
-                return $existing[0];
+            $existing = $this->getObject( $fields['id'] );
+            if ( $existing ) {
+                return $existing;
             }
         }
         $object = new ActivityPubObject();
@@ -56,13 +57,13 @@ class ObjectsService
      */
     private function persistField( $object, $fieldName, $fieldValue )
     {
-        if ( is_string( $fieldValue ) ) {
-            $fieldEntity = Field::withValue( $object, $fieldName, $fieldValue );
-            $this->entityManager->persist( $fieldEntity);
-        } else if ( is_array( $fieldValue ) ) {
+        if ( is_array( $fieldValue ) ) {
             $referencedObject = $this->createObject( $fieldValue );
             $fieldEntity = Field::withObject( $object, $fieldName, $referencedObject );
             $this->entityManager->persist( $fieldEntity );
+        } else {
+            $fieldEntity = Field::withValue( $object, $fieldName, $fieldValue );
+            $this->entityManager->persist( $fieldEntity);
         }
     }
 
@@ -136,6 +137,63 @@ class ObjectsService
                 $qb->expr()->count( "field$nonce" ),
                 count( $queryTerms )
             ) );
+    }
+
+    /**
+     * Gets an object by its ActivityPub id
+     *
+     * @param string $id The object's id
+     *
+     * @return ActivityPubObject|null The object or null
+     *   if no object exists with that id
+     */
+    public function getObject( $id )
+    {
+        $results = $this->query( array( 'id' => $id ) );
+        if ( ! empty( $results ) ) {
+            return $results[0];
+        }
+    }
+
+    /**
+     * Updates $object
+     *
+     * @param string $id The ActivityPub id of the object to update
+     * @param array $updatedFields An array where the key is a field name
+     *   to update and the value is the field's new value. If the value is
+     *   null, the field will be deleted.
+     *
+     * @return ActivityPubObject|null The updated object,
+     *   or null if an object with that id isn't in the DB
+     */
+    public function updateObject( $id, $updatedFields )
+    {
+        $object = $this->getObject( $id );
+        if ( ! $object ) {
+            return;
+        }
+        foreach( $object->getFields() as $field ) {
+            if ( array_key_exists( $field->getName(), $updatedFields ) ) {
+                $newValue = $updatedFields[$field->getName()];
+                if ( is_array( $newValue ) ) {
+                    // Should I handle orphaned nodes here?
+                    $referencedObject = $this->createObject( $newValue );
+                    $field->setTargetObject( $referencedObject );
+                    $this->entityManager->persist( $field );
+                } else if ( ! $newValue ) {
+                    $object->removeField( $field );
+                    $this->entityManager->persist( $object );
+                    $this->entityManager->remove( $field );
+                } else {
+                    $field->setValue( $newValue );
+                    $this->entityManager->persist( $field );
+                }
+            }
+        }
+        $object->setLastUpdated( new DateTime( "now" ) );
+        $this->entityManager->persist( $object );
+        $this->entityManager->flush();
+        return $object;
     }
 }
 ?>

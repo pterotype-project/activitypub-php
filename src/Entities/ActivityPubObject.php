@@ -153,7 +153,7 @@ class ActivityPubObject
      *
      * @param Field $field
      */
-    public function addField(Field $field)
+    public function addField( Field $field )
     {
         $this->fields[] = $field;
         $this->lastUpdated = new DateTime( "now" );
@@ -168,9 +168,31 @@ class ActivityPubObject
      *
      * @param Field $field
      */
-    public function addReferencingField(Field $field)
+    public function addReferencingField( Field $field )
     {
         $this->referencingFields[] = $field;
+    }
+
+    /**
+     * Removes a field from the object
+     * @param Field $field The field to remove
+     *
+     */
+    public function removeField( Field $field )
+    {
+        $this->fields->removeElement( $field );
+        $this->lastUpdated = new DateTime( "now" );
+    }
+
+    /**
+     * Sets the last updated timestamp
+     *
+     * @param DateTime $lastUpdated The new last updated timestamp
+     *
+     */
+    public function setLastUpdated( $lastUpdated )
+    {
+        $this->lastUpdated = $lastUpdated;
     }
 }
 ?>

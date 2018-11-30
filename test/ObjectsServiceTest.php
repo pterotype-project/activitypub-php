@@ -745,5 +745,104 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
         $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
     }
+
+    public function testItGetsById()
+    {
+        $fields = array(
+            'id' => 'https://example.com/note/1',
+            'type' => 'Note',
+            'content' => 'This is a note'
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $found = $this->objectsService->getObject( 'https://example.com/note/1' );
+        $this->assertNotNull( $found );
+        $this->assertEquals( $object, $found );
+    }
+
+    public function testItReturnsNullIfIdNotFound()
+    {
+        $fields = array(
+            'id' => 'https://example.com/note/1',
+            'type' => 'Note',
+            'content' => 'This is a note'
+        );
+        $object = $this->objectsService->createObject( $fields );
+        $found = $this->objectsService->getObject( 'https://example.com/note/2' );
+        $this->assertNull( $found );
+    }
+
+    public function testItUpdatesObject()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note'
+        );
+        $createTime = self::getNow();
+        $object = $this->objectsService->createObject( $fields );
+        $update = array( 'content' => 'This note has been updated' );
+        $updateTime = self::getNow();
+        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $expected = new ArrayDataSet( array(
+            'objects' => array(
+                array(
+                    'id' => 1,
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime
+                ),
+            ),
+            'fields' => array(
+                array(
+                    'id' => 1,
+                    'object_id' => 1,
+                    'name' => 'id',
+                    'value' => 'https://example.com/notes/1',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 2,
+                    'object_id' => 1,
+                    'name' => 'type',
+                    'value' => 'Note',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 3,
+                    'object_id' => 1,
+                    'name' => 'content',
+                    'value' => 'This note has been updated',
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime,
+                    'targetObject_id' => null,
+                ),
+            ),
+        ) );
+        $expectedObjectsTable = $expected->getTable('objects');
+        $expectedFieldsTable = $expected->getTable('fields');
+        $objectsQueryTable = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $fieldsQueryTable = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
+        $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
+    }
+
+    public function testItUpdatesObjectFieldToNewObject()
+    {
+    }
+
+    public function testItUpdatedObjectFieldArray()
+    {
+    }
+
+    public function testItDeletesObjectField()
+    {
+    }
 }
 ?>
