@@ -835,14 +835,260 @@ class ObjectsServiceTest extends SQLiteTestCase
 
     public function testItUpdatesObjectFieldToNewObject()
     {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+            'attributedTo' => array(
+                'id' => 'https://example.com/actors/1',
+            ),
+        );
+        $createTime = self::getNow();
+        $object = $this->objectsService->createObject( $fields );
+        $update = array( 'attributedTo' => array(
+            'id' => 'https://example.com/actors/2',
+        ) );
+        $updateTime = self::getNow();
+        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $expected = new ArrayDataSet( array(
+            'objects' => array(
+                array(
+                    'id' => 1,
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime
+                ),
+                array(
+                    'id' => 2,
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                ),
+                array(
+                    'id' => 3,
+                    'created' => $updateTime,
+                    'lastUpdated' => $updateTime,
+                ),
+            ),
+            'fields' => array(
+                array(
+                    'id' => 1,
+                    'object_id' => 1,
+                    'name' => 'id',
+                    'value' => 'https://example.com/notes/1',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 2,
+                    'object_id' => 1,
+                    'name' => 'type',
+                    'value' => 'Note',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 3,
+                    'object_id' => 1,
+                    'name' => 'content',
+                    'value' => 'This is a note',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 4,
+                    'object_id' => 2,
+                    'name' => 'id',
+                    'value' => 'https://example.com/actors/1',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 5,
+                    'object_id' => 1,
+                    'name' => 'attributedTo',
+                    'value' => null,
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime,
+                    'targetObject_id' => 3,
+                ),
+                array(
+                    'id' => 6,
+                    'object_id' => 3,
+                    'name' => 'id',
+                    'value' => 'https://example.com/actors/2',
+                    'created' => $updateTime,
+                    'lastUpdated' => $updateTime,
+                    'targetObject_id' => null,
+                ),
+            ),
+        ) );
+        $expectedObjectsTable = $expected->getTable('objects');
+        $expectedFieldsTable = $expected->getTable('fields');
+        $objectsQueryTable = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $fieldsQueryTable = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
+        $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
     }
 
     public function testItUpdatedObjectFieldArray()
     {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+            'likes' => array(
+                'https://example.com/likes/1',
+                'https://example.com/likes/2',
+            ),
+        );
+        $createTime = self::getNow();
+        $object = $this->objectsService->createObject( $fields );
+        $update = array( 'likes' => array(
+            'https://example.com/likes/3',
+            'https://example.com/likes/4',
+        ) );
+        $updateTime = self::getNow();
+        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $expected = new ArrayDataSet( array(
+            'objects' => array(
+                array(
+                    'id' => 1,
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime
+                ),
+                array(
+                    'id' => 3,
+                    'created' => $updateTime,
+                    'lastUpdated' => $updateTime,
+                ),
+            ),
+            'fields' => array(
+                array(
+                    'id' => 1,
+                    'object_id' => 1,
+                    'name' => 'id',
+                    'value' => 'https://example.com/notes/1',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 2,
+                    'object_id' => 1,
+                    'name' => 'type',
+                    'value' => 'Note',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 3,
+                    'object_id' => 1,
+                    'name' => 'content',
+                    'value' => 'This is a note',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 6,
+                    'object_id' => 1,
+                    'name' => 'likes',
+                    'value' => null,
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime,
+                    'targetObject_id' => 3,
+                ),
+                array(
+                    'id' => 7,
+                    'object_id' => 3,
+                    'name' => '0',
+                    'value' => 'https://example.com/likes/3',
+                    'created' => $updateTime,
+                    'lastUpdated' => $updateTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 8,
+                    'object_id' => 3,
+                    'name' => '1',
+                    'value' => 'https://example.com/likes/4',
+                    'created' => $updateTime,
+                    'lastUpdated' => $updateTime,
+                    'targetObject_id' => null,
+                ),
+            ),
+        ) );
+        $expectedObjectsTable = $expected->getTable('objects');
+        $expectedFieldsTable = $expected->getTable('fields');
+        $objectsQueryTable = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $fieldsQueryTable = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
+        $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
     }
 
     public function testItDeletesObjectField()
     {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note'
+        );
+        $createTime = self::getNow();
+        $object = $this->objectsService->createObject( $fields );
+        $update = array( 'content' => null );
+        $updateTime = self::getNow();
+        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $expected = new ArrayDataSet( array(
+            'objects' => array(
+                array(
+                    'id' => 1,
+                    'created' => $createTime,
+                    'lastUpdated' => $updateTime
+                ),
+            ),
+            'fields' => array(
+                array(
+                    'id' => 1,
+                    'object_id' => 1,
+                    'name' => 'id',
+                    'value' => 'https://example.com/notes/1',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+                array(
+                    'id' => 2,
+                    'object_id' => 1,
+                    'name' => 'type',
+                    'value' => 'Note',
+                    'created' => $createTime,
+                    'lastUpdated' => $createTime,
+                    'targetObject_id' => null,
+                ),
+            ),
+        ) );
+        $expectedObjectsTable = $expected->getTable('objects');
+        $expectedFieldsTable = $expected->getTable('fields');
+        $objectsQueryTable = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $fieldsQueryTable = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
+        $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
     }
 }
 ?>

@@ -21,7 +21,7 @@ class ActivityPubObject
 
     /**
      * This object's fields
-     * @OneToMany(targetEntity="Field", mappedBy="object")
+     * @OneToMany(targetEntity="Field", mappedBy="object", cascade={"persist", "remove"})
      * @var Field[] An ArrayCollection of Fields
      */
     protected $fields;
@@ -142,6 +142,21 @@ class ActivityPubObject
     public function getLastUpdated()
     {
         return $this->lastUpdated;
+    }
+
+    /**
+     * Returns true if the object contains a field with key $name
+     *
+     * @return boolean
+     */
+    public function hasField( string $name )
+    {
+        foreach( $this->getFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

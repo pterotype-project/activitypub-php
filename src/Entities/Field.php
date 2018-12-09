@@ -113,7 +113,7 @@ class Field
         $this->object= $object;
     }
 
-    protected function setTargetObject( ActivityPubObject $targetObject )
+    public function setTargetObject( ActivityPubObject $targetObject )
     {
         $this->value = null;
         $targetObject->addReferencingField( $this );
@@ -164,7 +164,17 @@ class Field
     }
 
     /**
-     * Returns either the value or the target object of the field, depending on which was set
+     * Returns the target object of the field or null if there isn't one
+     *
+     * @return ActivityPubObject|null
+     */
+    public function getTargetObject()
+    {
+        return $this->targetObject;
+    }
+
+    /**
+     * Returns the value or the target object of the field, depending on which was set
      *
      * @return string|ActivityPubObject
      */

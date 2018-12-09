@@ -163,6 +163,10 @@ class ObjectsService
      *   to update and the value is the field's new value. If the value is
      *   null, the field will be deleted.
      *
+     * If the update results in an orphaned anonymous node (an ActivityPubObject
+     *   with no 'id' field that no longer has any references to it), then the
+     *   orphaned node will be deleted.
+     *
      * @return ActivityPubObject|null The updated object,
      *   or null if an object with that id isn't in the DB
      */
@@ -176,10 +180,13 @@ class ObjectsService
             if ( array_key_exists( $field->getName(), $updatedFields ) ) {
                 $newValue = $updatedFields[$field->getName()];
                 if ( is_array( $newValue ) ) {
-                    // Should I handle orphaned nodes here?
                     $referencedObject = $this->createObject( $newValue );
+                    $oldTargetObject = $field->getTargetObject();
                     $field->setTargetObject( $referencedObject );
                     $this->entityManager->persist( $field );
+                    if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
+                        $this->entityManager->remove( $oldTargetObject );
+                    }
                 } else if ( ! $newValue ) {
                     $object->removeField( $field );
                     $this->entityManager->persist( $object );
