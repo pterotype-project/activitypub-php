@@ -116,6 +116,10 @@ class Field
     public function setTargetObject( ActivityPubObject $targetObject )
     {
         $this->value = null;
+        $oldTargetObject = $this->getTargetObject();
+        if ( $oldTargetObject ) {
+            $oldTargetObject->removeReferencingField( $this );
+        }
         $targetObject->addReferencingField( $this );
         $this->targetObject = $targetObject;
         $this->lastUpdated = new DateTime( "now" );
@@ -128,6 +132,10 @@ class Field
 
     public function setValue( string $value )
     {
+        $oldTargetObject = $this->getTargetObject();
+        if ( $oldTargetObject ) {
+            $oldTargetObject->removeReferencingField( $this );
+        }
         $this->targetObject = null;
         $this->value = $value;
         $this->lastUpdated = new DateTime( "now" );

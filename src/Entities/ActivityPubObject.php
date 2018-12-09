@@ -189,6 +189,20 @@ class ActivityPubObject
     }
 
     /**
+     * Removes a referencing field
+     *
+     * Don't call this directly; instead, set the field'd
+     *   targetObject to something else using $field->setTargetObject()
+     *   or $field->setValue().
+     *
+     * @param Field $field
+     */
+    public function removeReferencingField( Field $field )
+    {
+        $this->referencingFields->removeElement( $field );
+    }
+
+    /**
      * Removes a field from the object
      * @param Field $field The field to remove
      *
