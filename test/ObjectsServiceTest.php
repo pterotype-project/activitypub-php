@@ -10,13 +10,14 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Database\PrefixNamingStrategy;
+use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use PHPUnit\DbUnit\TestCaseTrait;
 
 class ObjectsServiceTest extends SQLiteTestCase
 {
-
     protected $entityManager;
     protected $objectsService;
+    protected $dateTimeProvider;
 
     protected function getDataSet()
     {
@@ -36,11 +37,14 @@ class ObjectsServiceTest extends SQLiteTestCase
             'path' => __DIR__ . '/db.sqlite',
         );
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
-        $this->objectsService = new ObjectsService( $this->entityManager );
+        $this->dateTimeProvider = new TestDateTimeProvider( new DateTime( "12:00" ), new DateTime( "12:01" ) );
+        $this->objectsService = new ObjectsService( $this->entityManager, $this->dateTimeProvider );
     }
 
-    private static function getNow() {
-        return date("Y-m-d H:i:s");
+    private function getTime( $context ) {
+        return $this->dateTimeProvider
+            ->getTime( $context )
+            ->format( "Y-m-d H:i:s" );
     }
 
     public function testItCreatesObject()
@@ -50,7 +54,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note',
         );
-        $now = self::getNow();
+        $now = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -149,7 +153,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 'type' => 'Person',
             ),
         );
-        $now = self::getNow();
+        $now = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -250,7 +254,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 "https://example.com/notes/2",
             ),
         );
-        $now = self::getNow();
+        $now = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -349,7 +353,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
             ),
         );
-        $now = self::getNow();
+        $now = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $expected = new ArrayDataSet( array(
              'objects' => array(
@@ -696,7 +700,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is another note',
         );
-        $now = self::getNow();
+        $now = $this->getTime( 'create' );
         $objectOne = $this->objectsService->createObject( $fieldsOne );
         $objectTwo = $this->objectsService->createObject( $fieldsTwo );
         $this->assertEquals( $objectOne, $objectTwo );
@@ -778,10 +782,10 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note'
         );
-        $createTime = self::getNow();
+        $createTime = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $update = array( 'content' => 'This note has been updated' );
-        $updateTime = self::getNow();
+        $updateTime = $this->getTime( 'update' );
         $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -843,12 +847,12 @@ class ObjectsServiceTest extends SQLiteTestCase
                 'id' => 'https://example.com/actors/1',
             ),
         );
-        $createTime = self::getNow();
+        $createTime = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $update = array( 'attributedTo' => array(
             'id' => 'https://example.com/actors/2',
         ) );
-        $updateTime = self::getNow();
+        $updateTime = $this->getTime( 'update' );
         $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -937,7 +941,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
     }
 
-    public function testItUpdatedObjectFieldArray()
+    public function testItUpdatesObjectFieldArray()
     {
         $fields = array(
             'id' => 'https://example.com/notes/1',
@@ -948,13 +952,13 @@ class ObjectsServiceTest extends SQLiteTestCase
                 'https://example.com/likes/2',
             ),
         );
-        $createTime = self::getNow();
+        $createTime = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $update = array( 'likes' => array(
             'https://example.com/likes/3',
             'https://example.com/likes/4',
         ) );
-        $updateTime = self::getNow();
+        $updateTime = $this->getTime( 'update' );
         $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -1045,10 +1049,10 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note'
         );
-        $createTime = self::getNow();
+        $createTime = $this->getTime( 'create' );
         $object = $this->objectsService->createObject( $fields );
         $update = array( 'content' => null );
-        $updateTime = self::getNow();
+        $updateTime = $this->getTime( 'update' );
         $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(

@@ -75,15 +75,17 @@ class Field
      * @param string $value The value of the field
      * @return Field The new field
      */
-    public static function withValue( ActivityPubObject $object, string $name, string $value )
+    public static function withValue( ActivityPubObject $object, string $name, string $value, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $field = new Field();
-        $field->setObject( $object );
+        $field->setObject( $object, $time );
         $field->setName( $name );
         $field->setValue( $value );
-        $now = new DateTime( "now" );
-        $field->setCreated( $now );
-        $field->setLastUpdated( $now );
+        $field->setCreated( $time );
+        $field->setLastUpdated( $time );
         return $field;
     }
 
@@ -95,26 +97,34 @@ class Field
      * @param ActivityPubObject $targetObject The object that this field holds
      * @return Field The new field
      */
-    public static function withObject( ActivityPubObject $object, string $name, Object $targetObject )
+    public static function withObject( ActivityPubObject $object, string $name, Object $targetObject, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $field = new Field();
-        $field->setObject( $object);
+        $field->setObject( $object, $time );
         $field->setName( $name );
         $field->setTargetObject( $targetObject );
-        $now = new DateTime( "now" );
-        $field->setCreated( $now );
-        $field->setLastUpdated( $now );
+        $field->setCreated( $time );
+        $field->setLastUpdated( $time );
         return $field;
     }
 
-    protected function setObject( ActivityPubObject $object )
+    protected function setObject( ActivityPubObject $object, DateTime $time = null )
     {
-        $object->addField( $this );
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
+        $object->addField( $this, $time );
         $this->object= $object;
     }
 
-    public function setTargetObject( ActivityPubObject $targetObject )
+    public function setTargetObject( ActivityPubObject $targetObject, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $this->value = null;
         $oldTargetObject = $this->getTargetObject();
         if ( $oldTargetObject ) {
@@ -122,7 +132,7 @@ class Field
         }
         $targetObject->addReferencingField( $this );
         $this->targetObject = $targetObject;
-        $this->lastUpdated = new DateTime( "now" );
+        $this->lastUpdated = $time;
     }
 
     protected function setName( string $name )
@@ -130,15 +140,18 @@ class Field
         $this->name= $name;
     }
 
-    public function setValue( string $value )
+    public function setValue( string $value, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $oldTargetObject = $this->getTargetObject();
         if ( $oldTargetObject ) {
             $oldTargetObject->removeReferencingField( $this );
         }
         $this->targetObject = null;
         $this->value = $value;
-        $this->lastUpdated = new DateTime( "now" );
+        $this->lastUpdated = $time;
     }
 
     protected function setCreated( DateTime $timestamp )

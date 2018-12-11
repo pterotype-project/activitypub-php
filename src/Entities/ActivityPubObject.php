@@ -47,11 +47,14 @@ class ActivityPubObject
      */
     protected $lastUpdated;
 
-    public function __construct() {
+    public function __construct( DateTime $time = null ) {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $this->fields = new ArrayCollection();
         $this->referencingFields = new ArrayCollection();
-        $this->created = new DateTime("now");
-        $this->lastUpdated = new DateTime("now");
+        $this->created = $time;
+        $this->lastUpdated = $time;
     }
 
     /**
@@ -168,10 +171,13 @@ class ActivityPubObject
      *
      * @param Field $field
      */
-    public function addField( Field $field )
+    public function addField( Field $field, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $this->fields[] = $field;
-        $this->lastUpdated = new DateTime( "now" );
+        $this->lastUpdated = $time;
     }
 
     /**
@@ -207,10 +213,13 @@ class ActivityPubObject
      * @param Field $field The field to remove
      *
      */
-    public function removeField( Field $field )
+    public function removeField( Field $field, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $this->fields->removeElement( $field );
-        $this->lastUpdated = new DateTime( "now" );
+        $this->lastUpdated = $time;
     }
 
     /**

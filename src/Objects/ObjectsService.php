@@ -5,15 +5,20 @@ use DateTime;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Utils\Util;
+use ActivityPub\Utils\DateTimeProvider;
 use Doctrine\ORM\EntityManager;
 
 class ObjectsService
 {
+    /** @var EntityManager */
     protected $entityManager;
+    /** @var DateTimeProvider */
+    protected $dateTimeProvider;
 
-    public function __construct( EntityManager $entityManager)
+    public function __construct( EntityManager $entityManager, DateTimeProvider $dateTimeProvider )
     {
         $this->entityManager = $entityManager;
+        $this->dateTimeProvider = $dateTimeProvider;
     }
 
     /**
@@ -24,9 +29,12 @@ class ObjectsService
      *   The existing object will not have its fields modified.
      *
      * @param array $fields The fields that define the new object
+     * @param string $context The context to retrieve the current time in. 
+     *   Used for fixing the time in tests.
+     *
      * @return ActivityPubObject The created object
      */
-    public function createObject( array $fields )
+    public function createObject( array $fields, string $context = 'create' )
     {
         // TODO attempt to fetch and create any values that are URLs
         // TODO JSON-LD compact all objects with the right context before saving them
@@ -36,10 +44,10 @@ class ObjectsService
                 return $existing;
             }
         }
-        $object = new ActivityPubObject();
+        $object = new ActivityPubObject( $this->dateTimeProvider->getTime( $context ) );
         $this->entityManager->persist( $object );
         foreach ( $fields as $name => $value ) {
-            $this->persistField( $object, $name, $value );
+            $this->persistField( $object, $name, $value, $context );
         }
         $this->entityManager->flush();
         return $object;
@@ -55,14 +63,18 @@ class ObjectsService
      * @param string|array $fieldValue
      *
      */
-    private function persistField( $object, $fieldName, $fieldValue )
+    private function persistField( $object, $fieldName, $fieldValue, $context = 'create' )
     {
         if ( is_array( $fieldValue ) ) {
-            $referencedObject = $this->createObject( $fieldValue );
-            $fieldEntity = Field::withObject( $object, $fieldName, $referencedObject );
+            $referencedObject = $this->createObject( $fieldValue, $context );
+            $fieldEntity = Field::withObject(
+                $object, $fieldName, $referencedObject, $this->dateTimeProvider->getTime( $context )
+            );
             $this->entityManager->persist( $fieldEntity );
         } else {
-            $fieldEntity = Field::withValue( $object, $fieldName, $fieldValue );
+            $fieldEntity = Field::withValue(
+                $object, $fieldName, $fieldValue, $this->dateTimeProvider->getTime( $context )
+            );
             $this->entityManager->persist( $fieldEntity);
         }
     }
@@ -180,9 +192,11 @@ class ObjectsService
             if ( array_key_exists( $field->getName(), $updatedFields ) ) {
                 $newValue = $updatedFields[$field->getName()];
                 if ( is_array( $newValue ) ) {
-                    $referencedObject = $this->createObject( $newValue );
+                    $referencedObject = $this->createObject( $newValue, 'update' );
                     $oldTargetObject = $field->getTargetObject();
-                    $field->setTargetObject( $referencedObject );
+                    $field->setTargetObject(
+                        $referencedObject, $this->dateTimeProvider->getTime( 'update' )
+                    );
                     $this->entityManager->persist( $field );
                     if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
                         $this->entityManager->remove( $oldTargetObject );
@@ -192,12 +206,12 @@ class ObjectsService
                     $this->entityManager->persist( $object );
                     $this->entityManager->remove( $field );
                 } else {
-                    $field->setValue( $newValue );
+                    $field->setValue( $newValue, $this->dateTimeProvider->getTime( 'update' ) );
                     $this->entityManager->persist( $field );
                 }
             }
         }
-        $object->setLastUpdated( new DateTime( "now" ) );
+        $object->setLastUpdated( $this->dateTimeProvider->getTime( 'update' ) );
         $this->entityManager->persist( $object );
         $this->entityManager->flush();
         return $object;
