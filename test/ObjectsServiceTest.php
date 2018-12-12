@@ -1134,5 +1134,25 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->expectException( BadMethodCallException::class );
         unset( $object['content'] );
     }
+
+    public function testNestedObjectArrayAccess()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+            'attributedTo' => array(
+                'id' => 'https://example.com/actor/1'
+            ),
+        );
+        $now = $this->getTime( 'create' );
+        $object = $this->objectsService->createObject( $fields );
+        $this->assertEquals( $object['content'], 'This is a note' );
+        $this->assertInstanceOf( ActivityPubObject::class, $object['attributedTo'] );
+        $this->assertEquals(
+            $object['attributedTo']['id'], 'https://example.com/actor/1'
+        );
+    }
+
 }
 ?>
