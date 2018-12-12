@@ -2,6 +2,7 @@
 namespace ActivityPub\Test;
 
 use DateTime;
+use BadMethodCallException;
 use ActivityPub\Test\Config\SQLiteTestCase;
 use ActivityPub\Test\Config\ArrayDataSet;
 use ActivityPub\Entities\ActivityPubObject;
@@ -1093,6 +1094,45 @@ class ObjectsServiceTest extends SQLiteTestCase
         );
         $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
         $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
+    }
+
+    public function testObjectArrayAccess()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $now = $this->getTime( 'create' );
+        $object = $this->objectsService->createObject( $fields );
+        $this->assertEquals( $object['content'], 'This is a note' );
+        $this->assertNull( $object['attributedTo'] );
+    }
+
+    public function testItThrowsTryingToSetObjectFieldLikeArray()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $now = $this->getTime( 'create' );
+        $object = $this->objectsService->createObject( $fields );
+        $this->expectException( BadMethodCallException::class );
+        $object['content'] = 'This should break';
+    }
+
+    public function testItThrowsTryingToUnsetObjectFieldLikeArray()
+    {
+        $fields = array(
+            'id' => 'https://example.com/notes/1',
+            'type' => 'Note',
+            'content' => 'This is a note',
+        );
+        $now = $this->getTime( 'create' );
+        $object = $this->objectsService->createObject( $fields );
+        $this->expectException( BadMethodCallException::class );
+        unset( $object['content'] );
     }
 }
 ?>

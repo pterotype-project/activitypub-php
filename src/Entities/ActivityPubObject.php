@@ -1,6 +1,8 @@
 <?php
 namespace ActivityPub\Entities;
 
+use ArrayAccess;
+use BadMethodCallException;
 use DateTime;
 use ActivityPub\Utils\Util;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -9,7 +11,7 @@ use Doctrine\Common\Collections\ArrayCollection;
  * Represents an ActivityPub JSON-LD object
  * @Entity @Table(name="objects")
  */
-class ActivityPubObject
+class ActivityPubObject implements ArrayAccess
 {
     /**
      * @var int
@@ -163,6 +165,25 @@ class ActivityPubObject
     }
 
     /**
+     * Returns the value of the field with key $name
+     *
+     * The value is either a string, another ActivityPubObject, or null
+     *   if no such key exists.
+     *
+     * @return string|ActivityPubObject|null The field's value, or null if
+     *   the field is not found
+     */
+    public function getFieldValue( string $name )
+    {
+        foreach( $this->getFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return $field->getValueOrTargetObject();
+            }
+        }
+        return null;
+    }
+
+    /**
      * Adds a new field on the object
      *
      * Don't call this directly; instead, use one of the
@@ -231,6 +252,30 @@ class ActivityPubObject
     public function setLastUpdated( $lastUpdated )
     {
         $this->lastUpdated = $lastUpdated;
+    }
+
+    public function offsetExists( $offset )
+    {
+        return $this->hasField( $offset );
+    }
+
+    public function offsetGet( $offset )
+    {
+        return $this->getFieldValue( $offset );
+    }
+
+    public function offsetSet( $offset, $value )
+    {
+        throw new BadMethodCallException(
+            'ActivityPubObject fields cannot be directly set'
+        );
+    }
+
+    public function offsetUnset( $offset )
+    {
+        throw new BadMethodCallException(
+            'ActivityPubObject fields cannot be directly unset'
+        );
     }
 }
 ?>
