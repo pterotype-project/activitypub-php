@@ -22,7 +22,8 @@
     ],
     "require": {
         "doctrine/orm": "^2.6",
-        "friendica/json-ld": "^1.1"
+        "friendica/json-ld": "^1.1",
+        "phpseclib/phpseclib": "^2.0"
     },
     "require-dev": {
         "phpunit/dbunit": "^4.0",
