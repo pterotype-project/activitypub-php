@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Crypto;
 
+use BadMethodCallException;
 use phpseclib\Crypt\RSA;
 
 class RsaKeypair
@@ -46,7 +47,7 @@ class RsaKeypair
      */
     public function sign( $data )
     {
-        if ( ! $this->privateKey ) {
+        if ( empty( $this->privateKey ) ) {
             throw new BadMethodCallException(
                 'Unable to sign data without a private key'
             );
@@ -95,7 +96,7 @@ class RsaKeypair
      */
     public function fromPublicKey( string $publicKey )
     {
-        return new RsaKeypair( $publicKey, null );
+        return new RsaKeypair( $publicKey, '' );
     }
 }
 ?>
