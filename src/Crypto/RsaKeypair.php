@@ -1,21 +1,30 @@
 <?php
 namespace ActivityPub\Crypto;
 
-use \phpseclib\Crypt\Rsa;
+use phpseclib\Crypt\RSA;
 
 class RsaKeypair
 {
     /**
-     * The RSA instance associated with this keypair
+     * The public key
      *
-     * @var RSA
+     * @var string
+     *
      */
-    private $rsa;
+    private $publicKey;
+
+    /**
+     * The private key
+     *
+     * @var string|null
+     *
+     */
+    private $privateKey;
     
-    private function __construct( RSA $rsa )
+    private function __construct( string $publicKey, string $privateKey )
     {
-        $rsa->setHash( 'sha256' );
-        $this->rsa = $rsa;
+        $this->publicKey = $publicKey;
+        $this->privateKey = $privateKey;
     }
 
     /**
@@ -37,12 +46,15 @@ class RsaKeypair
      */
     public function sign( $data )
     {
-        if ( ! $this->$rsa->getPrivateKey() ) {
+        if ( ! $this->privateKey ) {
             throw new BadMethodCallException(
                 'Unable to sign data without a private key'
             );
         }
-        return $this->$rsa->sign( $data );
+        $rsa = new RSA();
+        $rsa->setHash( 'sha256' );
+        $rsa->loadKey( $this->privateKey );
+        return $rsa->sign( $data );
     }
 
     /**
@@ -54,7 +66,10 @@ class RsaKeypair
      */
     public function verify( $data, $signature )
     {
-        return $this->$rsa->verify( $data, $signature );
+        $rsa = new RSA();
+        $rsa->setHash( 'sha256' );
+        $rsa->loadKey( $this->publicKey );
+        return $rsa->verify( $data, $signature );
     }
 
     /**
@@ -65,8 +80,8 @@ class RsaKeypair
     public static function generate()
     {
         $rsa = new RSA();
-        $rsa->createKey( 2048 );
-        return new RsaKeypair( $rsa );
+        $key = $rsa->createKey( 2048 );
+        return new RsaKeypair( $key['publickey'], $key['privatekey'] );
     }
 
     /**
@@ -80,9 +95,7 @@ class RsaKeypair
      */
     public function fromPublicKey( string $publicKey )
     {
-        $rsa = new RSA();
-        $rsa->loadKey( $publicKey );
-        return new RsaKeypair( $rsa );
+        return new RsaKeypair( $publicKey, null );
     }
 }
 ?>
