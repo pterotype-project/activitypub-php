@@ -13,6 +13,12 @@ class RsaKeypairTest extends TestCase
         $keypair = RsaKeypair::generate();
         $this->assertStringStartsWith( '-----BEGIN PUBLIC KEY-----', $keypair->getPublicKey() );
         $this->assertStringEndsWith( '-----END PUBLIC KEY-----', $keypair->getPublicKey() );
+        $this->assertStringStartsWith(
+            '-----BEGIN RSA PRIVATE KEY-----', $keypair->getPrivateKey()
+        );
+        $this->assertStringEndsWith(
+            '-----END RSA PRIVATE KEY-----', $keypair->getPrivateKey()
+        );
     }
 
     public function testItSignsAndValidatesSignatures()

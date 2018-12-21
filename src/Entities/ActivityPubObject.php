@@ -49,6 +49,13 @@ class ActivityPubObject implements ArrayAccess
      */
     protected $lastUpdated;
 
+    /**
+     * The private key associated with this object, if any
+     * @OneToOne(targetEntity="PrivateKey", mappedBy="object", cascade={"all"})
+     * @var PrivateKey
+     */
+    protected $privateKey;
+
     public function __construct( DateTime $time = null ) {
         if ( ! $time ) {
             $time = new DateTime( "now" );
@@ -252,6 +259,30 @@ class ActivityPubObject implements ArrayAccess
     public function setLastUpdated( $lastUpdated )
     {
         $this->lastUpdated = $lastUpdated;
+    }
+
+    /**
+     * Returns true if this object has an associated private key, false if otherwise
+     *
+     * @return bool
+     */
+    public function hasPrivateKey()
+    {
+        return $this->privateKey !== null;
+    }
+
+    /**
+     * Sets the object's private key
+     *
+     * @param string $key The new private key value
+     */
+    public function setPrivateKey( string $key )
+    {
+        if ( $this->hasPrivateKey() ) {
+            $this->privateKey->setKey( $key );
+        } else {
+            $this->privateKey = new PrivateKey( $key, $this );
+        }
     }
 
     public function offsetExists( $offset )

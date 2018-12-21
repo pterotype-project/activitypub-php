@@ -38,8 +38,12 @@ class ObjectsServiceTest extends SQLiteTestCase
             'path' => __DIR__ . '/db.sqlite',
         );
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
-        $this->dateTimeProvider = new TestDateTimeProvider( new DateTime( "12:00" ), new DateTime( "12:01" ) );
-        $this->objectsService = new ObjectsService( $this->entityManager, $this->dateTimeProvider );
+        $this->dateTimeProvider = new TestDateTimeProvider(
+            new DateTime( "12:00" ), new DateTime( "12:01" )
+        );
+        $this->objectsService = new ObjectsService(
+            $this->entityManager, $this->dateTimeProvider
+        );
     }
 
     private function getTime( $context ) {

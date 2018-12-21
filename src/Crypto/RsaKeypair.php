@@ -39,6 +39,16 @@ class RsaKeypair
     }
 
     /**
+     * Returns the private key as a string
+     *
+     * @return string The private key
+     */
+    public function getPrivateKey()
+    {
+        return $this->privateKey;
+    }
+
+    /**
      * Generates a signature for $data
      *
      * Throws a BadMethodCallException if this RsaKeypair does not have a private key.
@@ -63,7 +73,7 @@ class RsaKeypair
      *
      * @param string $data The data
      * @param string $signature The signature
-     * @return boolean
+     * @return bool
      */
     public function verify( $data, $signature )
     {
