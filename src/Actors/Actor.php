@@ -10,7 +10,7 @@ use ActivityPub\Entities\ActivityPubObject;
  * This class is the main entrypoint for the ActivityPub API, via the
  * inbox() and outbox() methods.
  */
-class ActivityPubActor
+class Actor
 {
     /**
      * The ActivityPubObject that represents this actor

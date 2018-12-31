@@ -1,7 +1,7 @@
 <?php
 namespace ActivityPub\Actors;
 
-use ActivityPub\Actors\ActivityPubActor;
+use ActivityPub\Actors\Actor;
 use ActivityPub\Entities\ActivityPubObject;
 
 /**
@@ -20,17 +20,17 @@ class Inbox
     /**
      * The actor to which this inbox belongs
      *
-     * @var ActivityPubActor
+     * @var Actor
      */
     private $actor;
 
     /**
      * Constructs a new Inbox
      *
-     * @param ActivityPubActor $actor The actor to which the inbox belongs
+     * @param Actor $actor The actor to which the inbox belongs
      * @param ActivityPubObject $object The ActivityPubObject that represents the inbox
      */
-    public function __construct( ActivityPubActor $actor, ActivityPubObject $object )
+    public function __construct( Actor $actor, ActivityPubObject $object )
     {
         $this->actor = $actor;
         $this->object = $object;

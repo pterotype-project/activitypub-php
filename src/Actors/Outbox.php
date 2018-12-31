@@ -1,7 +1,7 @@
 <?php
 namespace ActivityPub\Actors;
 
-use ActivityPub\Actors\ActivityPubActor;
+use ActivityPub\Actors\Actor;
 use ActivityPub\Entities\ActivityPubObject;
 
 /**
@@ -21,17 +21,17 @@ class Outbox
     /**
      * The actor to which this outbox belongs
      *
-     * @var ActivityPubActor
+     * @var Actor
      */
     private $actor;
 
     /**
      * Constructs a new Outbox
      *
-     * @param ActivityPubActor $actor The actor to which the outbox belongs
+     * @param Actor $actor The actor to which the outbox belongs
      * @param ActivityPubObject $object The ActivityPubObject that represents the outbox 
      */
-    public function __construct( ActivityPubActor $actor, ActivityPubObject $object )
+    public function __construct( Actor $actor, ActivityPubObject $object )
     {
         $this->actor = $actor;
         $this->object = $object;
