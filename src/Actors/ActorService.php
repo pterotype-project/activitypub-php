@@ -35,7 +35,7 @@ class ActorService
      * id. The private key will be persisted and associated with the actor object.
      *
      * @param array $fields The actor's fields. The id and type fields are required
-     * @return ActivityPubActor The created Actor object
+     * @return Actor The created Actor object
      */
     public function createActor( $fields )
     {
@@ -44,13 +44,20 @@ class ActorService
             throw new InvalidArgumentException( 'Actors require id and type fields' );
         }
         $actorId = rtrim( $fields['id'], '/' );
+
+        // Create keypair
         $keypair = RsaKeypair::generate();
+        $entityManager->persist( $keypair );
         $publicKeyField = array(
             'id' => "${actorId}#main-key",
             'owner' => $actorId,
             'publicKeyPem' => $keypair->getPublicKey(),
         );
         $fields['publicKey'] = $publicKeyField;
+
+        // Create collections
+
+        // Persist actor ActivityPubObject
     }
 
     /**
