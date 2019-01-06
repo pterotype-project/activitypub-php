@@ -3,10 +3,16 @@ namespace ActivityPub;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use ActivityPub\Database\PrefixNamingStrategy;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Tools\Setup;
-use ActivityPub\Database\PrefixNamingStrategy;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\HttpKernel;
+use Symfony\Component\EventDispatcher;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
+use Symfony\Component\HttpKernel\Controller\ControllerResolver;
 
 class ActivityPub
 {
@@ -33,6 +39,32 @@ class ActivityPub
         $dbConfig->setNamingStrategy( $namingStrategy );
         $dbParams = $options['dbOptions'];
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
+    }
+
+    /**
+     * Handles an incoming ActivityPub request
+     *
+     * @param Request $request (optional) The Symfony request object.
+     *   If not passed in, it is generated from the request globals.
+     *
+     * @return Response The response. Can be sent to the client with $response->send().
+     */
+    public function handle( $request = null )
+    {
+        if ( ! $request ) {
+            $request = Request::createFromGlobals();
+        }
+
+        $dispatcher = new EventDispatcher();
+        // TODO add listeners here
+
+        $controllerResolver = new ControllerResolver();
+        $argumentResolver = new ArgumentResolver();
+
+        $kernel = new HttpKernel(
+            $dispatcher, $controllerResolver, new RequestStack(), $argumentResolver
+        );
+        return $kernel->handle( $request );
     }
 
     public function updateSchema()
