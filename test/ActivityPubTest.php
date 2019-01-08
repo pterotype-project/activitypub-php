@@ -29,7 +29,7 @@ class ActivityPubTest extends SQLiteTestCase
         $this->assertTrue( file_exists( $this->getDbPath() ) );
     }
 
-    private function getDbPath() {
+    protected function getDbPath() {
         return dirname( __FILE__ ) . '/db.sqlite';
     }
 }

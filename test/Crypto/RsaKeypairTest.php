@@ -1,5 +1,5 @@
 <?php
-namespace ActivityPub\Test;
+namespace ActivityPub\Test\Crypto;
 
 use BadMethodCallException;
 use ActivityPub\Crypto\RsaKeypair;

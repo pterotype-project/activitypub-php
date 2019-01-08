@@ -1,5 +1,5 @@
 <?php
-namespace ActivityPub\Test;
+namespace ActivityPub\Test\Objects;
 
 use DateTime;
 use BadMethodCallException;
@@ -29,13 +29,13 @@ class ObjectsServiceTest extends SQLiteTestCase
     {
         parent::setUp();
         $dbConfig = Setup::createAnnotationMetadataConfiguration(
-            array( __DIR__ . '/../src/Entities' ), true
+            array( __DIR__ . '/../../src/Entities' ), true
         );
         $namingStrategy = new PrefixNamingStrategy( '' );
         $dbConfig->setNamingStrategy( $namingStrategy );
         $dbParams = array(
             'driver' => 'pdo_sqlite',
-            'path' => __DIR__ . '/db.sqlite',
+            'path' => $this->getDbPath(),
         );
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
         $this->dateTimeProvider = new TestDateTimeProvider(
