@@ -15,6 +15,7 @@ use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\EventDispatcher;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
+use Symfony\Component\HttpKernel\EventListener\ExceptionListener;
 
 class ActivityPub
 {
@@ -63,8 +64,7 @@ class ActivityPub
         }
 
         $dispatcher = new EventDispatcher();
-        $dispatcher->addSubscriber( $router );
-        // TODO add listeners here
+        $dispatcher->addSubscriber( new ExceptionListener() );
 
         $controllerResolver = new ControllerResolver();
         $argumentResolver = new ArgumentResolver();
