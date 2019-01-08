@@ -1,6 +1,10 @@
 <?php
 namespace ActivityPub\Http;
 
+use ActivityPub\Controllers\GetObjectController;
+use ActivityPub\Controllers\Inbox\DefaultInboxController;
+use ActivityPub\Controllers\Outbox\DefaultOutboxController;
+use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -12,7 +16,7 @@ class ControllerResolver implements ControllerResolverInterface
     private $inboxControllers;
     private $outboxControllers;
 
-    public function __construct( ObjectService $objectService )
+    public function __construct( ObjectsService $objectService )
     {
         $this->objectService = $objectService;
         $this->inboxControllers = array();
@@ -27,7 +31,7 @@ class ControllerResolver implements ControllerResolverInterface
      */
     public function registerInboxController( Callable $controller, string $type )
     {
-        $this->inboxControllers[$type] = $ccontroller;
+        $this->inboxControllers[$type] = $controller;
     }
 
     /**
@@ -38,7 +42,7 @@ class ControllerResolver implements ControllerResolverInterface
      */
     public function registerOutboxController( Callable $controller, string $type )
     {
-        this->outboxControllers[$type] = $ccontroller;
+        $this->outboxControllers[$type] = $controller;
     }
     
     /**

@@ -1,7 +1,7 @@
 <?php
 namespace ActivityPub\Controllers\Inbox;
 
-use ActivityPub\Objects\ObjectService;
+use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -9,11 +9,11 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class DefaultInboxController
 {
-    private $objectService;
+    private $ObjectsService;
 
-    public function __construct( ObjectService $objectService )
+    public function __construct( ObjectsService $ObjectsService )
     {
-        $this->objectService = $objectService;
+        $this->ObjectsService = $ObjectsService;
     }
 
     /**

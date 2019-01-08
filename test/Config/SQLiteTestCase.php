@@ -18,7 +18,7 @@ abstract class SQLiteTestCase extends TestCase
     protected function setUp()
     {
         parent::setUp();
-        $dbPath = dirname( __FILE__ ) . '/../db.sqlite';
+        $dbPath = $this->getDbPath();
         if ( file_exists( $dbPath ) ) {
             unlink( $dbPath );
         }
@@ -34,16 +34,21 @@ abstract class SQLiteTestCase extends TestCase
     protected function tearDown()
     {
         parent::tearDown();
-        unlink( dirname( __FILE__ ) . '/../db.sqlite' );
+        unlink( $this->getDbPath() );
         unset( $this->conn );
         unset( $this->pdo );
+    }
+
+    protected function getDbPath()
+    {
+        return dirname( __FILE__ ) . '/db.sqlite';
     }
 
     final public function getConnection()
     {
         if ( $this->conn === null ) {
             if ( $this->pdo === null ) {
-                $this->dbPath = dirname( __FILE__ ) . '/../db.sqlite';
+                $this->dbPath = $this->getDbPath();
                 $this->pdo = new \PDO( "sqlite:{$this->dbPath}" );
             }
             $this->conn = $this->createDefaultDBConnection( $this->pdo, $this->dbPath );

@@ -1,16 +1,16 @@
 <?php
 namespace ActivityPub\Controllers\Outbox;
 
-use ActivityPub\Objects\ObjectService;
+use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 
 class DefaultOutboxController
 {
-    private $objectService;
+    private $objectsService;
 
-    public function __construct( ObjectService $objectService )
+    public function __construct( ObjectsService $objectsService )
     {
-        $this->objectService = $objectService;
+        $this->objectsService = $objectsService;
     }
 
     /**

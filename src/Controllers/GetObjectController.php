@@ -9,11 +9,11 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class GetObjectController
 {
-    private $objectService;
+    private $objectsService;
 
-    public function __construct( ObjectService $objectService )
+    public function __construct( ObjectsService $objectsService )
     {
-        $this->objectService = $objectService;
+        $this->objectsService = $objectsService;
     }
 
     /**
