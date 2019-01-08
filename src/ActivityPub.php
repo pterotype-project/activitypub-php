@@ -4,6 +4,9 @@ namespace ActivityPub;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use ActivityPub\Database\PrefixNamingStrategy;
+use ActivityPub\Http\ControllerResolver;
+use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use Doctrine\ORM\Tools\Setup;
@@ -12,11 +15,11 @@ use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\EventDispatcher;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
-use Symfony\Component\HttpKernel\Controller\ControllerResolver;
 
 class ActivityPub
 {
-    protected $entityManager;
+    private $entityManager;
+    private $objectService;
 
     /**
      * Constructs a new ActivityPub instance
@@ -32,6 +35,7 @@ class ActivityPub
         );
         $options = array_merge( $defaults, $opts );
         $this->validateOptions( $options );
+
         $dbConfig = Setup::createAnnotationMetadataConfiguration(
             array( __DIR__ . '/Entities' ), $options['isDevMode']
         );
@@ -39,6 +43,9 @@ class ActivityPub
         $dbConfig->setNamingStrategy( $namingStrategy );
         $dbParams = $options['dbOptions'];
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
+
+        $dateTimeProvider = new SimpleDateTimeProvider();
+        $this->objectService = new ObjectsService($this->entityManager, $dateTimeProvider);
     }
 
     /**
@@ -56,6 +63,7 @@ class ActivityPub
         }
 
         $dispatcher = new EventDispatcher();
+        $dispatcher->addSubscriber( $router );
         // TODO add listeners here
 
         $controllerResolver = new ControllerResolver();
