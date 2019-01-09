@@ -2,13 +2,18 @@
 namespace ActivityPub\Controllers;
 
 use ActivityPub\Objects\ObjectsService;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * The GetObjectController is responsible for rendering ActivityPub objects as JSON
  */
 class GetObjectController
 {
+    /**
+     * @var ObjectsService
+     */
     private $objectsService;
 
     public function __construct( ObjectsService $objectsService )
@@ -24,7 +29,12 @@ class GetObjectController
      */
     public function handle( Request $request )
     {
-        // TODO implement me
+        $uri = $request->getUri();
+        $object = $this->objectsService->getObject( $uri );
+        if ( ! $object ) {
+            throw new NotFoundHttpException();
+        }
+        return new JsonResponse( $object->asArray() );
     }
 }
 ?>
