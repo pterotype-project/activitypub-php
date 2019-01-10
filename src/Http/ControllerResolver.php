@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ControllerResolver implements ControllerResolverInterface
 {
@@ -87,7 +88,7 @@ class ControllerResolver implements ControllerResolverInterface
                     return array( $controller, 'handle' );
                 }
             } else {
-                throw new MethodNotAllowedHttpException( array( Request::METHOD_GET ) );
+                throw new NotFoundHttpException();
             }
         } else {
             throw new MethodNotAllowedHttpException( array(

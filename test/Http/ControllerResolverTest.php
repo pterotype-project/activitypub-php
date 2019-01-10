@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ControllerResolverTest extends TestCase
 {
@@ -112,7 +113,7 @@ class ControllerResolverTest extends TestCase
         $request = $this->createRequestWithBody(
             'https://example.com/object', Request::METHOD_POST, array( 'type' => 'Foo' )
         );
-        $this->expectException( MethodNotAllowedHttpException::class );
+        $this->expectException( NotFoundHttpException::class );
         $this->controllerResolver->getController( $request );
     }
 
