@@ -33,6 +33,7 @@ class HttpSignatureService
      */
     public function verify( Request $request, string $publicKey )
     {
+        // TODO fail verification if date is > 300 seconds ago to prevent replay attacks
         $params = array();
         $headers = $request->headers;
         if ( $headers->has( 'signature' ) ) {
