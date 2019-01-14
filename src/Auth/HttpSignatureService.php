@@ -33,14 +33,6 @@ class HttpSignatureService
      */
     public function verify( Request $request, string $publicKey )
     {
-        // To verify a signature:
-        // 1. Re-create the signing string from the request and the headers
-        // 2. verify that the signature is signed correctly using the public key and the signing string
-        // The signature can either be in the Authentication header or the Signature header.
-        // If it's in the Authentication header, the params will be prefixed with the string "Signature",
-        // e.g. Authentication: Signature keyId="key-1",algorithm="rsa-sha256",headers="(request-target) host date",signature="thesig"
-        // as opposed to the Signature header, which just has the params as its value:
-        // Signature: keyId="key-1",algorithm="rsa-sha256",headers="(request-target) host date",signature="thesig"
         $params = array();
         $headers = $request->headers;
         if ( $headers->has( 'signature' ) ) {
@@ -58,7 +50,7 @@ class HttpSignatureService
             $targetHeaders = $params['headers'];
         }
         $signingString = $this->getSigningString( $request, $targetHeaders );
-        $signature = $params['signature'];
+        $signature = base64_decode( $params['signature'] );
         // TODO handle different algorithms here, checking the 'algorithm' param and the key headers
         return openssl_verify(
             $signingString, $signature, $publicKey, OPENSSL_ALGO_SHA256
@@ -103,7 +95,7 @@ class HttpSignatureService
         $params = array();
         $split = HeaderUtils::split( $paramsStr, ',= ' );
         foreach ( $split as $paramArr ) {
-            $paramName = $paramArr[0];
+            $paramName = $paramArr[0][0];
             $paramValue = $paramArr[1];
             if ( count( $paramValue ) === 1 ) {
                 $paramValue = $paramValue[0];
