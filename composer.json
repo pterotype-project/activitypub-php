@@ -24,8 +24,10 @@
     "require": {
         "doctrine/orm": "^2.6",
         "friendica/json-ld": "^1.1",
+        "guzzlehttp/guzzle": "^6.3",
         "phpseclib/phpseclib": "^2.0",
-        "symfony/http-kernel": "^4.2"
+        "symfony/http-kernel": "^4.2",
+        "symfony/psr-http-message-bridge": "^1.1"
     },
     "require-dev": {
         "phpunit/dbunit": "^4.0",
