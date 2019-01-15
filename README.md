@@ -3,13 +3,13 @@
 
 **This library is a work-in-progress. The documentation below reflects what the API will look like once it's done.**
 
-ActivityPub-PHP is a library that embeds a full ActivityPub server into any PHP project. It works with any SQL database and any web framework. At a high level, it provides a request handler that you can route ActivityPub requests to which will take care of persisting the received activity, performing any necessary side effects, and delivering the activity to other federated servers.
+ActivityPub-PHP is a library that embeds a full ActivityPub server into any PHP project. It works with any SQL database and any web framework. At a high level, it provides a request handler that you can route ActivityPub requests to which will take care of persisting the received activity, performing any necessary side effects, and delivering the activity to other federated servers. It also provides a PHP API to create and manage actors and activities.
 
 ## What it does
 - stores incoming activities to your project's existing SQL database in a configurable fashion
 - implement both the client-to-server and the server-to-server parts of the ActivityPub protocol
 - verify HTTP signatures on incoming ActivityPub requests and sign outgoing ActivityPub requests
-- provide a PHP API so you can create and manage Actors and send activities directly from code
+- provide a PHP API so you can create and manage actors and send activities directly from code
 - hook into your application's user authentication logic to provide ways to associate your users with ActivityPub actors
 - manage the JSON-LD context for you, with hooks if you need to add custom fields
 - support PHP > 5.*
@@ -57,7 +57,7 @@ $activitypub = new ActivityPub( array(
     'dbPrefix' => 'activitypub_',
 ) );
 
-// Routing incoming ActivityPub requests to the ActivityPub-PHP
+// Routing incoming ActivityPub requests to ActivityPub-PHP
 if ( in_array( $_SERVER['HTTP_ACCEPT'],
                array( 'application/ld+json', 'application/activity+json' ) ) ) {
     // Handle the request, perform any side effects and delivery,
