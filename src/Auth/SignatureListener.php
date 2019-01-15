@@ -17,7 +17,7 @@ class SignatureListener implements EventSubscriberInterface
      * @var HttpSignatureService
      */
     private $httpSignatureService;
-    
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -26,8 +26,8 @@ class SignatureListener implements EventSubscriberInterface
     }
 
     /**
-     * Check for a valid HTTP signature on the request. If the request has a valid 
-     * signature, set the 'signed' and 'signedBy' keys on the request ('signedBy' is 
+     * Check for a valid HTTP signature on the request. If the request has a valid
+     * signature, set the 'signed' and 'signedBy' keys on the request ('signedBy' is
      * the id of the actor whose key signed the request)
      */
     public function validateHttpSignature( GetResponseEvent $event )
