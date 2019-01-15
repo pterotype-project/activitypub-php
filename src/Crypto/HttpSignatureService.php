@@ -1,6 +1,9 @@
 <?php
-namespace ActivityPub\Auth;
+namespace ActivityPub\Crypto;
 
+use DateTime;
+use ActivityPub\Utils\DateTimeProvider;
+use ActivityPub\Utils\SimpleDateTimeProvider;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
@@ -15,13 +18,50 @@ class HttpSignatureService
         'host',
         'date',
     );
-    
-    public function sign( Request $request, string $privateKey, $headers = self::DEFAULT_HEADERS )
+
+    const REPLAY_THRESHOLD = 300;
+
+    /**
+     * @var DateTimeProvider
+     */
+    private $dateTimeProvider;
+
+    /**
+     * Constructs a new HttpSignatureService
+     *
+     * @param DateTimeProvider $dateTimeProvider The DateTimeProvider, 
+     * defaults to SimpleDateTimeProvider
+     */
+    public function __construct( DateTimeProvider $dateTimeProvider = null )
     {
-        // To generate a signature for a request:
-        // 1. put together the signing string from the headers list
-        // 2. generate an RSA-sha256 signature of the signing string using the private key
-        // 3. return the signature base64-encoded
+        if ( ! $dateTimeProvider ) {
+            $dateTimeProvider = new SimpleDateTimeProvider();
+        }
+        $this->dateTimeProvider = $dateTimeProvider;
+    }
+    
+    /**
+     * Generates a signature given the request and private key
+     *
+     * @param Request $request The request to be signed
+     * @param string $privateKey The private key to use to sign the request
+     * @param string $keyId The id of the signing key
+     * @param array $headers The headers to use in the signature 
+     *                       (default ['(request-target)', 'host', 'date'])
+     * @return string The Signature header value
+     */
+    public function sign( Request $request, string $privateKey, string $keyId,
+                          $headers = self::DEFAULT_HEADERS )
+    {
+        $headers = array_map( 'strtolower', $headers );
+        $signingString = $this->getSigningString( $request, $headers );
+        $keypair = RsaKeypair::fromPrivateKey( $privateKey );
+        $signature = base64_encode( $keypair->sign( $signingString, 'rsa256' ) );
+        $headersStr = implode( ' ', $headers );
+        return "keyId=\"$keyId\"," .
+            "algorithm=\"rsa-sha256\"," .
+            "headers=\"$headersStr\"," .
+            "signature=\"$signature\"";
     }
 
     /**
@@ -33,9 +73,18 @@ class HttpSignatureService
      */
     public function verify( Request $request, string $publicKey )
     {
-        // TODO fail verification if date is > 300 seconds ago to prevent replay attacks
         $params = array();
         $headers = $request->headers;
+
+        if ( ! $headers->has( 'date' ) ) {
+            return false;
+        }
+        $now = $this->dateTimeProvider->getTime( 'http-signature.verify' );
+        $then = DateTime::createFromFormat( DateTime::RFC2822, $headers->get( 'date' ) );
+        if ( abs( $now->getTimestamp() - $then->getTimestamp() ) > self::REPLAY_THRESHOLD ) {
+            return false;
+        }
+
         if ( $headers->has( 'signature' ) ) {
             $params = $this->parseSignatureParams( $headers->get( 'signature' ) );
         } else if ( $headers->has( 'authorization' ) &&
@@ -43,19 +92,21 @@ class HttpSignatureService
             $paramsStr = substr( $headers->get( 'authorization' ), 10 );
             $params = $this->parseSignatureParams( $paramsStr );
         }
+
         if ( count( $params ) === 0 ) {
             return false;
         }
+
         $targetHeaders = array( 'date' );
         if ( array_key_exists( 'headers', $params ) ) {
             $targetHeaders = $params['headers'];
         }
+
         $signingString = $this->getSigningString( $request, $targetHeaders );
         $signature = base64_decode( $params['signature'] );
         // TODO handle different algorithms here, checking the 'algorithm' param and the key headers
-        return openssl_verify(
-            $signingString, $signature, $publicKey, OPENSSL_ALGO_SHA256
-        ) === 1;
+        $keypair = RsaKeypair::fromPublicKey( $publicKey );
+        return $keypair->verify($signingString, $signature, 'sha256');
     }
 
     /**
@@ -71,7 +122,7 @@ class HttpSignatureService
         foreach ( $headers as $header ) {
             $component = "${header}: ";
             if ( $header == '(request-target)' ) {
-                $method = strtolower( $request->method );
+                $method = strtolower( $request->getMethod());
                 $path = $request->getRequestUri();
                 $component = $component . $method . ' ' . $path;
             } else {
@@ -81,7 +132,7 @@ class HttpSignatureService
             }
             $signingComponents[] = $component;
         }
-        return implode( '\n', $signingComponents );
+        return implode( "\n", $signingComponents );
     }
 
     /**
@@ -94,12 +145,12 @@ class HttpSignatureService
     private function parseSignatureParams( string $paramsStr )
     {
         $params = array();
-        $split = HeaderUtils::split( $paramsStr, ',= ' );
+        $split = HeaderUtils::split( $paramsStr, ',=' );
         foreach ( $split as $paramArr ) {
-            $paramName = $paramArr[0][0];
+            $paramName = $paramArr[0];
             $paramValue = $paramArr[1];
-            if ( count( $paramValue ) === 1 ) {
-                $paramValue = $paramValue[0];
+            if ( $paramName == 'headers' ) {
+                $paramValue = explode(' ', $paramValue);
             }
             $params[$paramName] = $paramValue;
         }

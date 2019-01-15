@@ -39,7 +39,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         );
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
         $this->dateTimeProvider = new TestDateTimeProvider(
-            new DateTime( "12:00" ), new DateTime( "12:01" )
+            array( 'create' => new DateTime( "12:00" ), 'update' => new DateTime( "12:01" ) )
         );
         $this->objectsService = new ObjectsService(
             $this->entityManager, $this->dateTimeProvider

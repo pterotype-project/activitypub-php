@@ -9,21 +9,20 @@ use ActivityPub\Utils\DateTimeProvider;
  */
 class TestDateTimeProvider implements DateTimeProvider
 {
-    protected $createTime;
-    protected $updateTime;
+    protected $context;
 
-    public function __construct( DateTime $createTime, DateTime $updateTime )
+    /**
+     * @param array $context An array mapping context strings to DateTime instances
+     */
+    public function __construct( $context )
     {
-        $this->createTime = $createTime;
-        $this->updateTime = $updateTime;
+        $this->context = $context;
     }
     
     public function getTime( $context = '' )
     {
-        if ( $context === 'create' ) {
-            return $this->createTime;
-        } else if ( $context === 'update' ) {
-            return $this->updateTime;
+        if ( array_key_exists( $context, $this->context )) {
+            return $this->context[$context];
         } else {
             return new DateTime( 'now' );
         }
