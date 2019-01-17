@@ -5,7 +5,7 @@ use DateTime;
 use ActivityPub\Utils\DateTimeProvider;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Psr\Http\Message\RequestInterface;
-use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
+use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
@@ -29,9 +29,9 @@ class HttpSignatureService
     private $dateTimeProvider;
 
     /**
-     * @var HttpFoundationFactory
+     * @var DiactorosFactory
      */
-    private $httpFoundationFactory;
+    private $psr7Factory;
 
     /**
      * Constructs a new HttpSignatureService
@@ -45,7 +45,7 @@ class HttpSignatureService
             $dateTimeProvider = new SimpleDateTimeProvider();
         }
         $this->dateTimeProvider = $dateTimeProvider;
-        $this->httpFoundationFactory = new HttpFoundationFactory();
+        $this->psr7Factory = new DiactorosFactory();
     }
     
     /**
@@ -58,10 +58,9 @@ class HttpSignatureService
      *                       (default ['(request-target)', 'host', 'date'])
      * @return string The Signature header value
      */
-    public function sign( RequestInterface $psrRequest, string $privateKey,
+    public function sign( RequestInterface $request, string $privateKey,
                           string $keyId, $headers = self::DEFAULT_HEADERS )
     {
-        $request = $this->httpFoundationFactory->createRequest( $psrRequest );
         $headers = array_map( 'strtolower', $headers );
         $signingString = $this->getSigningString( $request, $headers );
         $keypair = RsaKeypair::fromPrivateKey( $privateKey );
@@ -111,7 +110,8 @@ class HttpSignatureService
             $targetHeaders = $params['headers'];
         }
 
-        $signingString = $this->getSigningString( $request, $targetHeaders );
+        $psrRequest = $this->psr7Factory->createRequest( $request );
+        $signingString = $this->getSigningString( $psrRequest, $targetHeaders );
         $signature = base64_decode( $params['signature'] );
         // TODO handle different algorithms here, checking the 'algorithm' param and the key headers
         $keypair = RsaKeypair::fromPublicKey( $publicKey );
@@ -125,18 +125,22 @@ class HttpSignatureService
      * @param array $headers The headers to use to generate the signing string
      * @return string The signing string
      */
-    private function getSigningString( Request $request, $headers )
+    private function getSigningString( RequestInterface $request, $headers )
     {
         $signingComponents = array();
         foreach ( $headers as $header ) {
             $component = "${header}: ";
             if ( $header == '(request-target)' ) {
                 $method = strtolower( $request->getMethod());
-                $path = $request->getRequestUri();
+                $path = $request->getUri()->getPath();
+                $query = $request->getUri()->getQuery();
+                if ( ! empty( $query ) ) {
+                    $path = "$path?$query";
+                }
                 $component = $component . $method . ' ' . $path;
             } else {
                 // TODO handle 'digest' specially here too
-                $values = $request->headers->get( $header, null, false );
+                $values = $request->getHeader( $header );
                 $component = $component . implode( ', ', $values );
             }
             $signingComponents[] = $component;

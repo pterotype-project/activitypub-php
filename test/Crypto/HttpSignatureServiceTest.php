@@ -4,6 +4,7 @@ namespace ActivityPub\Test\Crypto;
 use DateTime;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
+use GuzzleHttp\Psr7\Request as PsrRequest;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -44,7 +45,7 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
         $this->httpSignatureService = new HttpSignatureService( $dateTimeProvider );
     }
 
-    private static function getRequest()
+    private static function getSymfonyRequest()
     {
         $request = Request::create(
             'https://example.com/foo?param=value&pet=dog',
@@ -63,6 +64,21 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
         $request->headers->set( 'content-length', 18 );
         $request->headers->set( 'date', 'Sun, 05 Jan 2014 21:31:40 GMT' );
         return $request;
+    }
+
+    private static function getPsrRequest()
+    {
+        $headers = array(
+            'Host' => 'example.com',
+            'Content-Type' => 'application/json',
+            'Digest' => 'SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=',
+            'Content-Length' => 18,
+            'Date' => 'Sun, 05 Jan 2014 21:31:40 GMT'
+        );
+        $body = '{"hello": "world"}';
+        return new PsrRequest(
+            'POST', 'https://example.com/foo?param=value&pet=dog', $headers, $body
+        );
     }
 
     public function testItVerifies()
@@ -164,7 +180,7 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                 ) );
                 $this->httpSignatureService = new HttpSignatureService( $dateTimeProvider );
             }
-            $request = self::getRequest();
+            $request = self::getSymfonyRequest();
             foreach ( $testCase['headers'] as $header => $value ) {
                 $request->headers->set( $header, $value );
             }
@@ -198,7 +214,7 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
             ),
         );
         foreach ( $testCases as $testCase ) {
-            $request = self::getRequest();
+            $request = self::getPsrRequest();
             if ( array_key_exists( 'headers', $testCase ) ) {
                 $actual = $this->httpSignatureService->sign(
                     $request, self::PRIVATE_KEY, $testCase['keyId'], $testCase['headers']

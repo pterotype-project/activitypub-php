@@ -28,7 +28,8 @@
         "phpseclib/phpseclib": "^2.0",
         "psr/http-message": "^1.0",
         "symfony/http-kernel": "^4.2",
-        "symfony/psr-http-message-bridge": "^1.1"
+        "symfony/psr-http-message-bridge": "^1.1",
+        "zendframework/zend-diactoros": "^1.8"
     },
     "require-dev": {
         "phpunit/dbunit": "^4.0",
