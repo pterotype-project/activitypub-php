@@ -30,7 +30,7 @@ class GetObjectController
     public function handle( Request $request )
     {
         $uri = $request->getUri();
-        $object = $this->objectsService->getObject( $uri );
+        $object = $this->objectsService->dereference( $uri );
         if ( ! $object ) {
             throw new NotFoundHttpException();
         }

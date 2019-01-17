@@ -27,7 +27,7 @@ class GetObjectControllerTest extends TestCase
     public function setUp()
     {
         $objectsService = $this->createMock( ObjectsService::class );
-        $objectsService->method( 'getObject' )->will(
+        $objectsService->method( 'dereference' )->will(
             $this->returnCallback( function( $uri ) {
                 if ( array_key_exists( $uri, self::OBJECTS ) ) {
                     return $this->objectFromArray( self::OBJECTS[$uri] );
