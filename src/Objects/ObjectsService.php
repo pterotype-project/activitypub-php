@@ -47,8 +47,7 @@ class ObjectsService
      */
     public function persist( array $fields, string $context = 'create' )
     {
-        // TODO attempt to fetch and create any values that are URLs
-        // TODO JSON-LD compact all objects with the right context before saving them
+        // TODO should I do JSON-LD compaction here?
         if ( array_key_exists( 'id', $fields ) ) {
             $existing = $this->getObject( $fields['id'] );
             if ( $existing ) {
