@@ -7,25 +7,36 @@ use ActivityPub\Entities\Field;
 use ActivityPub\Utils\Util;
 use ActivityPub\Utils\DateTimeProvider;
 use Doctrine\ORM\EntityManager;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Request;
 
 class ObjectsService
 {
-    /** @var EntityManager */
+    /** 
+     * @var EntityManager 
+     */
     protected $entityManager;
-    /** @var DateTimeProvider */
+    /** 
+     * @var DateTimeProvider 
+     */
     protected $dateTimeProvider;
+    /** 
+     * @var Client 
+     */
+    protected $httpClient;
 
     public function __construct( EntityManager $entityManager, DateTimeProvider $dateTimeProvider )
     {
         $this->entityManager = $entityManager;
         $this->dateTimeProvider = $dateTimeProvider;
+        $this->client = new Client();
     }
 
     /**
-     * Creates a new object with fields defined by $fields
+     * Persists a new object to the database with fields defined by $fields
      *
      * If there is an 'id' field, and an object with that id already exists,
-     *   this returns the existing object rather than creating the new object.
+     *   this returns the existing object rather than persisting the new object.
      *   The existing object will not have its fields modified.
      *
      * @param array $fields The fields that define the new object
@@ -34,7 +45,7 @@ class ObjectsService
      *
      * @return ActivityPubObject The created object
      */
-    public function createObject( array $fields, string $context = 'create' )
+    public function persist( array $fields, string $context = 'create' )
     {
         // TODO attempt to fetch and create any values that are URLs
         // TODO JSON-LD compact all objects with the right context before saving them
@@ -66,17 +77,60 @@ class ObjectsService
     private function persistField( $object, $fieldName, $fieldValue, $context = 'create' )
     {
         if ( is_array( $fieldValue ) ) {
-            $referencedObject = $this->createObject( $fieldValue, $context );
+            $referencedObject = $this->persist( $fieldValue, $context );
             $fieldEntity = Field::withObject(
                 $object, $fieldName, $referencedObject, $this->dateTimeProvider->getTime( $context )
             );
             $this->entityManager->persist( $fieldEntity );
         } else {
+            if ( filter_var( $fieldValue, FILTER_VALIDATE_URL ) !== false ) {
+                $dereferenced = $this->dereference( $fieldValue );
+                if ( $dereferenced ) {
+                    $fieldEntity = Field::withObject(
+                        $object, $fieldName, $dereferenced, $this->dateTimeProvider->getTime( $context )
+                    );
+                    $this->entityManager->persist( $fieldEntity );
+                    return;
+                }
+            }
             $fieldEntity = Field::withValue(
                 $object, $fieldName, $fieldValue, $this->dateTimeProvider->getTime( $context )
             );
             $this->entityManager->persist( $fieldEntity);
         }
+    }
+
+    /**
+     * Returns the full object represented by $id, expanded up to depth $depth
+     *
+     * This method will first check the local DB for the object. If it's not there,
+     * it will request the object from that object's server, fully expand it by
+     * dereferencing any children that are id values, and persist it to the local DB
+     * before returning the object collapsed to $depth.
+     *
+     * @param string $id The id of the object to dereference
+     *
+     * @return ActivityPubObject|null The dereferenced object if it exists
+     */
+    public function dereference( $id )
+    {
+        $object = $this->getObject( $id );
+        if ( $object ) {
+            return $this->collapseObjectToDepth( $object, $depth );
+        }
+        // TODO sign this request?
+        $request = new Request( 'GET', $id, array(
+            'Accept' => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
+        ) );
+        $response = $this->httpClient->send( $request );
+        if ( $response->getStatusCode() !== 200 || empty( $response->getBody() ) ) {
+            return;
+        }
+        $object = json_decode( $response->getBody() );
+        if ( ! $object ) {
+            return;
+        }
+        return $this->persist( $object );
     }
 
     /**
@@ -152,14 +206,15 @@ class ObjectsService
     }
 
     /**
-     * Gets an object by its ActivityPub id
+     * Gets an object from the DB by its ActivityPub id
+     *
+     * For internal use only - external callers should use dereference()
      *
      * @param string $id The object's id
-     *
      * @return ActivityPubObject|null The object or null
      *   if no object exists with that id
      */
-    public function getObject( $id )
+    protected function getObject( $id )
     {
         $results = $this->query( array( 'id' => $id ) );
         if ( ! empty( $results ) ) {
@@ -192,7 +247,7 @@ class ObjectsService
             if ( array_key_exists( $field->getName(), $updatedFields ) ) {
                 $newValue = $updatedFields[$field->getName()];
                 if ( is_array( $newValue ) ) {
-                    $referencedObject = $this->createObject( $newValue, 'update' );
+                    $referencedObject = $this->persist( $newValue, 'update' );
                     $oldTargetObject = $field->getTargetObject();
                     $field->setTargetObject(
                         $referencedObject, $this->dateTimeProvider->getTime( 'update' )

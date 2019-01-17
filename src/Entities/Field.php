@@ -195,6 +195,36 @@ class Field
     }
 
     /**
+     * Returns the value of the field or null if there isn't one
+     *
+     * @return string|null
+     */
+    public function getValue()
+    {
+        return $this->value;
+    }
+
+    /**
+     * Returns true if the field has a value
+     *
+     * @return bool
+     */
+    public function hasValue()
+    {
+        return $this->value !== null;
+    }
+
+    /**
+     * Returns true if the field has a target object
+     *
+     * @return bool
+     */
+    public function hasTargetObject()
+    {
+        return $this->targetObject !== null;
+    }
+
+    /**
      * Returns the value or the target object of the field, depending on which was set
      *
      * @return string|ActivityPubObject

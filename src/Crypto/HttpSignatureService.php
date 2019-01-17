@@ -4,6 +4,8 @@ namespace ActivityPub\Crypto;
 use DateTime;
 use ActivityPub\Utils\DateTimeProvider;
 use ActivityPub\Utils\SimpleDateTimeProvider;
+use Psr\Http\Message\RequestInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 
@@ -27,6 +29,11 @@ class HttpSignatureService
     private $dateTimeProvider;
 
     /**
+     * @var HttpFoundationFactory
+     */
+    private $httpFoundationFactory;
+
+    /**
      * Constructs a new HttpSignatureService
      *
      * @param DateTimeProvider $dateTimeProvider The DateTimeProvider, 
@@ -38,21 +45,23 @@ class HttpSignatureService
             $dateTimeProvider = new SimpleDateTimeProvider();
         }
         $this->dateTimeProvider = $dateTimeProvider;
+        $this->httpFoundationFactory = new HttpFoundationFactory();
     }
     
     /**
      * Generates a signature given the request and private key
      *
-     * @param Request $request The request to be signed
+     * @param RequestInterface $psrRequest The request to be signed
      * @param string $privateKey The private key to use to sign the request
      * @param string $keyId The id of the signing key
      * @param array $headers The headers to use in the signature 
      *                       (default ['(request-target)', 'host', 'date'])
      * @return string The Signature header value
      */
-    public function sign( Request $request, string $privateKey, string $keyId,
-                          $headers = self::DEFAULT_HEADERS )
+    public function sign( RequestInterface $psrRequest, string $privateKey,
+                          string $keyId, $headers = self::DEFAULT_HEADERS )
     {
+        $request = $this->httpFoundationFactory->createRequest( $psrRequest );
         $headers = array_map( 'strtolower', $headers );
         $signingString = $this->getSigningString( $request, $headers );
         $keypair = RsaKeypair::fromPrivateKey( $privateKey );

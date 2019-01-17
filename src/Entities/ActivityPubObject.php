@@ -69,46 +69,24 @@ class ActivityPubObject implements ArrayAccess
     /**
      * Returns the object represented as an array
      *
-     * @return array
+     * @param int $depth The depth at which child objects will be collapsed to ids
+     *
+     * @return array|string Either the object or its id if $depth is 0
      */
-    public function asArray() {
+    public function asArray( int $depth = 2 ) {
+        if ( $depth <= 0 && $this->hasField( 'id' ) ) {
+            return $this->getFieldValue( 'id' );
+        }
         $arr = array();
         foreach ( $this->getFields() as $field ) {
             $key = $field->getName();
-            $value = $field->getValueOrTargetObject();
-            if ( is_string( $value ) ) {
-                self::addItemToObjectArray( $arr, $key, $value );
-            } else if ( $value instanceof ActivityPubObject ) {
-                self::addItemToObjectArray( $arr, $key, $value->asArray() );
+            if ( $field->hasValue() ) {
+                $arr[$key] = $field->getValue();
+            } else if ( $field->hasTargetObject() ) {
+                $arr[$key] = $field->getTargetObject()->asArray( $depth - 1 );
             }
         }
         return $arr;
-    }
-
-    /**
-     * Adds an item to the array representing this object
-     *
-     * If the key already exists in the array, the value becomes an array with the
-     *   new item appended. Otherwise, the value is just the item.
-     *
-     * @param array $arr The array (modified by this function)
-     * @param string $key The key for the new item
-     * @param string|array $item The new item
-     */
-    private static function addItemToObjectArray( &$arr, $key, $item ) {
-        // TODO here's the problem: how can I tell the difference between
-        // a field that's an array with one object, or a field that is not
-        // an array?
-        if ( array_key_exists( $key, $arr ) ) {
-            $existing= $arr[$key];
-            if ( is_array( $existing ) && ! Util::isAssoc( $existing ) ) {
-                $arr[$key][] = $item;
-            } else {
-                $arr[$key] = array( $existing, $item );
-            }
-        } else {
-            $arr[$key] = $item;
-        }
     }
 
     public function getId()
