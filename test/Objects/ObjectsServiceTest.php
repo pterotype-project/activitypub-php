@@ -60,7 +60,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note',
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now )
@@ -114,7 +114,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note',
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertCount( 3, $object->getFields() );
         $this->assertEmpty( $object->getReferencingFields() );
     }
@@ -126,7 +126,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note',
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertEquals( $fields, $object->asArray() );
     }
 
@@ -137,7 +137,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Collection',
             'items' => array( "https://example.com/items/1" ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertEquals( $fields, $object->asArray() );
     }
 
@@ -159,7 +159,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),
@@ -245,7 +245,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 'type' => 'Person',
             ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertEquals( $fields, $object->asArray() );
     }
 
@@ -260,7 +260,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),
@@ -336,7 +336,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 "https://example.com/notes/2",
             ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertEquals( $fields, $object->asArray() );
     }
 
@@ -359,7 +359,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $expected = new ArrayDataSet( array(
              'objects' => array(
                  array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),
@@ -499,7 +499,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
             ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $arr = $object->asArray();
         $this->assertEquals( $fields, $arr );
     }
@@ -511,7 +511,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note',
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $query = array(
             'type' => 'Note',
         );
@@ -528,7 +528,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Collection',
             'items' => array( "https://example.com/items/1" ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $query = array(
             'id' => 'https://example.com/collections/1'
         );
@@ -543,13 +543,13 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note',
         );
-        $objectOne = $this->objectsService->createObject( $fieldsOne );
+        $objectOne = $this->objectsService->persist( $fieldsOne );
         $fieldsTwo = array(
             'id' => 'https://example.com/notes/2',
             'type' => 'Note',
             'content' => 'This is another note',
         );
-        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $objectTwo = $this->objectsService->persist( $fieldsTwo );
         $query = array(
             'type' => 'Note',
         );
@@ -567,13 +567,13 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note',
         );
-        $objectOne = $this->objectsService->createObject( $fieldsOne );
+        $objectOne = $this->objectsService->persist( $fieldsOne );
         $fieldsTwo = array(
             'id' => 'https://example.com/notes/2',
             'type' => 'Note',
             'content' => 'This is another note',
         );
-        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $objectTwo = $this->objectsService->persist( $fieldsTwo );
         $query = array(
             'type' => 'Note',
             'content' => 'This is a note',
@@ -596,7 +596,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 'type' => 'Person',
             ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $query = array(
             'attributedTo' => array(
                 'id' => 'https://example.com/actors/1',
@@ -627,8 +627,8 @@ class ObjectsServiceTest extends SQLiteTestCase
                 array( 'id' => 'example.com/objects/2' ),
             ),
         );
-        $objectOne = $this->objectsService->createObject( $fieldsOne );
-        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $objectOne = $this->objectsService->persist( $fieldsOne );
+        $objectTwo = $this->objectsService->persist( $fieldsTwo );
         $query = array(
             'items' => array(
                 'https://example.com/objects/1',
@@ -662,7 +662,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
             ),
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $query = array(
             'attributedTo' => array(
                 'following' => array(
@@ -686,7 +686,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note'
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $query = array( 'type' => 'Article' );
         $result = $this->objectsService->query( $query );
         $this->assertEmpty( $result );
@@ -706,8 +706,8 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is another note',
         );
         $now = $this->getTime( 'create' );
-        $objectOne = $this->objectsService->createObject( $fieldsOne );
-        $objectTwo = $this->objectsService->createObject( $fieldsTwo );
+        $objectOne = $this->objectsService->persist( $fieldsOne );
+        $objectTwo = $this->objectsService->persist( $fieldsTwo );
         $this->assertEquals( $objectOne, $objectTwo );
         $expected = new ArrayDataSet( array(
             'objects' => array(
@@ -762,7 +762,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note'
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $found = $this->objectsService->getObject( 'https://example.com/note/1' );
         $this->assertNotNull( $found );
         $this->assertEquals( $object, $found );
@@ -775,7 +775,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'type' => 'Note',
             'content' => 'This is a note'
         );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $found = $this->objectsService->getObject( 'https://example.com/note/2' );
         $this->assertNull( $found );
     }
@@ -788,7 +788,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note'
         );
         $createTime = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $update = array( 'content' => 'This note has been updated' );
         $updateTime = $this->getTime( 'update' );
         $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
@@ -853,7 +853,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $createTime = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $update = array( 'attributedTo' => array(
             'id' => 'https://example.com/actors/2',
         ) );
@@ -958,7 +958,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $createTime = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $update = array( 'likes' => array(
             'https://example.com/likes/3',
             'https://example.com/likes/4',
@@ -1055,7 +1055,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note'
         );
         $createTime = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $update = array( 'content' => null );
         $updateTime = $this->getTime( 'update' );
         $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
@@ -1108,7 +1108,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note',
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertEquals( $object['content'], 'This is a note' );
         $this->assertNull( $object['attributedTo'] );
     }
@@ -1121,7 +1121,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note',
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->expectException( BadMethodCallException::class );
         $object['content'] = 'This should break';
     }
@@ -1134,7 +1134,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note',
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->expectException( BadMethodCallException::class );
         unset( $object['content'] );
     }
@@ -1150,7 +1150,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $now = $this->getTime( 'create' );
-        $object = $this->objectsService->createObject( $fields );
+        $object = $this->objectsService->persist( $fields );
         $this->assertEquals( $object['content'], 'This is a note' );
         $this->assertInstanceOf( ActivityPubObject::class, $object['attributedTo'] );
         $this->assertEquals(
