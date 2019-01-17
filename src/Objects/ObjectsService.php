@@ -29,7 +29,7 @@ class ObjectsService
     {
         $this->entityManager = $entityManager;
         $this->dateTimeProvider = $dateTimeProvider;
-        $this->client = new Client();
+        $this->httpClient = new Client();
     }
 
     /**
