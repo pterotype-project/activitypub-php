@@ -500,7 +500,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             ),
         );
         $object = $this->objectsService->persist( $fields );
-        $arr = $object->asArray();
+        $arr = $object->asArray( 3 );
         $this->assertEquals( $fields, $arr );
     }
 
@@ -640,7 +640,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertCount( 1, $results );
         $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
         $this->assertEquals( $objectOne, $results[0] );
-        $this->assertEquals( $fieldsOne, $results[0]->asArray() );
+        $this->assertEquals( $fieldsOne, $results[0]->asArray( 3 ) );
         $this->assertNotContains( $objectTwo, $results );
     }
 
@@ -676,7 +676,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertCount( 1, $results );
         $this->assertContainsOnlyInstancesOf( ActivityPubObject::class, $results );
         $this->assertEquals( $object, $results[0] );
-        $this->assertEquals( $fields, $results[0]->asArray() );
+        $this->assertEquals( $fields, $results[0]->asArray( 5 ) );
     }
 
     public function testItReturnsEmptyArrayForNoMatches()
@@ -763,7 +763,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note'
         );
         $object = $this->objectsService->persist( $fields );
-        $found = $this->objectsService->getObject( 'https://example.com/note/1' );
+        $found = $this->objectsService->dereference( 'https://example.com/note/1' );
         $this->assertNotNull( $found );
         $this->assertEquals( $object, $found );
     }
@@ -776,7 +776,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'content' => 'This is a note'
         );
         $object = $this->objectsService->persist( $fields );
-        $found = $this->objectsService->getObject( 'https://example.com/note/2' );
+        $found = $this->objectsService->dereference( 'https://example.com/note/2' );
         $this->assertNull( $found );
     }
 
@@ -791,7 +791,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         $object = $this->objectsService->persist( $fields );
         $update = array( 'content' => 'This note has been updated' );
         $updateTime = $this->getTime( 'update' );
-        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $this->objectsService->update( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array(
@@ -858,7 +858,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'id' => 'https://example.com/actors/2',
         ) );
         $updateTime = $this->getTime( 'update' );
-        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $this->objectsService->update( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array(
@@ -964,7 +964,7 @@ class ObjectsServiceTest extends SQLiteTestCase
             'https://example.com/likes/4',
         ) );
         $updateTime = $this->getTime( 'update' );
-        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $this->objectsService->update( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array(
@@ -1058,7 +1058,7 @@ class ObjectsServiceTest extends SQLiteTestCase
         $object = $this->objectsService->persist( $fields );
         $update = array( 'content' => null );
         $updateTime = $this->getTime( 'update' );
-        $this->objectsService->updateObject( 'https://example.com/notes/1', $update );
+        $this->objectsService->update( 'https://example.com/notes/1', $update );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array(

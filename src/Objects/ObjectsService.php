@@ -29,7 +29,7 @@ class ObjectsService
     {
         $this->entityManager = $entityManager;
         $this->dateTimeProvider = $dateTimeProvider;
-        $this->httpClient = new Client();
+        $this->httpClient = new Client( array( 'http_errors' => false ) );
     }
 
     /**
@@ -83,7 +83,8 @@ class ObjectsService
             );
             $this->entityManager->persist( $fieldEntity );
         } else {
-            if ( filter_var( $fieldValue, FILTER_VALIDATE_URL ) !== false ) {
+            if ( $fieldName !== 'id' &&
+                 filter_var( $fieldValue, FILTER_VALIDATE_URL ) !== false ) {
                 $dereferenced = $this->dereference( $fieldValue );
                 if ( $dereferenced ) {
                     $fieldEntity = Field::withObject(
@@ -116,7 +117,7 @@ class ObjectsService
     {
         $object = $this->getObject( $id );
         if ( $object ) {
-            return $this->collapseObjectToDepth( $object, $depth );
+            return $object;
         }
         // TODO sign this request?
         $request = new Request( 'GET', $id, array(
@@ -237,7 +238,7 @@ class ObjectsService
      * @return ActivityPubObject|null The updated object,
      *   or null if an object with that id isn't in the DB
      */
-    public function updateObject( $id, $updatedFields )
+    public function update( $id, $updatedFields )
     {
         $object = $this->getObject( $id );
         if ( ! $object ) {
