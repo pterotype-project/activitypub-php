@@ -4,7 +4,6 @@ namespace ActivityPub;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use ActivityPub\Config\ActivityPubModule;
-use ActivityPub\Http\ControllerResolver;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernel;
@@ -50,7 +49,7 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( 'signatureListener' ) );
         $dispatcher->addSubscriber( new ExceptionListener() );
 
-        $controllerResolver = new ControllerResolver();
+        $controllerResolver = $this->module->get( 'controllerResolver' );
         $argumentResolver = new ArgumentResolver();
 
         $kernel = new HttpKernel(

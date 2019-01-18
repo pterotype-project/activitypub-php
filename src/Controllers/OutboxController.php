@@ -1,10 +1,10 @@
 <?php
-namespace ActivityPub\Controllers\Outbox;
+namespace ActivityPub\Controllers;
 
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 
-class DefaultOutboxController
+class OutboxController
 {
     private $objectsService;
 

@@ -3,8 +3,12 @@ namespace ActivityPub\Config;
 
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\SignatureListener;
+use ActivityPub\Controllers\GetObjectController;
+use ActivityPub\Controllers\InboxController;
+use ActivityPub\Controllers\OutboxController;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
+use ActivityPub\Http\ControllerResolver;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
@@ -43,7 +47,6 @@ class ActivityPubModule
         $namingStrategy = new PrefixNamingStrategy( $options['dbPrefix'] );
         $dbConfig->setNamingStrategy( $namingStrategy );
         $dbParams = $options['dbOptions'];
-
         $this->injector->register( 'entityManager', EntityManager::class )
             ->setArguments( array( $dbParams, $dbConfig ) )
             ->setFactory( array( EntityManager::class, 'create' ) );
@@ -67,6 +70,21 @@ class ActivityPubModule
 
         $this->injector->register( 'authListener', AuthListener::class )
             ->addArgument( $options['authFunction'] );
+
+        $this->injector->register( 'getObjectController', GetObjectController::class )
+            ->addArgument( new Reference( 'objectsService' ) );
+
+        $this->injector->register( 'inboxController', InboxController::class )
+            ->addArgument( new Reference( 'objectsService' ) );
+
+        $this->injector->register( 'outboxController', OutboxController::class )
+            ->addArgument( new Reference( 'objectsService' ) );
+
+        $this->injector->register( 'controllerResolver', ControllerResolver::class )
+            ->addArgument( new Reference( 'objectsService' ) )
+            ->addArgument( new Reference( 'getObjectController' ) )
+            ->addArgument( new Reference( 'inboxController' ) )
+            ->addArgument( new Reference( 'outboxController' ) );
     }
 
     /**

@@ -2,8 +2,8 @@
 namespace ActivityPub\Http;
 
 use ActivityPub\Controllers\GetObjectController;
-use ActivityPub\Controllers\Inbox\DefaultInboxController;
-use ActivityPub\Controllers\Outbox\DefaultOutboxController;
+use ActivityPub\Controllers\InboxController;
+use ActivityPub\Controllers\OutboxController;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
@@ -13,39 +13,22 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class ControllerResolver implements ControllerResolverInterface
 {
-    private $objectService;
-    private $inboxControllers;
-    private $outboxControllers;
+    private $objectsService;
+    private $getObjectController;
+    private $inboxController;
+    private $outboxController;
 
-    public function __construct( ObjectsService $objectService )
+    public function __construct( ObjectsService $objectsService,
+                                 GetObjectController $getObjectController,
+                                 InboxController $inboxController,
+                                 OutboxController $outboxController )
     {
-        $this->objectService = $objectService;
-        $this->inboxControllers = array();
-        $this->outboxControllers = array();
+        $this->objectsService = $objectsService;
+        $this->getObjectController = $getObjectController;
+        $this->inboxController = $inboxController;
+        $this->outboxController = $outboxController;
     }
 
-    /**
-     * Registers a new controller to handle ActivityPub inbox requests of type $type
-     *
-     * @param Callable $controller The controller
-     * @param string $type The Activity type this controller can handle
-     */
-    public function registerInboxController( Callable $controller, string $type )
-    {
-        $this->inboxControllers[$type] = $controller;
-    }
-
-    /**
-     * Registers a new controller to handle ActivityPub outbox requests of type $type
-     *
-     * @param Callable $controller The controller
-     * @param string $type The Activity type this controller can handle
-     */
-    public function registerOutboxController( Callable $controller, string $type )
-    {
-        $this->outboxControllers[$type] = $controller;
-    }
-    
     /**
      * Returns true if an object with a field named $name with value $value exists
      *
@@ -55,14 +38,13 @@ class ControllerResolver implements ControllerResolverInterface
      */
     private function objectWithFieldExists( string $name, string $value )
     {
-        return count( $this->objectService->query( array( $name => $value ) ) ) > 0;
+        return count( $this->objectsService->query( array( $name => $value ) ) ) > 0;
     }
 
     public function getController( Request $request )
     {
         if ( $request->getMethod() == Request::METHOD_GET ) {
-            $controller = new GetObjectController( $this->objectService );
-            return array( $controller, 'handle' );
+            return array( $this->getObjectController, 'handle' );
         } else if ( $request->getMethod() == Request::METHOD_POST ) {
             $uri = $request->getUri();
             if ( $this->objectWithFieldExists( 'inbox', $uri ) ) {
@@ -70,23 +52,13 @@ class ControllerResolver implements ControllerResolverInterface
                 if ( ! isset( $activity->type ) ) {
                     throw new BadRequestHttpException( '"type" field not found' );
                 }
-                if ( array_key_exists( $activity->type, $this->inboxControllers ) ) {
-                    return $this->inboxControllers[$activity->type];
-                } else {
-                    $controller = new DefaultInboxController( $this->objectService );
-                    return array( $controller, 'handle' );
-                }
+                return array( $this->inboxController, 'handle' );
             } else if ( $this->objectWithFieldExists( 'outbox', $uri ) ) {
                 $activity = json_decode( $request->getContent() );
                 if ( ! isset( $activity->type ) ) {
                     throw new BadRequestHttpException( '"type" field not found' );
                 }
-                if ( array_key_exists( $activity->type, $this->outboxControllers ) ) {
-                    return $this->outboxControllers[$activity->type];
-                } else {
-                    $controller = new DefaultOutboxController( $this->objectService );
-                    return array( $controller, 'handle' );
-                }
+                return array( $this->outboxController, 'handle' );
             } else {
                 throw new NotFoundHttpException();
             }

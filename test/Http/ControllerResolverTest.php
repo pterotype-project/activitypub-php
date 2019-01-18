@@ -4,6 +4,8 @@ namespace ActivityPub\Test\Http;
 use ActivityPub\Controllers\Inbox\DefaultInboxController;
 use ActivityPub\Controllers\Outbox\DefaultOutboxController;
 use ActivityPub\Controllers\GetObjectController;
+use ActivityPub\Controllers\InboxController;
+use ActivityPub\Controllers\OutboxController;
 use ActivityPub\Http\ControllerResolver;
 use ActivityPub\Objects\ObjectsService;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +20,9 @@ class ControllerResolverTest extends TestCase
     const OUTBOX_URI = 'https://example.com/outbox';
 
     private $controllerResolver;
+    private $getObjectController;
+    private $inboxController;
+    private $outboxController;
     
     public function setUp()
     {
@@ -35,7 +40,15 @@ class ControllerResolverTest extends TestCase
                 return array();
             })
         );
-        $this->controllerResolver = new ControllerResolver( $objectsService );
+        $this->getObjectController = $this->createMock( GetObjectController::class );
+        $this->inboxController = $this->createMock( InboxController::class );
+        $this->outboxController = $this->createMock( OutboxController::class );
+        $this->controllerResolver = new ControllerResolver(
+            $objectsService,
+            $this->getObjectController,
+            $this->inboxController,
+            $this->outboxController
+        );
     }
 
     private function createRequestWithBody( $uri, $method, $body )
@@ -49,8 +62,7 @@ class ControllerResolverTest extends TestCase
         $request = Request::create( 'https://example.com/object', Request::METHOD_GET );
         $controller = $this->controllerResolver->getController( $request );
         $this->assertIsCallable( $controller );
-        $this->assertInstanceOf( GetObjectController::class, $controller[0] );
-        $this->assertEquals( 'handle', $controller[1] );
+        $this->assertEquals( array( $this->getObjectController, 'handle' ), $controller );
     }
 
     public function testItChecksForType()
@@ -60,15 +72,13 @@ class ControllerResolverTest extends TestCase
         $controller = $this->controllerResolver->getController( $request );
     }
 
-    public function testItReturnsDefaultInboxController()
+    public function testItReturnsInboxController()
     {
         $request = $this->createRequestWithBody(
             'https://example.com/inbox', Request::METHOD_POST, array( 'type' => 'Foo' )
         );
         $controller = $this->controllerResolver->getController( $request );
-        $this->assertIsCallable( $controller );
-        $this->assertInstanceOf( DefaultInboxController::class, $controller[0] );
-        $this->assertEquals( 'handle', $controller[1] );
+        $this->assertEquals( array( $this->inboxController, 'handle' ), $controller );
     }
 
     public function testItReturnsDefaultOutboxController()
@@ -77,35 +87,7 @@ class ControllerResolverTest extends TestCase
             'https://example.com/outbox', Request::METHOD_POST, array( 'type' => 'Foo' )
         );
         $controller = $this->controllerResolver->getController( $request );
-        $this->assertIsCallable( $controller );
-        $this->assertInstanceOf( DefaultOutboxController::class, $controller[0] );
-        $this->assertEquals( 'handle', $controller[1] );
-    }
-
-    public function testItRegistersNewInboxController()
-    {
-        $this->controllerResolver->registerInboxController( function() {
-            return 'barCallable';
-        }, 'Bar' );
-        $request = $this->createRequestWithBody(
-            'https://example.com/inbox', Request::METHOD_POST, array( 'type' => 'Bar' )
-        );
-        $controller = $this->controllerResolver->getController( $request );
-        $this->assertIsCallable( $controller );
-        $this->assertEquals( 'barCallable', call_user_func( $controller ) );
-    }
-
-    public function testItRegistersNewOutboxController()
-    {
-        $this->controllerResolver->registerOutboxController( function() {
-            return 'barCallable';
-        }, 'Bar' );
-        $request = $this->createRequestWithBody(
-            'https://example.com/outbox', Request::METHOD_POST, array( 'type' => 'Bar' )
-        );
-        $controller = $this->controllerResolver->getController( $request );
-        $this->assertIsCallable( $controller );
-        $this->assertEquals( 'barCallable', call_user_func( $controller ) );
+        $this->assertEquals( array( $this->outboxController, 'handle' ), $controller );
     }
 
     public function testItDisallowsPostToInvalidUrl()

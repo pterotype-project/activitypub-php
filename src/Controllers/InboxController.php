@@ -1,13 +1,13 @@
 <?php
-namespace ActivityPub\Controllers\Inbox;
+namespace ActivityPub\Controllers;
 
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * The DefaultInboxController handles inbox requests not handled by other controllers
+ * The InboxController handles POST requests to an inbox
  */
-class DefaultInboxController
+class InboxController
 {
     private $ObjectsService;
 
