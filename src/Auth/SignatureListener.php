@@ -51,14 +51,14 @@ class SignatureListener implements EventSubscriberInterface
         if ( $headers->has( 'signature' ) ) {
             $signatureHeader = $headers->get( 'signature' );
         } else if ( $headers->has( 'authorization' ) &&
-                    substr( $headers->get( 'authorization', 0, 9 ) === 'Signature' ) ) {
+                    substr( $headers->get( 'authorization' ), 0, 9 ) === 'Signature' ) {
             $signatureHeader = substr( $headers->get( 'authorization' ), 10 );
         }
         if ( ! $signatureHeader ) {
             return;
         }
         $matches = array();
-        if ( ! preg_match( '/keyId="(.*)"/', $signatureHeader, $matches) ) {
+        if ( ! preg_match( '/keyId="([^"]*)"/', $signatureHeader, $matches) ) {
             return;
         }
         $keyId = $matches[1];

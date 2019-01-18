@@ -1,0 +1,152 @@
+<?php
+namespace ActivityPub\Test\Auth;
+
+use DateTime;
+use ActivityPub\Auth\SignatureListener;
+use ActivityPub\Crypto\HttpSignatureService;
+use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Entities\Field;
+use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestUtils\TestDateTimeProvider;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
+use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use PHPUnit\Framework\TestCase;
+
+class SignatureListenerTest extends TestCase
+{
+    const KEY_ID = 'https://example.com/actor/1/key';
+    const PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCFENGw33yGihy92pDjZQhl0C3
+6rPJj+CvfSC8+q28hxA161QFNUd13wuCTUcq0Qd2qsBe/2hFyc2DCJJg0h1L78+6
+Z4UMR7EOcpfdUE9Hf3m/hs+FUR45uBJeDK1HSFHD8bHKD6kv8FPGfJTotc+2xjJw
+oYi+1hqp1fIekaxsyQIDAQAB
+-----END PUBLIC KEY-----";
+    const KEY = array(
+        'id' => self::KEY_ID,
+        'owner' => 'https://example.com/actor/1',
+        'publicKeyPem' => self::PUBLIC_KEY,
+    );
+    
+    private $signatureListener;
+
+    public function setUp()
+    {
+        $dateTimeProvider = new TestDateTimeProvider( array(
+            'http-signature.verify' => DateTime::createFromFormat(
+                DateTime::RFC2822, 'Sun, 05 Jan 2014 21:31:40 GMT'
+            ),
+        ) );
+        $httpSignatureService = new HttpSignatureService( $dateTimeProvider );
+        $objectsService = $this->createMock( ObjectsService::class );
+        $objectsService->method( 'dereference' )
+            ->will( $this->returnValueMap( array(
+                array( self::KEY_ID, self::objectFromArray( self::KEY ) )
+            ) ) );
+        $this->signatureListener = new SignatureListener(
+            $httpSignatureService, $objectsService
+        );
+    }
+
+    private static function objectFromArray( $array ) {
+        $object = new ActivityPubObject();
+        foreach ( $array as $name => $value ) {
+            if ( is_array( $value ) ) {
+                $child = $this->objectFromArray( $value );
+                Field::withObject( $object, $name, $child );
+            } else {
+                Field::withValue( $object, $name, $value );
+            }
+        }
+        return $object;
+    }
+
+    private function getEvent()
+    {
+        $kernel = $this->createMock( HttpKernelInterface::class );
+        $request = Request::create(
+            'https://example.com/foo?param=value&pet=dog',
+            Request::METHOD_POST,
+            array(),
+            array(),
+            array(),
+            array(),
+            '{"hello": "world"}'
+        );
+        $request->headers->set( 'host', 'example.com' );
+        $request->headers->set( 'content-type', 'application/json' );
+        $request->headers->set(
+            'digest', 'SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE='
+        );
+        $request->headers->set( 'content-length', 18 );
+        $request->headers->set( 'date', 'Sun, 05 Jan 2014 21:31:40 GMT' );
+        $event = new GetResponseEvent( $kernel, $request, HttpKernelInterface::MASTER_REQUEST );
+        return $event;
+    }
+
+    public function testSignatureListener()
+    {
+        $testCases = array(
+            array(
+                'id' => 'basicTest',
+                'headers' => array(
+                    'Authorization' => 'Signature keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
+                ),
+                'expectedAttributes' => array(
+                    'signed' => true,
+                    'signedBy' => 'https://example.com/actor/1',
+                    'actor' => 'https://example.com/actor/1',
+                ),
+            ),
+            array(
+                'id' => 'existingActorTest',
+                'headers' => array(
+                    'Authorization' => 'Signature keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
+                ),
+                'requestAttributes' => array(
+                    'actor' => 'https://example.com/actor/2',
+                ),
+                'expectedAttributes' => array(
+                    'signed' => true,
+                    'signedBy' => 'https://example.com/actor/1',
+                    'actor' => 'https://example.com/actor/2',
+                ),
+            ),
+            array(
+                'id' => 'signatureHeaderTest',
+                'headers' => array(
+                    'Signature' => 'keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
+                ),
+                'expectedAttributes' => array(
+                    'signed' => true,
+                    'signedBy' => 'https://example.com/actor/1',
+                    'actor' => 'https://example.com/actor/1',
+                ),
+            ),
+            array(
+                'id' => 'noSignatureTest',
+                'expectedAttributes' => array(),
+            ),
+        );
+        foreach ( $testCases as $testCase ) {
+            $event = $this->getEvent();
+            if ( array_key_exists( 'headers', $testCase ) ) {
+                foreach( $testCase['headers'] as $header => $value ) {
+                    $event->getRequest()->headers->set( $header, $value );
+                }
+            }
+            if ( array_key_exists( 'requestAttributes', $testCase ) ) {
+                foreach( $testCase['requestAttributes'] as $attribute => $value ) {
+                    $event->getRequest()->attributes->set( $attribute, $value );
+                }
+            }
+            $this->signatureListener->validateHttpSignature( $event );
+            $this->assertEquals(
+                $testCase['expectedAttributes'],
+                $event->getRequest()->attributes->all(),
+                "Error on test $testCase[id]"
+            );
+        }
+    }
+}
+?>
