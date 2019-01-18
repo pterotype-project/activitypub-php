@@ -71,10 +71,10 @@ class ActivityPubObject implements ArrayAccess
      *
      * @param int $depth The depth at which child objects will be collapsed to ids
      *
-     * @return array|string Either the object or its id if $depth is 0
+     * @return array|string Either the object or its id if $depth is < 0
      */
-    public function asArray( int $depth = 2 ) {
-        if ( $depth <= 0 && $this->hasField( 'id' ) ) {
+    public function asArray( int $depth = 1 ) {
+        if ( $depth < 0 && $this->hasField( 'id' ) ) {
             return $this->getFieldValue( 'id' );
         }
         $arr = array();

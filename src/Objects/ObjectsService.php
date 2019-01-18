@@ -47,7 +47,7 @@ class ObjectsService
      *
      * @return ActivityPubObject The created object
      */
-    public function persist( array $fields, string $context = 'create' )
+    public function persist( array $fields, string $context = 'objects-service.create' )
     {
         // TODO should I do JSON-LD compaction here?
         if ( array_key_exists( 'id', $fields ) ) {
@@ -58,6 +58,7 @@ class ObjectsService
         }
         $object = new ActivityPubObject( $this->dateTimeProvider->getTime( $context ) );
         $this->entityManager->persist( $object );
+        $this->entityManager->flush();
         foreach ( $fields as $name => $value ) {
             $this->persistField( $object, $name, $value, $context );
         }
@@ -75,7 +76,7 @@ class ObjectsService
      * @param string|array $fieldValue
      *
      */
-    private function persistField( $object, $fieldName, $fieldValue, $context = 'create' )
+    private function persistField( $object, $fieldName, $fieldValue, $context = 'objects-service.create' )
     {
         if ( is_array( $fieldValue ) ) {
             $referencedObject = $this->persist( $fieldValue, $context );
@@ -249,10 +250,10 @@ class ObjectsService
             if ( array_key_exists( $field->getName(), $updatedFields ) ) {
                 $newValue = $updatedFields[$field->getName()];
                 if ( is_array( $newValue ) ) {
-                    $referencedObject = $this->persist( $newValue, 'update' );
+                    $referencedObject = $this->persist( $newValue, 'objects-service.update' );
                     $oldTargetObject = $field->getTargetObject();
                     $field->setTargetObject(
-                        $referencedObject, $this->dateTimeProvider->getTime( 'update' )
+                        $referencedObject, $this->dateTimeProvider->getTime( 'objects-service.update' )
                     );
                     $this->entityManager->persist( $field );
                     if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
@@ -263,12 +264,12 @@ class ObjectsService
                     $this->entityManager->persist( $object );
                     $this->entityManager->remove( $field );
                 } else {
-                    $field->setValue( $newValue, $this->dateTimeProvider->getTime( 'update' ) );
+                    $field->setValue( $newValue, $this->dateTimeProvider->getTime( 'objects-service.update' ) );
                     $this->entityManager->persist( $field );
                 }
             }
         }
-        $object->setLastUpdated( $this->dateTimeProvider->getTime( 'update' ) );
+        $object->setLastUpdated( $this->dateTimeProvider->getTime( 'objects-service.update' ) );
         $this->entityManager->persist( $object );
         $this->entityManager->flush();
         return $object;
