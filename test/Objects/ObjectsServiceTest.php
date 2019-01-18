@@ -8,10 +8,11 @@ use ActivityPub\Test\Config\ArrayDataSet;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use Doctrine\ORM\EntityManager;
-use Doctrine\ORM\Tools\Setup;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
+use Doctrine\ORM\Tools\Setup;
+use GuzzleHttp\Client;
 use PHPUnit\DbUnit\TestCaseTrait;
 
 class ObjectsServiceTest extends SQLiteTestCase
@@ -19,6 +20,7 @@ class ObjectsServiceTest extends SQLiteTestCase
     protected $entityManager;
     protected $objectsService;
     protected $dateTimeProvider;
+    protected $httpClient;
 
     protected function getDataSet()
     {
@@ -41,8 +43,9 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->dateTimeProvider = new TestDateTimeProvider(
             array( 'create' => new DateTime( "12:00" ), 'update' => new DateTime( "12:01" ) )
         );
+        $this->httpClient = new Client( array( 'http_errors' => false ) );
         $this->objectsService = new ObjectsService(
-            $this->entityManager, $this->dateTimeProvider
+            $this->entityManager, $this->dateTimeProvider, $this->httpClient
         );
     }
 

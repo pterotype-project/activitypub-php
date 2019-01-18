@@ -3,13 +3,9 @@ namespace ActivityPub;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use ActivityPub\Database\PrefixNamingStrategy;
+use ActivityPub\Config\ActivityPubModule;
 use ActivityPub\Http\ControllerResolver;
-use ActivityPub\Objects\ObjectsService;
-use ActivityPub\Utils\SimpleDateTimeProvider;
-use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
-use Doctrine\ORM\Tools\Setup;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\EventDispatcher;
@@ -19,8 +15,10 @@ use Symfony\Component\HttpKernel\EventListener\ExceptionListener;
 
 class ActivityPub
 {
-    private $entityManager;
-    private $objectService;
+    /**
+     * @var ActivityPubModule
+     */
+    private $module;
 
     /**
      * Constructs a new ActivityPub instance
@@ -30,23 +28,7 @@ class ActivityPub
      */
     public function __construct( array $opts )
     {
-        $defaults = array(
-            'isDevMode' => false,
-            'dbPrefix' => '',
-        );
-        $options = array_merge( $defaults, $opts );
-        $this->validateOptions( $options );
-
-        $dbConfig = Setup::createAnnotationMetadataConfiguration(
-            array( __DIR__ . '/Entities' ), $options['isDevMode']
-        );
-        $namingStrategy = new PrefixNamingStrategy( $options['dbPrefix'] );
-        $dbConfig->setNamingStrategy( $namingStrategy );
-        $dbParams = $options['dbOptions'];
-        $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
-
-        $dateTimeProvider = new SimpleDateTimeProvider();
-        $this->objectService = new ObjectsService($this->entityManager, $dateTimeProvider);
+        $this->module = new ActivityPubModule( $opts );
     }
 
     /**
@@ -77,21 +59,10 @@ class ActivityPub
 
     public function updateSchema()
     {
-        $schemaTool = new SchemaTool( $this->entityManager );
-        $classes = $this->entityManager->getMetadataFactory()->getAllMetadata();
+        $entityManager = $this->module->get( 'entityManager' );
+        $schemaTool = new SchemaTool( $entityManager );
+        $classes = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool->updateSchema( $classes );
-    }
-
-    private function validateOptions( $opts )
-    {
-        $required = array( 'dbOptions' );
-        $actual = array_keys( $opts );
-        $missing = array_diff( $required, $actual );
-        if ( count( $missing ) > 0 ) {
-            throw new InvalidArgumentException(
-                'Missing required options: ' . print_r( $missing, t )
-            );
-        }
     }
 }
 ?>

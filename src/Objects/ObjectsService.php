@@ -25,11 +25,13 @@ class ObjectsService
      */
     protected $httpClient;
 
-    public function __construct( EntityManager $entityManager, DateTimeProvider $dateTimeProvider )
+    public function __construct( EntityManager $entityManager,
+                                 DateTimeProvider $dateTimeProvider,
+                                 Client $client)
     {
         $this->entityManager = $entityManager;
         $this->dateTimeProvider = $dateTimeProvider;
-        $this->httpClient = new Client( array( 'http_errors' => false ) );
+        $this->httpClient = $client;
     }
 
     /**
