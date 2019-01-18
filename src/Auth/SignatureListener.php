@@ -2,6 +2,7 @@
 namespace ActivityPub\Auth;
 
 use ActivityPub\Crypto\HttpSignatureService;
+use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -18,11 +19,23 @@ class SignatureListener implements EventSubscriberInterface
      */
     private $httpSignatureService;
 
+    /**
+     * @var ObjectsService
+     */
+    private $objectsService;
+
     public static function getSubscribedEvents()
     {
         return array(
             KernelEvents::REQUEST => 'validateHttpSignature'
         );
+    }
+
+    public function __construct( HttpSignatureService $httpSignatureService,
+                                 ObjectsService $objectsService )
+    {
+        $this->httpSignatureService = $httpSignatureService;
+        $this->objectsService = $objectsService;
     }
 
     /**
@@ -33,6 +46,41 @@ class SignatureListener implements EventSubscriberInterface
     public function validateHttpSignature( GetResponseEvent $event )
     {
         $request = $event->getRequest();
+        $headers = $request->headers;
+        $signatureHeader = null;
+        if ( $headers->has( 'signature' ) ) {
+            $signatureHeader = $headers->get( 'signature' );
+        } else if ( $headers->has( 'authorization' ) &&
+                    substr( $headers->get( 'authorization', 0, 9 ) === 'Signature' ) ) {
+            $signatureHeader = substr( $headers->get( 'authorization' ), 10 );
+        }
+        if ( ! $signatureHeader ) {
+            return;
+        }
+        $matches = array();
+        if ( ! preg_match( '/keyId="(.*)"/', $signatureHeader, $matches) ) {
+            return;
+        }
+        $keyId = $matches[1];
+        $key = $this->objectsService->dereference( $keyId );
+        if ( ! $key || ! $key->hasField( 'owner' )  || ! $key->hasField( 'publicKeyPem' ) ) {
+            return;
+        }
+        $owner = $key['owner'];
+        if ( ! is_string( $owner ) ) {
+            $owner = $owner['id'];
+        }
+        if ( ! $owner ) {
+            return;
+        }
+        if ( ! $this->httpSignatureService->verify( $request, $key['publicKeyPem'] ) ) {
+            return;
+        }
+        $request->attributes->set( 'signed', true );
+        $request->attributes->set( 'signedBy', $owner );
+        if ( ! $request->attributes->has( 'actor' ) ) {
+            $request->attributes->set( 'actor', $owner );
+        }
     }
 }
 ?>
