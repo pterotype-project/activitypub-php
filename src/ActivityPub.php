@@ -46,8 +46,8 @@ class ActivityPub
         }
 
         $dispatcher = new EventDispatcher();
-        $signatureListener = $this->module->get( 'signatureListener' );
-        $dispatcher->addSubscriber( $signatureListener );
+        $dispatcher->addSubscriber( $this->module->get( 'authListener' ) );
+        $dispatcher->addSubscriber( $this->module->get( 'signatureListener' ) );
         $dispatcher->addSubscriber( new ExceptionListener() );
 
         $controllerResolver = new ControllerResolver();

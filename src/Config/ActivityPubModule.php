@@ -1,6 +1,8 @@
 <?php
 namespace ActivityPub\Config;
 
+use ActivityPub\Auth\AuthListener;
+use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Objects\ObjectsService;
@@ -26,6 +28,9 @@ class ActivityPubModule
         $defaults = array(
             'isDevMode' => false,
             'dbPrefix' => '',
+            'authFunction' => function() {
+                return false;
+            },
         );
         $options = array_merge( $defaults, $options );
         $this->validateOptions( $options );
@@ -59,6 +64,9 @@ class ActivityPubModule
         $this->injector->register( 'signatureListener', SignatureListener::class )
             ->addArgument( new Reference( 'httpSignatureService' ) )
             ->addArgument( new Reference( 'objectsService' ) );
+
+        $this->injector->register( 'authListener', AuthListener::class )
+            ->addArgument( $options['authFunction'] );
     }
 
     /**
