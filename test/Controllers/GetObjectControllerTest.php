@@ -23,13 +23,24 @@ class GetObjectControllerTest extends TestCase
             'type' => 'Create',
         ),
         'https://example.com/objects/2' => array(
-            'id' => 'https://example.com/objects/1',
+            'id' => 'https://example.com/objects/2',
             'object' => array(
-                'id' => 'https://example.com/objects/2',
+                'id' => 'https://example.com/objects/3',
                 'type' => 'Note',
             ),
             'to' => array( 'https://example.com/actor/1' ),
             'type' => 'Create',
+            'actor' => array(
+                'id' => 'https://example.com/actor/2',
+            ),
+        ),
+        'https://example.com/objects/3' => array(
+            'id' => 'https://example.com/objects/3',
+            'object' => array(
+                'id' => 'https://example.com/objects/2',
+                'type' => 'Note',
+            ),
+            'type' => 'Collection',
             'actor' => array(
                 'id' => 'https://example.com/actor/2',
             ),
@@ -111,6 +122,18 @@ class GetObjectControllerTest extends TestCase
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/2'] ),
+            $response->getContent()
+        );
+        $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
+    }
+
+    public function testItAllowsAccessToNoAudienceObject()
+    {
+        $request = Request::create( 'https://example.com/objects/3' );
+        $response = $this->getObjectController->handle( $request );
+        $this->assertNotNull( $response );
+        $this->assertEquals(
+            json_encode( self::OBJECTS['https://example.com/objects/3'] ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );

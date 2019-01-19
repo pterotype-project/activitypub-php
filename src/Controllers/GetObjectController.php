@@ -48,12 +48,25 @@ class GetObjectController
     private function requestAuthorizedToView( Request $request,
                                               ActivityPubObject $object )
     {
+        if ( ! $this->hasAudience( $object ) ) {
+            return true;
+        }
         $audience = $this->getAudience( $object );
         if ( in_array( 'https://www.w3.org/ns/activitystreams#Public', $audience ) ) {
             return true;
         }
         return $request->attributes->has( 'actor' ) &&
             in_array( $request->attributes->get( 'actor' ), $audience );
+    }
+
+    public function hasAudience( ActivityPubObject $object )
+    {
+        $arr = $object->asArray( 0 );
+        return array_key_exists( 'audience', $arr ) ||
+            array_key_exists( 'to', $arr ) ||
+            array_key_exists( 'bto', $arr ) ||
+            array_key_exists( 'cc', $arr ) ||
+            array_key_exists( 'bcc', $arr );
     }
 
     /**
