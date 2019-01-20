@@ -26,13 +26,11 @@ class ActivityPubModuleTest extends TestCase
         $entityManager = $this->module->get( EntityManager::class );
         $this->assertNotNull( $entityManager );
         $this->assertInstanceOf( EntityManager::class, $entityManager );
-    }
 
-    public function testItAutowires()
-    {
         $controllerResolver = $this->module->get( ControllerResolver::class );
         $this->assertNotNull( $controllerResolver );
         $this->assertInstanceOf( ControllerResolver::class, $controllerResolver );
+
     }
 }
 ?>
