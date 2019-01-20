@@ -40,7 +40,7 @@ class GetObjectControllerTest extends TestCase
                 'id' => 'https://example.com/objects/2',
                 'type' => 'Note',
             ),
-            'type' => 'Collection',
+            'type' => 'Like',
             'actor' => array(
                 'id' => 'https://example.com/actor/2',
             ),

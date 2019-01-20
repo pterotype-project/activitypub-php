@@ -41,7 +41,11 @@ class GetObjectController
                 'Signature realm="ActivityPub",headers="(request-target) host date"'
             );
         }
-        // TODO handle collections here
+        if ( $object->hasField( 'type' ) &&
+             ( $object['type'] === 'Collection' ||
+               $object['type'] === 'OrderedCollection' ) ) {
+            return $this->pageAndFilterCollection( $request, $object );
+        }
         return new JsonResponse( $object->asArray() );
     }
 
@@ -59,7 +63,7 @@ class GetObjectController
             in_array( $request->attributes->get( 'actor' ), $audience );
     }
 
-    public function hasAudience( ActivityPubObject $object )
+    private function hasAudience( ActivityPubObject $object )
     {
         $arr = $object->asArray( 0 );
         return array_key_exists( 'audience', $arr ) ||
@@ -104,6 +108,18 @@ class GetObjectController
             $audience[] = $objectArr['actor']; 
         }
         return $audience;
+    }
+
+    /**
+     * Returns an array representation of the $collection
+     *
+     * If the collection's size is greater than 30, return a PagedCollection instead,
+     * and filter all items by the request's permissions
+     */
+    private function pageAndFilterCollection( Request $request,
+                                              ActivityPubObject $collection )
+    {
+        
     }
 }
 ?>
