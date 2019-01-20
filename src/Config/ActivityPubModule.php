@@ -10,6 +10,7 @@ use ActivityPub\Controllers\OutboxController;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\ControllerResolver;
+use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\SimpleDateTimeProvider;
@@ -24,6 +25,8 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class ActivityPubModule
 {
+    const COLLECTION_PAGE_SIZE = 20;
+
     /**
      * @var ContainerBuilder
      */
@@ -37,6 +40,10 @@ class ActivityPubModule
             'authFunction' => function() {
                 return false;
             },
+            'context' => array(
+                'https://www.w3.org/ns/activitystreams',
+                'https://w3id.org/security/v1',
+            ),
         );
         $options = array_merge( $defaults, $options );
         $this->validateOptions( $options );
@@ -76,9 +83,15 @@ class ActivityPubModule
         $this->injector->register( AuthListener::class, AuthListener::class )
             ->addArgument( $options['authFunction'] );
 
-        $this->injector->register( CollectionsService::class, CollectionsService::class );
-
         $this->injector->register( AuthService::class, AuthService::class );
+
+        $this->injector->register( ContextProvider::class, ContextProvider::class )
+            ->addArgument( $options['context'] );
+
+        $this->injector->register( CollectionsService::class, CollectionsService::class )
+            ->addArgument( self::COLLECTION_PAGE_SIZE )
+            ->addArgument( new Reference( AuthService::class ) )
+            ->addArgument( new Reference( ContextProvider::class ) );
 
         $this->injector->register( GetObjectController::class, GetObjectController::class )
             ->addArgument( new Reference( ObjectsService::class ) )

@@ -5,8 +5,10 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Controllers\GetObjectController;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
+use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestUtils\TestUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -57,28 +59,16 @@ class GetObjectControllerTest extends TestCase
         $objectsService->method( 'dereference' )->will(
             $this->returnCallback( function( $uri ) {
                 if ( array_key_exists( $uri, self::OBJECTS ) ) {
-                    return $this->objectFromArray( self::OBJECTS[$uri] );
+                    return TestUtils::objectFromArray( self::OBJECTS[$uri] );
                 }
             })
         );
-        $collectionsService = new CollectionsService();
         $authService = new AuthService();
+        $contextProvider = new ContextProvider();
+        $collectionsService = new CollectionsService( 4, $authService, $contextProvider );
         $this->getObjectController = new GetObjectController(
             $objectsService, $collectionsService, $authService
         );
-    }
-
-    private function objectFromArray( $array ) {
-        $object = new ActivityPubObject();
-        foreach ( $array as $name => $value ) {
-            if ( is_array( $value ) ) {
-                $child = $this->objectFromArray( $value );
-                Field::withObject( $object, $name, $child );
-            } else {
-                Field::withValue( $object, $name, $value );
-            }
-        }
-        return $object;
     }
 
     public function testItRendersPersistedObject()

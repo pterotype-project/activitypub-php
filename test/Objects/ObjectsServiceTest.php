@@ -40,9 +40,10 @@ class ObjectsServiceTest extends SQLiteTestCase
             'path' => $this->getDbPath(),
         );
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
-        $this->dateTimeProvider = new TestDateTimeProvider(
-            array( 'objects-service.create' => new DateTime( "12:00" ), 'objects-service.update' => new DateTime( "12:01" ) )
-        );
+        $this->dateTimeProvider = new TestDateTimeProvider( array(
+            'objects-service.create' => new DateTime( "12:00" ),
+            'objects-service.update' => new DateTime( "12:01" ),
+        ) );
         $this->httpClient = new Client( array( 'http_errors' => false ) );
         $this->objectsService = new ObjectsService(
             $this->entityManager, $this->dateTimeProvider, $this->httpClient

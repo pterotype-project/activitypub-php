@@ -38,9 +38,10 @@ class EntityTest extends SQLiteTestCase
             'path' => $this->getDbPath(),
         );
         $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
-        $this->dateTimeProvider = new TestDateTimeProvider(
-            new DateTime( "12:00" ), new DateTime( "12:01" )
-        );
+        $this->dateTimeProvider = new TestDateTimeProvider( array(
+            'objects-service.create' => new DateTime( "12:00" ),
+            'objects-service.update' => new DateTime( "12:01" ),
+        ) );
     }
 
     private function getTime( $context ) {
@@ -51,12 +52,12 @@ class EntityTest extends SQLiteTestCase
 
     public function testItCreatesAnObjectWithAPrivateKey()
     {
-        $object = new ActivityPubObject( $this->dateTimeProvider->getTime( 'create' ) );
+        $object = new ActivityPubObject( $this->dateTimeProvider->getTime( 'objects-service.create' ) );
         $privateKey = 'a private key';
         $object->setPrivateKey( $privateKey );
         $this->entityManager->persist( $object );
         $this->entityManager->flush();
-        $now = $this->getTime( 'create' );
+        $now = $this->getTime( 'objects-service.create' );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),
@@ -79,7 +80,7 @@ class EntityTest extends SQLiteTestCase
 
     public function itUpdatesAPrivateKey()
     {
-        $object = new ActivityPubObject( $this->dateTimeProvider->getTime( 'create' ) );
+        $object = new ActivityPubObject( $this->dateTimeProvider->getTime( 'objects-service.create' ) );
         $privateKey = 'a private key';
         $object->setPrivateKey( $privateKey );
         $this->entityManager->persist( $object );
@@ -88,7 +89,7 @@ class EntityTest extends SQLiteTestCase
         $object->setPrivateKey( $newPrivateKey );
         $this->entityManager->persiste( $object );
         $this->entityManager->flush();
-        $now = $this->getTime( 'create' );
+        $now = $this->getTime( 'objects-service.create' );
         $expected = new ArrayDataSet( array(
             'objects' => array(
                 array( 'id' => 1, 'created' => $now, 'lastUpdated' => $now ),

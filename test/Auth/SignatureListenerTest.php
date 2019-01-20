@@ -8,6 +8,7 @@ use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
+use ActivityPub\Test\TestUtils\TestUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -41,24 +42,11 @@ oYi+1hqp1fIekaxsyQIDAQAB
         $objectsService = $this->createMock( ObjectsService::class );
         $objectsService->method( 'dereference' )
             ->will( $this->returnValueMap( array(
-                array( self::KEY_ID, self::objectFromArray( self::KEY ) )
+                array( self::KEY_ID, TestUtils::objectFromArray( self::KEY ) )
             ) ) );
         $this->signatureListener = new SignatureListener(
             $httpSignatureService, $objectsService
         );
-    }
-
-    private static function objectFromArray( $array ) {
-        $object = new ActivityPubObject();
-        foreach ( $array as $name => $value ) {
-            if ( is_array( $value ) ) {
-                $child = $this->objectFromArray( $value );
-                Field::withObject( $object, $name, $child );
-            } else {
-                Field::withValue( $object, $name, $value );
-            }
-        }
-        return $object;
     }
 
     private function getEvent()

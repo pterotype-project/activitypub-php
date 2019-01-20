@@ -1,12 +1,35 @@
 <?php
 namespace ActivityPub\Objects;
 
+use ActivityPub\Auth\AuthService;
 use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Objects\ContextProvider;
 use Symfony\Component\HttpFoundation\Request;
 
 class CollectionsService
 {
-    const PAGE_SIZE = 20;
+    /**
+     * @var int
+     */
+    private $pageSize;
+    
+    /**
+     * @var AuthService
+     */
+    private $authService;
+
+    /**
+     * @var ContextProvider
+     */
+    private $contextProvider;
+
+    public function __construct( int $pageSize, AuthService $authService,
+                                 ContextProvider $contextProvider )
+    {
+        $this->pageSize = $pageSize;
+        $this->authService = $authService;
+        $this->contextProvider = $contextProvider;
+    }
 
     /**
      * Returns an array representation of the $collection
@@ -17,28 +40,77 @@ class CollectionsService
     public function pageAndFilterCollection( Request $request,
                                              ActivityPubObject $collection )
     {
-        // expected behavior:
-        // - request with no 'offset' param returns the collection object,
-        //   with the first page appended as with Pleroma
-        // - request with an 'offset' param returns the collection page starting
-        //   at that offset with the next PAGE_SIZE items
         if ( $request->query->has( 'offset' ) ) {
-            // return a filtered collection page
+            return $this->getCollectionPage(
+                $collection, $request, $request->query->get( 'offset' ), $this->pageSize
+            );
         }
-        // else return the collection itself with the first page
+        $colArr = array();
+        foreach ( $collection->getFields() as $field ) {
+            if ( ! in_array( $field->getName(), array( 'items', 'orderedItems' ) ) ) {
+                if ( $field->hasValue() ) {
+                    $colArr[$field->getName()] = $field->getValue();
+                } else {
+                    $colArr[$field->getName()] = $field->getTargetObject()->asArray( 1 );
+                }
+            }
+        }
+        $firstPage = $this->getCollectionPage(
+            $collection, $request, 0, $this->pageSize
+        );
+        $colArr['first'] = $firstPage;
+        return $colArr;
     }
 
     private function getCollectionPage( ActivityPubObject $collection,
+                                        Request $request,
                                         int $offset,
                                         int $pageSize )
     {
         $itemsKey = 'items';
         $pageType = 'CollectionPage';
-        if ( $this->isOrdered( $collection ) ) {
+        $isOrdered = $this->isOrdered( $collection );
+        if ( $isOrdered ) {
             $itemsKey = 'orderedItems';
             $pageType = 'OrderedCollectionPage';
         }
-        // Create and return the page as an array
+        if ( ! $collection->hasField( $itemsKey ) ) {
+            throw new InvalidArgumentException(
+                "Collection does not have an \"$field\" key"
+            );
+        }
+        $collectionItems = $collection->getFieldValue( $itemsKey );
+        $pageItems = array();
+        $idx = $offset;
+        $count = 0;
+        while ( $count < $pageSize ) {
+            $item = $collectionItems->getFieldValue( $idx );
+            if ( ! $item ) {
+                break;
+            }
+            if ( is_string( $item ) ) {
+                $pageItems[] = $item;
+                $count++;
+            } else if ( $this->authService->requestAuthorizedToView( $request, $item ) ) {
+                $pageItems[] = $item->asArray( 1 );
+                $count++;
+            }
+            $idx++;
+        }
+        $page = array(
+            '@context' => $this->contextProvider->getContext(),
+            'id' => $collection['id'] . "?offset=$offset",
+            'type' => $pageType,
+            $itemsKey => $pageItems,
+            'partOf' => $collection['id'],
+        );
+        if ( $collectionItems->getFieldValue( $idx ) ) {
+            $page['next'] = $collection['id'] . "?offset=$idx";
+        }
+        if ( $isOrdered ) {
+            $page['startIndex'] = $offset;
+        }
+        return $page;
     }
 
     private function isOrdered( ActivityPubObject $collection )
