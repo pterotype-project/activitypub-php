@@ -2,6 +2,7 @@
 namespace ActivityPub\Config;
 
 use ActivityPub\Auth\AuthListener;
+use ActivityPub\Auth\AuthService;
 use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Controllers\GetObjectController;
 use ActivityPub\Controllers\InboxController;
@@ -9,6 +10,7 @@ use ActivityPub\Controllers\OutboxController;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\ControllerResolver;
+use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
@@ -74,8 +76,14 @@ class ActivityPubModule
         $this->injector->register( AuthListener::class, AuthListener::class )
             ->addArgument( $options['authFunction'] );
 
+        $this->injector->register( CollectionsService::class, CollectionsService::class );
+
+        $this->injector->register( AuthService::class, AuthService::class );
+
         $this->injector->register( GetObjectController::class, GetObjectController::class )
-            ->addArgument( new Reference( ObjectsService::class ) );
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) )
+            ->addArgument( new Reference( AuthService::class ) );
 
         $this->injector->register( InboxController::class, InboxController::class )
             ->addArgument( new Reference( ObjectsService::class ) );

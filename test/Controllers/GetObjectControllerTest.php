@@ -1,9 +1,11 @@
 <?php
 namespace ActivityPub\Test\Controllers;
 
+use ActivityPub\Auth\AuthService;
 use ActivityPub\Controllers\GetObjectController;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
+use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
@@ -59,7 +61,11 @@ class GetObjectControllerTest extends TestCase
                 }
             })
         );
-        $this->getObjectController = new GetObjectController( $objectsService );
+        $collectionsService = new CollectionsService();
+        $authService = new AuthService();
+        $this->getObjectController = new GetObjectController(
+            $objectsService, $collectionsService, $authService
+        );
     }
 
     private function objectFromArray( $array ) {
@@ -134,6 +140,18 @@ class GetObjectControllerTest extends TestCase
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/3'] ),
+            $response->getContent()
+        );
+        $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
+    }
+
+    public function testItDisregardsQueryParams()
+    {
+        $request = Request::create( 'https://example.com/objects/1?foo=bar&baz=qux' );
+        $response = $this->getObjectController->handle( $request );
+        $this->assertNotNull( $response );
+        $this->assertEquals(
+            json_encode( self::OBJECTS['https://example.com/objects/1'] ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
