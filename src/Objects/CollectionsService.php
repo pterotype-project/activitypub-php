@@ -104,13 +104,28 @@ class CollectionsService
             $itemsKey => $pageItems,
             'partOf' => $collection['id'],
         );
-        if ( $collectionItems->getFieldValue( $idx ) ) {
-            $page['next'] = $collection['id'] . "?offset=$idx";
+        $nextIdx = $this->hasNextItem( $request, $collectionItems, $idx );
+        if ( $nextIdx ) {
+            $page['next'] = $collection['id'] . "?offset=$nextIdx";
         }
         if ( $isOrdered ) {
             $page['startIndex'] = $offset;
         }
         return $page;
+    }
+
+    private function hasNextItem( $request, $collectionItems, $idx )
+    {
+        $next = $collectionItems->getFieldValue( $idx );
+        while ( $next ) {
+            if ( is_string( $next ) ||
+                 $this->authService->requestAuthorizedToView( $request, $next ) ) {
+                return $idx;
+            }
+            $idx++;
+            $next = $collectionsItems->getFieldValue( $idx );
+        }
+        return false;
     }
 
     private function isOrdered( ActivityPubObject $collection )
