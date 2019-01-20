@@ -47,44 +47,47 @@ class ActivityPubModule
         $namingStrategy = new PrefixNamingStrategy( $options['dbPrefix'] );
         $dbConfig->setNamingStrategy( $namingStrategy );
         $dbParams = $options['dbOptions'];
-        $this->injector->register( 'entityManager', EntityManager::class )
+        $this->injector->register( EntityManager::class, EntityManager::class )
             ->setArguments( array( $dbParams, $dbConfig ) )
             ->setFactory( array( EntityManager::class, 'create' ) );
 
-        $this->injector->register( 'httpClient', Client::class )
+        $this->injector->register( Client::class, Client::class )
             ->addArgument( array( 'http_errors' => false ) );
 
-        $this->injector->register( 'dateTimeProvider', SimpleDateTimeProvider::class );
+        $this->injector->register(
+            SimpleDateTimeProvider::class, SimpleDateTimeProvider::class
+        );
 
-        $this->injector->register( 'objectsService', ObjectsService::class )
-            ->addArgument( new Reference( 'entityManager' ) )
-            ->addArgument( new Reference( 'dateTimeProvider' ) )
-            ->addArgument( new Reference( 'httpClient' ) );
+        $this->injector->register( ObjectsService::class, ObjectsService::class )
+            ->addArgument( new Reference( EntityManager::class ) )
+            ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
+            ->addArgument( new Reference( Client::class ) );
 
-        $this->injector->register( 'httpSignatureService', HttpSignatureService::class )
-            ->addArgument( new Reference( 'dateTimeProvider' ) );
+        $this->injector->register(
+            HttpSignatureService::class, HttpSignatureService::class
+        )->addArgument( new Reference( SimpleDateTimeProvider::class ) );
 
-        $this->injector->register( 'signatureListener', SignatureListener::class )
-            ->addArgument( new Reference( 'httpSignatureService' ) )
-            ->addArgument( new Reference( 'objectsService' ) );
+        $this->injector->register( SignatureListener::class, SignatureListener::class )
+            ->addArgument( new Reference( HttpSignatureService::class ) )
+            ->addArgument( new Reference( ObjectsService::class ) );
 
-        $this->injector->register( 'authListener', AuthListener::class )
+        $this->injector->register( AuthListener::class, AuthListener::class )
             ->addArgument( $options['authFunction'] );
 
-        $this->injector->register( 'getObjectController', GetObjectController::class )
-            ->addArgument( new Reference( 'objectsService' ) );
+        $this->injector->register( GetObjectController::class, GetObjectController::class )
+            ->addArgument( new Reference( ObjectsService::class ) );
 
-        $this->injector->register( 'inboxController', InboxController::class )
-            ->addArgument( new Reference( 'objectsService' ) );
+        $this->injector->register( InboxController::class, InboxController::class )
+            ->addArgument( new Reference( ObjectsService::class ) );
 
-        $this->injector->register( 'outboxController', OutboxController::class )
-            ->addArgument( new Reference( 'objectsService' ) );
+        $this->injector->register( OutboxController::class, OutboxController::class )
+            ->addArgument( new Reference( ObjectsService::class ) );
 
-        $this->injector->register( 'controllerResolver', ControllerResolver::class )
-            ->addArgument( new Reference( 'objectsService' ) )
-            ->addArgument( new Reference( 'getObjectController' ) )
-            ->addArgument( new Reference( 'inboxController' ) )
-            ->addArgument( new Reference( 'outboxController' ) );
+        $this->injector->register( ControllerResolver::class, ControllerResolver::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( GetObjectController::class ) )
+            ->addArgument( new Reference( InboxController::class ) )
+            ->addArgument( new Reference( OutboxController::class ) );
     }
 
     /**

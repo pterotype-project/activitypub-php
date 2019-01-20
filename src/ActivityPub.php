@@ -3,7 +3,11 @@ namespace ActivityPub;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use ActivityPub\Auth\AuthListener;
+use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Config\ActivityPubModule;
+use ActivityPub\Http\ControllerResolver;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernel;
@@ -45,11 +49,11 @@ class ActivityPub
         }
 
         $dispatcher = new EventDispatcher();
-        $dispatcher->addSubscriber( $this->module->get( 'authListener' ) );
-        $dispatcher->addSubscriber( $this->module->get( 'signatureListener' ) );
+        $dispatcher->addSubscriber( $this->module->get( AuthListener::class ) );
+        $dispatcher->addSubscriber( $this->module->get( SignatureListener::class ) );
         $dispatcher->addSubscriber( new ExceptionListener() );
 
-        $controllerResolver = $this->module->get( 'controllerResolver' );
+        $controllerResolver = $this->module->get( ControllerResolver::class );
         $argumentResolver = new ArgumentResolver();
 
         $kernel = new HttpKernel(
@@ -60,7 +64,7 @@ class ActivityPub
 
     public function updateSchema()
     {
-        $entityManager = $this->module->get( 'entityManager' );
+        $entityManager = $this->module->get( EntityManager::class );
         $schemaTool = new SchemaTool( $entityManager );
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool->updateSchema( $classes );

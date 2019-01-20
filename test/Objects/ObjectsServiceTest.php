@@ -3,8 +3,8 @@ namespace ActivityPub\Test\Objects;
 
 use DateTime;
 use BadMethodCallException;
-use ActivityPub\Test\Config\SQLiteTestCase;
-use ActivityPub\Test\Config\ArrayDataSet;
+use ActivityPub\Test\TestConfig\SQLiteTestCase;
+use ActivityPub\Test\TestConfig\ArrayDataSet;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use Doctrine\ORM\EntityManager;

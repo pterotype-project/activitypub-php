@@ -2,8 +2,8 @@
 namespace ActivityPub\Test;
     
 use ActivityPub\ActivityPub;
-use ActivityPub\Test\Config\SQLiteTestCase;
-use ActivityPub\Test\Config\ArrayDataSet;
+use ActivityPub\Test\TestConfig\SQLiteTestCase;
+use ActivityPub\Test\TestConfig\ArrayDataSet;
 
 class ActivityPubTest extends SQLiteTestCase
 {
