@@ -5,6 +5,7 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ContextProvider;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CollectionsService
 {
@@ -96,6 +97,9 @@ class CollectionsService
                 $count++;
             }
             $idx++;
+        }
+        if ( $count === 0 ) {
+            throw new NotFoundHttpException();
         }
         $page = array(
             '@context' => $this->contextProvider->getContext(),
