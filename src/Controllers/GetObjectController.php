@@ -57,7 +57,7 @@ class GetObjectController
         if ( ! $object ) {
             throw new NotFoundHttpException();
         }
-        if ( ! $this->authService->requestAuthorizedToView( $request, $object ) ) {
+        if ( ! $this->authService->isAuthorized( $request, $object ) ) {
             throw new UnauthorizedHttpException(
                 'Signature realm="ActivityPub",headers="(request-target) host date"'
             );

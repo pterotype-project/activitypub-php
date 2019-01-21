@@ -6,8 +6,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 class AuthService
 {
-    public function requestAuthorizedToView( Request $request,
-                                              ActivityPubObject $object )
+    public function isAuthorized( Request $request,
+                                  ActivityPubObject $object )
     {
         if ( ! $this->hasAudience( $object ) ) {
             return true;
@@ -43,28 +43,24 @@ class AuthService
         // TODO do I need to traverse the inReplyTo chain here?
         $objectArr = $object->asArray( 0 );
         $audience = array();
-        if ( array_key_exists( 'to', $objectArr ) ) {
-            $audience = array_merge( $audience, $objectArr['to'] );
-        }
-        if ( array_key_exists( 'bto', $objectArr ) ) {
-            $audience = array_merge( $audience, $objectArr['bto'] );
-        }
-        if ( array_key_exists( 'cc', $objectArr ) ) {
-            $audience = array_merge( $audience, $objectArr['cc'] );
-        }
-        if ( array_key_exists( 'bcc', $objectArr ) ) {
-            $audience = array_merge( $audience, $objectArr['bcc'] );
-        }
-        if ( array_key_exists( 'audience', $objectArr ) ) {
-            $audience = array_merge( $audience, $objectArr['audience'] );
-        }
-        if ( array_key_exists( 'attributedTo', $objectArr ) ) {
-            $audience[] = $objectArr['attributedTo']; 
-        }
-        if ( array_key_exists( 'actor', $objectArr ) ) {
-            $audience[] = $objectArr['actor']; 
+        foreach( array( 'to', 'bto', 'cc', 'bcc', 'audience', 'attributedTo', 'actor' )
+                 as $attribute ) {
+            $audience = $this->checkAudienceAttribute( $audience, $attribute, $objectArr );
         }
         return $audience;
+    }
+
+    private function checkAudienceAttribute( $audience, $attribute, $objectArr )
+    {
+        if ( array_key_exists( $attribute, $objectArr ) ) {
+            $audienceValue = $objectArr[$attribute];
+            if ( ! is_array( $audienceValue ) ) {
+                $audienceValue = array( $audienceValue );
+            }
+            return array_merge( $audience, $audienceValue );
+        } else {
+            return $audience;
+        }
     }
 }
 ?>

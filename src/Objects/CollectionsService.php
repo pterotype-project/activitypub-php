@@ -92,7 +92,7 @@ class CollectionsService
             if ( is_string( $item ) ) {
                 $pageItems[] = $item;
                 $count++;
-            } else if ( $this->authService->requestAuthorizedToView( $request, $item ) ) {
+            } else if ( $this->authService->isAuthorized( $request, $item ) ) {
                 $pageItems[] = $item->asArray( 1 );
                 $count++;
             }
@@ -123,7 +123,7 @@ class CollectionsService
         $next = $collectionItems->getFieldValue( $idx );
         while ( $next ) {
             if ( is_string( $next ) ||
-                 $this->authService->requestAuthorizedToView( $request, $next ) ) {
+                 $this->authService->isAuthorized( $request, $next ) ) {
                 return $idx;
             }
             $idx++;
