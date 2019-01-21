@@ -175,7 +175,7 @@ class CollectionsServiceTest extends TestCase
                 ),
                 'request' => Request::create(
                     'https://example.com/objects/1?offset=3',
-                    Request::METHOD_GET,
+                    Request::METHOD_GET
                 ),
                 'expectedResult' => array(
                     '@context' => array(
