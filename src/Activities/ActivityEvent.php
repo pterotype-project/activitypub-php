@@ -3,6 +3,7 @@ namespace ActivityPub\Activities;
 
 use ActivityPub\Entities\ActivityPubObject;
 use Symfony\Component\EventDispatcher\Event;
+use Symfony\Component\HttpFoundation\Request;
 
 class ActivityEvent extends Event
 {
@@ -20,10 +21,19 @@ class ActivityEvent extends Event
      */
     protected $actor;
 
-    protected function __construct( array $activity, ActivityPubObject $actor )
+    /**
+     * The current request
+     *
+     * @var Request
+     */
+    protected $request;
+
+    protected function __construct( array $activity, ActivityPubObject $actor,
+                                    Request $request )
     {
         $this->activity = $activity;
         $this->actor = $actor;
+        $this->request = $request;
     }
 
     /**
@@ -45,6 +55,14 @@ class ActivityEvent extends Event
     public function getActor()
     {
         return $this->actor;
+    }
+
+    /**
+     * @return Request The request
+     */
+    public function getRequest()
+    {
+        return $this->request;
     }
 }
 ?>

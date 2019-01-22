@@ -43,7 +43,9 @@ class NonActivityHandler implements EventSubscriberInterface
         if ( in_array( $object['type'], self::ACTIVITY_TYPES ) ) {
             return;
         }
-        $create = $this->makeCreate( $object );
+        $request = $event->getRequest();
+        $actor = $event->getActor();
+        $create = $this->makeCreate( $request, $object, $actor );
         $event->setActivity( $create );
     }
 

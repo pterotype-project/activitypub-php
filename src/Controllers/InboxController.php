@@ -34,7 +34,7 @@ class InboxController
             throw new UnauthorizedHttpException(); 
         }
         $activity = $request->attributes->get( 'activity' );
-        $event = new InboxActivityEvent( $activity, $actor );
+        $event = new InboxActivityEvent( $activity, $actor, $request );
         $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
     }
 

@@ -35,7 +35,7 @@ class OutboxController
             throw new UnauthorizedHttpException(); 
         }
         $activity = $request->attributes->get( 'activity' );
-        $event = new OutboxActivityEvent( $activity, $actor );
+        $event = new OutboxActivityEvent( $activity, $actor, $request );
         $this->eventDispatcher->dispatch( OutboxActivityEvent::NAME, $event );
     }
 
