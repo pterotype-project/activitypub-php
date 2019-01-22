@@ -12,13 +12,16 @@ use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\ControllerResolver;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
+use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Utils\RandomProvider;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use GuzzleHttp\Client;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 /**
  * The ActivityPubModule is responsible for setting up all the services for the library
@@ -63,6 +66,8 @@ class ActivityPubModule
         $this->injector->register( Client::class, Client::class )
             ->addArgument( array( 'http_errors' => false ) );
 
+        $this->injector->register( EventDispatcher::class, EventDispatcher::class );
+
         $this->injector->register(
             SimpleDateTimeProvider::class, SimpleDateTimeProvider::class
         );
@@ -93,16 +98,22 @@ class ActivityPubModule
             ->addArgument( new Reference( AuthService::class ) )
             ->addArgument( new Reference( ContextProvider::class ) );
 
+        $this->injector->register( RandomProvider::class, RandomProvider::class );
+
+        $this->injector->register( IdProvider::class, IdProvider::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( RandomProvider::class ) );
+
         $this->injector->register( GetObjectController::class, GetObjectController::class )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( CollectionsService::class ) )
             ->addArgument( new Reference( AuthService::class ) );
 
         $this->injector->register( InboxController::class, InboxController::class )
-            ->addArgument( new Reference( ObjectsService::class ) );
+            ->addArgument( new Reference( EventDispatcher::class ) );
 
         $this->injector->register( OutboxController::class, OutboxController::class )
-            ->addArgument( new Reference( ObjectsService::class ) );
+            ->addArgument( new Reference( EventDispatcher::class ) );
 
         $this->injector->register( ControllerResolver::class, ControllerResolver::class )
             ->addArgument( new Reference( ObjectsService::class ) )

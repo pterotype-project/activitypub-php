@@ -34,11 +34,15 @@ class ControllerResolver implements ControllerResolverInterface
      *
      * @param string $name The field name to look for
      * @param string $value The field value to look for
-     * @return bool
+     * @return ActivityPubObject|bool The first result, or false if there are no results
      */
-    private function objectWithFieldExists( string $name, string $value )
+    private function objectWithField( string $name, string $value )
     {
-        return count( $this->objectsService->query( array( $name => $value ) ) ) > 0;
+        $results = $this->objectsService->query( array( $name => $value ) );
+        if ( count( $results ) === 0 ) {
+            return false;
+        }
+        return $results[0];
     }
 
     public function getController( Request $request )
@@ -47,20 +51,28 @@ class ControllerResolver implements ControllerResolverInterface
             return array( $this->getObjectController, 'handle' );
         } else if ( $request->getMethod() == Request::METHOD_POST ) {
             $uri = $request->getUri();
-            if ( $this->objectWithFieldExists( 'inbox', $uri ) ) {
-                $activity = json_decode( $request->getContent() );
-                if ( ! isset( $activity->type ) ) {
+            $actorWithInbox = $this->objectWithField( 'inbox', $uri );
+            if ( $actorWithInbox ) {
+                $activity = json_decode( $request->getContent(), true );
+                if ( ! $activity || ! array_key_exists( 'type', $activity ) ) {
                     throw new BadRequestHttpException( '"type" field not found' );
                 }
+                $request->attributes->set( 'activity', $activity );
+                $request->attributes->set( 'inbox', $actorWithInbox->getFieldValue( 'inbox' ) );
                 return array( $this->inboxController, 'handle' );
-            } else if ( $this->objectWithFieldExists( 'outbox', $uri ) ) {
-                $activity = json_decode( $request->getContent() );
-                if ( ! isset( $activity->type ) ) {
-                    throw new BadRequestHttpException( '"type" field not found' );
-                }
-                return array( $this->outboxController, 'handle' );
             } else {
-                throw new NotFoundHttpException();
+                $actorWithOutbox = $this->objectWithField( 'outbox', $uri );
+                if ( $actorWithOutbox ) {
+                    $activity = json_decode( $request->getContent(), true );
+                    if ( ! $activity || ! array_key_exists( 'type', $activity ) ) {
+                        throw new BadRequestHttpException( '"type" field not found' );
+                    }
+                    $request->attributes->set( 'activity', $activity );
+                    $request->attributes->set( 'outbox', $actorWithOutbox->getFieldValue( 'outbox' ) );
+                    return array( $this->outboxController, 'handle' );
+                } else {
+                    throw new NotFoundHttpException();
+                }
             }
         } else {
             throw new MethodNotAllowedHttpException( array(

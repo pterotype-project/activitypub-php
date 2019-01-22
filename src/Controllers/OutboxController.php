@@ -1,16 +1,20 @@
 <?php
 namespace ActivityPub\Controllers;
 
-use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Activities\OutboxActivityEvent;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 class OutboxController
 {
-    private $objectsService;
+    /**
+     * @var EventDispatcher
+     */
+    private $eventDispatcher;
 
-    public function __construct( ObjectsService $objectsService )
+    public function __construct( EventDispatcher $eventDispatcher )
     {
-        $this->objectsService = $objectsService;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -21,7 +25,10 @@ class OutboxController
      */
     public function handle( Request $request )
     {
-        // TODO implement me
+        $activity = $request->attributes->get( 'activity' );
+        $outbox = $request->attributes->get( 'outbox' );
+        $event = new OutboxActivityEvent( $activity, $outbox );
+        $this->eventDispatcher->dispatch( OutboxActivityEvent::NAME, $event );
     }
 }
 ?>

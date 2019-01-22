@@ -1,7 +1,8 @@
 <?php
 namespace ActivityPub\Controllers;
 
-use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Activities\InboxActivityEvent;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -9,11 +10,11 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class InboxController
 {
-    private $ObjectsService;
+    private $eventDispatcher;
 
-    public function __construct( ObjectsService $ObjectsService )
+    public function __construct( EventDispatcher $EventDispatcher )
     {
-        $this->ObjectsService = $ObjectsService;
+        $this->eventDispatcher = $EventDispatcher;
     }
 
     /**
@@ -24,7 +25,10 @@ class InboxController
      */
     public function handle( Request $request )
     {
-        // TODO implement me
+        $activity = $request->attributes->get( 'activity' );
+        $inbox = $request->attributes->get( 'inbox' );
+        $event = new InboxActivityEvent( $activity, $inbox );
+        $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
     }
 }
 ?>

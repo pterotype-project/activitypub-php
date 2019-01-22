@@ -8,6 +8,7 @@ use ActivityPub\Controllers\InboxController;
 use ActivityPub\Controllers\OutboxController;
 use ActivityPub\Http\ControllerResolver;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestUtils\TestUtils;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -31,11 +32,21 @@ class ControllerResolverTest extends TestCase
             $this->returnCallback( function ( $query ) {
                 if ( array_key_exists( 'inbox', $query ) &&
                      $query['inbox'] == self::INBOX_URI ) {
-                    return array( 'objectWithInbox' );
+                    return array( TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                        'inbox' => array(
+                            'id' => 'https://example.com/actor/1/inbox',
+                        ),
+                    ) ) );
                 }
                 if ( array_key_exists( 'outbox', $query ) &&
                      $query['outbox'] == self::OUTBOX_URI ) {
-                    return array( 'objectWithOutbox' );
+                    return array( TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                        'outbox' => array(
+                            'id' => 'https://example.com/actor/1/outbox',
+                        ),
+                    ) ) );
                 }
                 return array();
             })
@@ -78,15 +89,33 @@ class ControllerResolverTest extends TestCase
             'https://example.com/inbox', Request::METHOD_POST, array( 'type' => 'Foo' )
         );
         $controller = $this->controllerResolver->getController( $request );
+        $this->assertTrue( $request->attributes->has( 'activity' ) );
+        $this->assertEquals( array( 'type' => 'Foo' ), $request->attributes->get( 'activity' ) );
+        $this->assertTrue( $request->attributes->has( 'inbox' ) );
+        $this->assertEquals(
+            array(
+                'id' => 'https://example.com/actor/1/inbox',
+            ),
+            $request->attributes->get( 'inbox' )->asArray()
+        );
         $this->assertEquals( array( $this->inboxController, 'handle' ), $controller );
     }
 
-    public function testItReturnsDefaultOutboxController()
+    public function testItReturnsOutboxController()
     {
         $request = $this->createRequestWithBody(
             'https://example.com/outbox', Request::METHOD_POST, array( 'type' => 'Foo' )
         );
         $controller = $this->controllerResolver->getController( $request );
+        $this->assertTrue( $request->attributes->has( 'activity' ) );
+        $this->assertEquals( array( 'type' => 'Foo' ), $request->attributes->get( 'activity' ) );
+        $this->assertTrue( $request->attributes->has( 'outbox' ) );
+        $this->assertEquals(
+            array(
+                'id' => 'https://example.com/actor/1/outbox',
+            ),
+            $request->attributes->get( 'outbox' )->asArray()
+        );
         $this->assertEquals( array( $this->outboxController, 'handle' ), $controller );
     }
 

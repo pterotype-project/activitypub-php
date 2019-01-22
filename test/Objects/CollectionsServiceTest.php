@@ -255,7 +255,7 @@ class CollectionsServiceTest extends TestCase
                 ),
                 'request' => Request::create(
                     'https://example.com/objects/1',
-                    Request::METHOD_GET,
+                    Request::METHOD_GET
                 ),
                 'expectedResult' => array(
                     '@context' => array(
@@ -320,7 +320,7 @@ class CollectionsServiceTest extends TestCase
                 ),
                 'request' => Request::create(
                     'https://example.com/objects/1',
-                    Request::METHOD_GET,
+                    Request::METHOD_GET
                 ),
                 'requestAttributes' => array(
                     'actor' => 'https://example.com/actors/2',

@@ -48,7 +48,7 @@ class ActivityPub
             $request = Request::createFromGlobals();
         }
 
-        $dispatcher = new EventDispatcher();
+        $dispatcher = $this->module->get( EventDispatcher::class );
         $dispatcher->addSubscriber( $this->module->get( AuthListener::class ) );
         $dispatcher->addSubscriber( $this->module->get( SignatureListener::class ) );
         $dispatcher->addSubscriber( new ExceptionListener() );
