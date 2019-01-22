@@ -2,6 +2,9 @@
 namespace ActivityPub\Test\Auth;
 
 use ActivityPub\Auth\AuthListener;
+use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Test\TestUtils\TestUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -9,6 +12,20 @@ use PHPUnit\Framework\TestCase;
 
 class AuthListenerTest extends TestCase
 {
+    private $objectsService;
+
+    public function setUp()
+    {
+        $this->objectsService = $this->createMock( ObjectsService::class );
+        $this->objectsService->method( 'dereference' )->will( $this->returnValueMap( array(
+            array( 'https://example.com/actor/1', TestUtils::objectFromArray( array(
+                'id' => 'https://example.com/actor/1',
+            ) ) ),
+            array( 'https://example.com/actor/2', TestUtils::objectFromArray( array(
+                'id' => 'https://example.com/actor/2',
+            ) ) ),
+        ) ) );
+    }
 
     public function getEvent()
     {
@@ -28,7 +45,9 @@ class AuthListenerTest extends TestCase
                     return 'https://example.com/actor/1';
                 },
                 'expectedAttributes' => array(
-                    'actor' => 'https://example.com/actor/1',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
                 ),
             ),
             array(
@@ -37,10 +56,14 @@ class AuthListenerTest extends TestCase
                     return 'https://example.com/actor/1';
                 },
                 'requestAttributes' => array(
-                    'actor' => 'https://example.com/actor/2',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/2',
+                    ) ),
                 ),
                 'expectedAttributes' => array(
-                    'actor' => 'https://example.com/actor/2',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/2',
+                    ) ),
                 ),
             ),
             array(
@@ -58,13 +81,30 @@ class AuthListenerTest extends TestCase
                     $event->getRequest()->attributes->set( $attribute, $value );
                 }
             }
-            $authListener = new AuthListener( $testCase['authFunction'] );
-            $authListener->checkAuth( $event );
-            $this->assertEquals(
-                $testCase['expectedAttributes'],
-                $event->getRequest()->attributes->all(),
-                "Error on test $testCase[id]"
+            $authListener = new AuthListener(
+                $testCase['authFunction'], $this->objectsService
             );
+            $authListener->checkAuth( $event );
+            foreach ( $testCase['expectedAttributes'] as $expectedKey => $expectedValue ) {
+                $this->assertTrue(
+                    $event->getRequest()->attributes->has( $expectedKey ),
+                    "Error on test $testCase[id]"
+                );
+                if ( $expectedValue instanceof ActivityPubObject ) {
+                    $this->assertTrue(
+                        $expectedValue->equals(
+                            $event->getRequest()->attributes->get( $expectedKey )
+                        ),
+                        "Error on test $testCase[id]"
+                    );
+                } else {
+                    $this->assertEquals(
+                        $expectedValue,
+                        $event->getRequest()->attributes->get( $expectedKey ),
+                        "Error on test $testCase[id]"
+                    );
+                }
+            }
         }
     }
 }

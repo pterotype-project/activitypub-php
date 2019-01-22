@@ -4,6 +4,7 @@ namespace ActivityPub\Controllers;
 use ActivityPub\Activities\OutboxActivityEvent;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class OutboxController
 {
@@ -25,10 +26,27 @@ class OutboxController
      */
     public function handle( Request $request )
     {
+        if ( ! $request->attributes->has( 'actor' ) ) {
+            throw new UnauthorizedHttpException();
+        }
+        $actor = $request->attributes->get( 'actor' );
+        $outboxId = $this->getUriWithoutQuery( $request );
+        if ( ! $actor->hasField( 'outbox' ) || $actor['outbox']['id'] !== $outboxId ) {
+            throw new UnauthorizedHttpException(); 
+        }
         $activity = $request->attributes->get( 'activity' );
-        $outbox = $request->attributes->get( 'outbox' );
-        $event = new OutboxActivityEvent( $activity, $outbox );
+        $event = new OutboxActivityEvent( $activity, $actor );
         $this->eventDispatcher->dispatch( OutboxActivityEvent::NAME, $event );
+    }
+
+    private function getUriWithoutQuery( Request $request )
+    {
+        $uri = $request->getUri();
+        $queryPos = strpos( $uri, '?' );
+        if ( $queryPos !== false ) {
+            $uri = substr( $uri, 0, $queryPos );
+        }
+        return $uri;
     }
 }
 ?>

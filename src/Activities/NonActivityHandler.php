@@ -2,6 +2,7 @@
 namespace ActivityPub\Activities;
 
 use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Objects\IdProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -13,6 +14,11 @@ class NonActivityHandler implements EventSubscriberInterface
      * @var ContextProvider
      */
     private $contextProvider;
+
+    /**
+     * @var IdProvider
+     */
+    private $idProvider;
     
     const ACTIVITY_TYPES = array(
         'Accept', 'Add', 'Announce', 'Arrive',
@@ -44,13 +50,27 @@ class NonActivityHandler implements EventSubscriberInterface
     /**
      * Makes a new Create activity with $object as the object
      *
+     * @param Request $request The current request
+     * @param array $object The object
+     * @param ActivityPubObject $actorId The actor creating the object
+     *
      * @return array The Create activity
      */
-    private function makeCreate( array $object )
+    private function makeCreate( Request $request, array $object,
+                                 ActivityPubObject $actor )
     {
-        // TODO implement me
-        // if object doesn't have an id, generate one
-        // generate an id for the Create activity as well
+        $create = array(
+            '@context' => $this->contextProvider->getContext(),
+            'type' => 'Create',
+            'id' => $this->idProvider->getId( $request, "activities" ),
+            'actor' => $actor['id'],
+            'object' => $object,
+        );
+        foreach ( array( 'to', 'bto', 'cc', 'bcc', 'audience' ) as $field ) {
+            if ( array_key_exists( $field, $object ) ) {
+                $create[$field] = $object[$field];
+            }
+        }
     }
 }
 ?>

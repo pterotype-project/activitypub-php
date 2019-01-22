@@ -16,6 +16,8 @@ use PHPUnit\Framework\TestCase;
 
 class SignatureListenerTest extends TestCase
 {
+    const ACTOR_ID = 'https://example.com/actor/1';
+    const ACTOR = array( 'id' => self::ACTOR_ID );
     const KEY_ID = 'https://example.com/actor/1/key';
     const PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCFENGw33yGihy92pDjZQhl0C3
@@ -42,7 +44,8 @@ oYi+1hqp1fIekaxsyQIDAQAB
         $objectsService = $this->createMock( ObjectsService::class );
         $objectsService->method( 'dereference' )
             ->will( $this->returnValueMap( array(
-                array( self::KEY_ID, TestUtils::objectFromArray( self::KEY ) )
+                array( self::KEY_ID, TestUtils::objectFromArray( self::KEY ) ),
+                array( self::ACTOR_ID, TestUtils::objectFromArray( self::ACTOR ) ),
             ) ) );
         $this->signatureListener = new SignatureListener(
             $httpSignatureService, $objectsService
@@ -82,8 +85,9 @@ oYi+1hqp1fIekaxsyQIDAQAB
                 ),
                 'expectedAttributes' => array(
                     'signed' => true,
-                    'signedBy' => 'https://example.com/actor/1',
-                    'actor' => 'https://example.com/actor/1',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
                 ),
             ),
             array(
@@ -92,12 +96,15 @@ oYi+1hqp1fIekaxsyQIDAQAB
                     'Authorization' => 'Signature keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
                 ),
                 'requestAttributes' => array(
-                    'actor' => 'https://example.com/actor/2',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/2',
+                    ) ),
                 ),
                 'expectedAttributes' => array(
                     'signed' => true,
-                    'signedBy' => 'https://example.com/actor/1',
-                    'actor' => 'https://example.com/actor/2',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/2',
+                    ) ),
                 ),
             ),
             array(
@@ -107,8 +114,9 @@ oYi+1hqp1fIekaxsyQIDAQAB
                 ),
                 'expectedAttributes' => array(
                     'signed' => true,
-                    'signedBy' => 'https://example.com/actor/1',
-                    'actor' => 'https://example.com/actor/1',
+                    'actor' => TestUtils::objectFromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
                 ),
             ),
             array(
@@ -129,11 +137,27 @@ oYi+1hqp1fIekaxsyQIDAQAB
                 }
             }
             $this->signatureListener->validateHttpSignature( $event );
-            $this->assertEquals(
-                $testCase['expectedAttributes'],
-                $event->getRequest()->attributes->all(),
-                "Error on test $testCase[id]"
-            );
+            foreach ( $testCase['expectedAttributes'] as $expectedKey => $expectedValue ) {
+                $this->assertTrue(
+                    $event->getRequest()->attributes->has( $expectedKey ),
+                    "Error on test $testCase[id]"
+                );
+                xdebug_break();
+                if ( $expectedValue instanceof ActivityPubObject ) {
+                    $this->assertTrue(
+                        $expectedValue->equals(
+                            $event->getRequest()->attributes->get( $expectedKey )
+                        ),
+                        "Error on test $testCase[id]"
+                    );
+                } else {
+                    $this->assertEquals(
+                        $expectedValue,
+                        $event->getRequest()->attributes->get( $expectedKey ),
+                        "Error on test $testCase[id]"
+                    );
+                }
+            }
         }
     }
 }

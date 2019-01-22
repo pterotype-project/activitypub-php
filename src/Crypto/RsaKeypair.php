@@ -82,6 +82,8 @@ class RsaKeypair
      */
     public function verify( $data, $signature, $hash = 'sha256' )
     {
+        // TODO this throws a "Signature representative out of range" occasionally
+        // I have no idea what that means or how to fix it
         $rsa = new RSA();
         $rsa->setHash( $hash );
         $rsa->setSignatureMode(RSA::SIGNATURE_PKCS1);

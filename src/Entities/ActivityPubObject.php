@@ -150,6 +150,21 @@ class ActivityPubObject implements ArrayAccess
     }
 
     /**
+     * Returns the fields named $field, if it exists
+     *
+     * @param string $name The name of the field to get
+     * @return Field|null
+     */
+    public function getField( string $name )
+    {
+        foreach( $this->getFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return $field;
+            }
+        }
+    }
+
+    /**
      * Returns the value of the field with key $name
      *
      * The value is either a string, another ActivityPubObject, or null
@@ -285,6 +300,27 @@ class ActivityPubObject implements ArrayAccess
         throw new BadMethodCallException(
             'ActivityPubObject fields cannot be directly unset'
         );
+    }
+
+    /**
+     * Returns true if $other has all the same fields as $this
+     *
+     * @param ActivityPubObject $other The other object to compare to
+     * @return bool Whether or not this object has the same fields and values as 
+     *   the other
+     */
+    public function equals( ActivityPubObject $other )
+    {
+        foreach( $other->getFields() as $otherField ) {
+            $thisField = $this->getField( $otherField->getName() );
+            if ( ! $thisField ) {
+                return false;
+            }
+            if ( ! $thisField->equals( $otherField ) ) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 ?>

@@ -257,5 +257,23 @@ class Field
     {
         return $this->lastUpdated;
     }
+
+    /**
+     * Returns true if $this is equal to $other
+     *
+     * @return bool
+     */
+    public function equals( Field $other )
+    {
+        if ( $this->getName() !== $other->getName() ) {
+            return false;
+        }
+        if ( $this->hasValue() ) {
+            return $other->hasValue() && $other->getValue() === $this->getValue();
+        } else {
+            return $other->hasTargetObject() &&
+                $this->getTargetObject()->equals( $other->getTargetObject() );
+        }
+    }
 }
 ?>

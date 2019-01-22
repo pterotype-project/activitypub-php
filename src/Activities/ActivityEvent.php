@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Activities;
 
+use ActivityPub\Entities\ActivityPubObject;
 use Symfony\Component\EventDispatcher\Event;
 
 class ActivityEvent extends Event
@@ -12,9 +13,17 @@ class ActivityEvent extends Event
      */
     protected $activity;
 
-    protected function __construct( array $activity )
+    /**
+     * The actor posting or receiving the activity
+     *
+     * @var ActivityPubObject
+     */
+    protected $actor;
+
+    protected function __construct( array $activity, ActivityPubObject $actor )
     {
         $this->activity = $activity;
+        $this->actor = $actor;
     }
 
     /**
@@ -28,6 +37,14 @@ class ActivityEvent extends Event
     public function setActivity( array $activity )
     {
         $this->activity = $activity;
+    }
+
+    /**
+     * @return ActivityPubObject The actor
+     */
+    public function getActor()
+    {
+        return $this->actor;
     }
 }
 ?>

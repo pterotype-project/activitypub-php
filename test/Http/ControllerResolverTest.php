@@ -90,13 +90,8 @@ class ControllerResolverTest extends TestCase
         );
         $controller = $this->controllerResolver->getController( $request );
         $this->assertTrue( $request->attributes->has( 'activity' ) );
-        $this->assertEquals( array( 'type' => 'Foo' ), $request->attributes->get( 'activity' ) );
-        $this->assertTrue( $request->attributes->has( 'inbox' ) );
         $this->assertEquals(
-            array(
-                'id' => 'https://example.com/actor/1/inbox',
-            ),
-            $request->attributes->get( 'inbox' )->asArray()
+            array( 'type' => 'Foo' ), $request->attributes->get( 'activity' )
         );
         $this->assertEquals( array( $this->inboxController, 'handle' ), $controller );
     }
@@ -108,13 +103,8 @@ class ControllerResolverTest extends TestCase
         );
         $controller = $this->controllerResolver->getController( $request );
         $this->assertTrue( $request->attributes->has( 'activity' ) );
-        $this->assertEquals( array( 'type' => 'Foo' ), $request->attributes->get( 'activity' ) );
-        $this->assertTrue( $request->attributes->has( 'outbox' ) );
         $this->assertEquals(
-            array(
-                'id' => 'https://example.com/actor/1/outbox',
-            ),
-            $request->attributes->get( 'outbox' )->asArray()
+            array( 'type' => 'Foo' ), $request->attributes->get( 'activity' )
         );
         $this->assertEquals( array( $this->outboxController, 'handle' ), $controller );
     }

@@ -25,10 +25,27 @@ class InboxController
      */
     public function handle( Request $request )
     {
+        if ( ! $request->attributes->has( 'actor' ) ) {
+            throw new UnauthorizedHttpException();
+        }
+        $actor = $request->attributes->get( 'actor' );
+        $inboxId = $this->getUriWithoutQuery( $request );
+        if ( ! $actor->hasField( 'inbox' ) || $actor['inbox']['id'] !== $inboxId ) {
+            throw new UnauthorizedHttpException(); 
+        }
         $activity = $request->attributes->get( 'activity' );
-        $inbox = $request->attributes->get( 'inbox' );
-        $event = new InboxActivityEvent( $activity, $inbox );
+        $event = new InboxActivityEvent( $activity, $actor );
         $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
+    }
+
+    private function getUriWithoutQuery( Request $request )
+    {
+        $uri = $request->getUri();
+        $queryPos = strpos( $uri, '?' );
+        if ( $queryPos !== false ) {
+            $uri = substr( $uri, 0, $queryPos );
+        }
+        return $uri;
     }
 }
 ?>

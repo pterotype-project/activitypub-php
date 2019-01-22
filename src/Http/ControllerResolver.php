@@ -50,7 +50,7 @@ class ControllerResolver implements ControllerResolverInterface
         if ( $request->getMethod() == Request::METHOD_GET ) {
             return array( $this->getObjectController, 'handle' );
         } else if ( $request->getMethod() == Request::METHOD_POST ) {
-            $uri = $request->getUri();
+            $uri = $this->getUriWithoutQuery( $request );
             $actorWithInbox = $this->objectWithField( 'inbox', $uri );
             if ( $actorWithInbox ) {
                 $activity = json_decode( $request->getContent(), true );
@@ -58,7 +58,6 @@ class ControllerResolver implements ControllerResolverInterface
                     throw new BadRequestHttpException( '"type" field not found' );
                 }
                 $request->attributes->set( 'activity', $activity );
-                $request->attributes->set( 'inbox', $actorWithInbox->getFieldValue( 'inbox' ) );
                 return array( $this->inboxController, 'handle' );
             } else {
                 $actorWithOutbox = $this->objectWithField( 'outbox', $uri );
@@ -68,7 +67,6 @@ class ControllerResolver implements ControllerResolverInterface
                         throw new BadRequestHttpException( '"type" field not found' );
                     }
                     $request->attributes->set( 'activity', $activity );
-                    $request->attributes->set( 'outbox', $actorWithOutbox->getFieldValue( 'outbox' ) );
                     return array( $this->outboxController, 'handle' );
                 } else {
                     throw new NotFoundHttpException();
@@ -80,6 +78,16 @@ class ControllerResolver implements ControllerResolverInterface
                 Request::METHOD_POST,
             ) );
         }
+    }
+
+    private function getUriWithoutQuery( Request $request )
+    {
+        $uri = $request->getUri();
+        $queryPos = strpos( $uri, '?' );
+        if ( $queryPos !== false ) {
+            $uri = substr( $uri, 0, $queryPos );
+        }
+        return $uri;
     }
 }
 ?>

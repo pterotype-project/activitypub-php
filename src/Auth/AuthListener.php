@@ -1,6 +1,8 @@
 <?php
 namespace ActivityPub\Auth;
 
+use Exception;
+use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -22,6 +24,11 @@ class AuthListener implements EventSubscriberInterface
      */
     private $authFunction;
 
+    /**
+     * @var ObjectsService
+     */
+    private $objectsService;
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -35,9 +42,10 @@ class AuthListener implements EventSubscriberInterface
      * @param Callable $authFunction A Callable that should accept
      *
      */
-    public function __construct( Callable $authFunction )
+    public function __construct( Callable $authFunction, ObjectsService $objectsService )
     {
         $this->authFunction = $authFunction;
+        $this->objectsService = $objectsService;
     }
 
     public function checkAuth( GetResponseEvent $event )
@@ -48,7 +56,11 @@ class AuthListener implements EventSubscriberInterface
         }
         $actorId = call_user_func( $this->authFunction );
         if ( $actorId && ! empty( $actorId ) ) {
-            $request->attributes->set( 'actor', $actorId );
+            $actor = $this->objectsService->dereference( $actorId );
+            if ( ! $actor ) {
+                throw new Exception( "Actor $actorId does not exist" );
+            }
+            $request->attributes->set( 'actor', $actor );
         }
     }
 }

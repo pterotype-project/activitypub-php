@@ -67,8 +67,8 @@ class SignatureListener implements EventSubscriberInterface
             return;
         }
         $owner = $key['owner'];
-        if ( ! is_string( $owner ) ) {
-            $owner = $owner['id'];
+        if ( is_string( $owner ) ) {
+            $owner = $this->objectsService->dereference( $owner );
         }
         if ( ! $owner ) {
             return;
@@ -77,7 +77,6 @@ class SignatureListener implements EventSubscriberInterface
             return;
         }
         $request->attributes->set( 'signed', true );
-        $request->attributes->set( 'signedBy', $owner );
         if ( ! $request->attributes->has( 'actor' ) ) {
             $request->attributes->set( 'actor', $owner );
         }
