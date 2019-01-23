@@ -3,7 +3,7 @@ namespace ActivityPub\Test\Controllers;
 
 use PHPUnit\Framework\TestCase;
 
-class OutboxControllerTest extends TestCase
+class PostControllerTest extends TestCase
 {
     public function testOutboxController()
     {

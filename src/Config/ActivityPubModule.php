@@ -4,12 +4,11 @@ namespace ActivityPub\Config;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Auth\SignatureListener;
-use ActivityPub\Controllers\GetObjectController;
-use ActivityPub\Controllers\InboxController;
-use ActivityPub\Controllers\OutboxController;
+use ActivityPub\Controllers\GetController;
+use ActivityPub\Controllers\PostController;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
-use ActivityPub\Http\ControllerResolver;
+use ActivityPub\Http\Router;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\IdProvider;
@@ -104,22 +103,18 @@ class ActivityPubModule
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( RandomProvider::class ) );
 
-        $this->injector->register( GetObjectController::class, GetObjectController::class )
+        $this->injector->register( GetController::class, GetController::class )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( CollectionsService::class ) )
             ->addArgument( new Reference( AuthService::class ) );
 
-        $this->injector->register( InboxController::class, InboxController::class )
-            ->addArgument( new Reference( EventDispatcher::class ) );
+        $this->injector->register( PostController::class, PostController::class )
+            ->addArgument( new Reference( EventDispatcher::class ) )
+            ->addArgument( new Reference( ObjectsService::class ) );
 
-        $this->injector->register( OutboxController::class, OutboxController::class )
-            ->addArgument( new Reference( EventDispatcher::class ) );
-
-        $this->injector->register( ControllerResolver::class, ControllerResolver::class )
-            ->addArgument( new Reference( ObjectsService::class ) )
-            ->addArgument( new Reference( GetObjectController::class ) )
-            ->addArgument( new Reference( InboxController::class ) )
-            ->addArgument( new Reference( OutboxController::class ) );
+        $this->injector->register( Router::class, Router::class )
+            ->addArgument( new Reference( GetController::class ) )
+            ->addArgument( new Reference( PostController::class ) );
     }
 
     /**

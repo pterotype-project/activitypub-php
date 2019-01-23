@@ -2,7 +2,7 @@
 namespace ActivityPub\Test\Config;
 
 use ActivityPub\Config\ActivityPubModule;
-use ActivityPub\Http\ControllerResolver;
+use ActivityPub\Http\Router;
 use Doctrine\ORM\EntityManager;
 use PHPUnit\Framework\TestCase;
 
@@ -27,10 +27,9 @@ class ActivityPubModuleTest extends TestCase
         $this->assertNotNull( $entityManager );
         $this->assertInstanceOf( EntityManager::class, $entityManager );
 
-        $controllerResolver = $this->module->get( ControllerResolver::class );
-        $this->assertNotNull( $controllerResolver );
-        $this->assertInstanceOf( ControllerResolver::class, $controllerResolver );
-
+        $router = $this->module->get( Router::class );
+        $this->assertNotNull( $router );
+        $this->assertInstanceOf( Router::class, $router );
     }
 }
 ?>

@@ -11,9 +11,9 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * The GetObjectController is responsible for rendering ActivityPub objects as JSON
+ * The GetController is responsible for rendering ActivityPub objects as JSON
  */
-class GetObjectController
+class GetController
 {
     
     /**

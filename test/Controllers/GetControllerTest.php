@@ -2,7 +2,7 @@
 namespace ActivityPub\Test\Controllers;
 
 use ActivityPub\Auth\AuthService;
-use ActivityPub\Controllers\GetObjectController;
+use ActivityPub\Controllers\GetController;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Objects\ContextProvider;
@@ -14,7 +14,7 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use PHPUnit\Framework\TestCase;
 
-class GetObjectControllerTest extends TestCase
+class GetControllerTest extends TestCase
 {
     const OBJECTS = array(
         'https://example.com/objects/1' => array(
@@ -51,7 +51,7 @@ class GetObjectControllerTest extends TestCase
         ),
     );
 
-    private $getObjectController;
+    private $getController;
 
     public function setUp()
     {
@@ -66,7 +66,7 @@ class GetObjectControllerTest extends TestCase
         $authService = new AuthService();
         $contextProvider = new ContextProvider();
         $collectionsService = new CollectionsService( 4, $authService, $contextProvider );
-        $this->getObjectController = new GetObjectController(
+        $this->getController = new GetController(
             $objectsService, $collectionsService, $authService
         );
     }
@@ -74,7 +74,7 @@ class GetObjectControllerTest extends TestCase
     public function testItRendersPersistedObject()
     {
         $request = Request::create( 'https://example.com/objects/1' );
-        $response = $this->getObjectController->handle( $request );
+        $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/1'] ),
@@ -87,21 +87,21 @@ class GetObjectControllerTest extends TestCase
     {
         $request = Request::create( 'https://example.com/objects/notreal' );
         $this->expectException( NotFoundHttpException::class );
-        $this->getObjectController->handle( $request );
+        $this->getController->handle( $request );
     }
 
     public function testItDeniesAccess()
     {
         $request = Request::create( 'https://example.com/objects/2' );
         $this->expectException( UnauthorizedHttpException::class );
-        $this->getObjectController->handle( $request );
+        $this->getController->handle( $request );
     }
 
     public function testItAllowsAccessToAuthedActor()
     {
         $request = Request::create( 'https://example.com/objects/2' );
         $request->attributes->set( 'actor', 'https://example.com/actor/1' );
-        $response = $this->getObjectController->handle( $request );
+        $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/2'] ),
@@ -114,7 +114,7 @@ class GetObjectControllerTest extends TestCase
     {
         $request = Request::create( 'https://example.com/objects/2' );
         $request->attributes->set( 'actor', 'https://example.com/actor/2' );
-        $response = $this->getObjectController->handle( $request );
+        $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/2'] ),
@@ -126,7 +126,7 @@ class GetObjectControllerTest extends TestCase
     public function testItAllowsAccessToNoAudienceObject()
     {
         $request = Request::create( 'https://example.com/objects/3' );
-        $response = $this->getObjectController->handle( $request );
+        $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/3'] ),
@@ -138,7 +138,7 @@ class GetObjectControllerTest extends TestCase
     public function testItDisregardsQueryParams()
     {
         $request = Request::create( 'https://example.com/objects/1?foo=bar&baz=qux' );
-        $response = $this->getObjectController->handle( $request );
+        $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
             json_encode( self::OBJECTS['https://example.com/objects/1'] ),
