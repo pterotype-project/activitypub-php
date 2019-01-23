@@ -2,11 +2,15 @@
 namespace ActivityPub\Activities;
 
 use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
- * The NonActivityHandler wraps non-activity objects sent to the outbox in a Create activity
+ * The NonActivityHandler wraps non-activity objects sent to the outbox in a
+ * Create activity
  */
 class NonActivityHandler implements EventSubscriberInterface
 {
@@ -35,6 +39,13 @@ class NonActivityHandler implements EventSubscriberInterface
         return array(
             OutboxActivityEvent::NAME => 'handle',
         );
+    }
+
+    public function __construct( ContextProvider $contextProvider,
+                                 IdProvider $idProvider )
+    {
+        $this->contextProvider = $contextProvider;
+        $this->idProvider = $idProvider;
     }
 
     public function handle( OutboxActivityEvent $event )
@@ -73,6 +84,7 @@ class NonActivityHandler implements EventSubscriberInterface
                 $create[$field] = $object[$field];
             }
         }
+        return $create;
     }
 }
 ?>
