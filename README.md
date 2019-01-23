@@ -30,32 +30,34 @@ Basic usage example:
 ``` php
 <?php
 use ActivityPub\ActivityPub;
+use ActivityPub\Config\ActivityPubConfig;
 
 // Constructing the ActivityPub instance
-$activitypub = new ActivityPub( array(
-    // Function to determine if the current request should be associated
-    // with an ActivityPub actor. It should return the actor id associated
-    // with the current request, or false if the current request is not associated
-    // with the actor. This is where you can plug in your application's user
-    // management system:
-    'authFunction' => function() {
-        if ( current_user_is_logged_in() ) {
-            return get_actor_id_for_current_user();
-        } else {
-            return false;
-        }
-    },
-    // Database connection options, passed directly to Doctrine:
-    'dbOptions' => array(
-        'driver' => 'pdo_mysql',
-        'user' => 'mysql'
-        'password' => 'thePa$$word',
-        'dbname' => 'my-database',
-    ),
-    // Database table name prefix for compatibility with $wpdb->prefix, etc.:
-    // Default: ''
-    'dbPrefix' => 'activitypub_',
-) );
+$config = ActivityPubConfig::createBuilder()
+        // Function to determine if the current request should be associated
+        // with an ActivityPub actor. It should return the actor id associated
+        // with the current request, or false if the current request is not associated
+        // with the actor. This is where you can plug in your application's user
+        // management system:
+        ->setAuthFunction( function() {
+            if ( current_user_is_logged_in() ) {
+                return get_actor_id_for_current_user();
+            } else {
+                return false;
+            }
+        } )
+        // Database connection options, passed directly to Doctrine:
+        ->setDbConnectionParams( array(
+            'driver' => 'pdo_mysql',
+            'user' => 'mysql'
+            'password' => 'thePa$$word',
+            'dbname' => 'my-database',
+        ) )
+        // Database table name prefix for compatibility with $wpdb->prefix, etc.:
+        // Default: ''
+        ->setDbPrefix( 'activitypub_' )
+        ->build();
+$activitypub = new ActivityPub( $config );
 
 // Routing incoming ActivityPub requests to ActivityPub-PHP
 if ( in_array( $_SERVER['HTTP_ACCEPT'],

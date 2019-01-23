@@ -5,6 +5,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\SignatureListener;
+use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Config\ActivityPubModule;
 use ActivityPub\Http\Router;
 use Doctrine\ORM\EntityManager;
@@ -27,12 +28,11 @@ class ActivityPub
     /**
      * Constructs a new ActivityPub instance
      *
-     * @param array $opts Array of options. Valid keys are
-     *     'dbOptions', 'dbprefix', and 'isDevMode'.
+     * @param ActivityPubConfig $config Configuration options
      */
-    public function __construct( array $opts )
+    public function __construct( ActivityPubConfig $config )
     {
-        $this->module = new ActivityPubModule( $opts );
+        $this->module = new ActivityPubModule( $config);
     }
 
     /**

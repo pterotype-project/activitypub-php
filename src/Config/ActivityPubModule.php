@@ -6,6 +6,7 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Controllers\GetController;
 use ActivityPub\Controllers\PostController;
+use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\Router;
@@ -34,30 +35,16 @@ class ActivityPubModule
      */
     private $injector;
 
-    public function __construct( $options )
+    public function __construct( ActivityPubConfig $config )
     {
-        $defaults = array(
-            'isDevMode' => false,
-            'dbPrefix' => '',
-            'authFunction' => function() {
-                return false;
-            },
-            'context' => array(
-                'https://www.w3.org/ns/activitystreams',
-                'https://w3id.org/security/v1',
-            ),
-        );
-        $options = array_merge( $defaults, $options );
-        $this->validateOptions( $options );
-
         $this->injector = new ContainerBuilder;
 
         $dbConfig = Setup::createAnnotationMetadataConfiguration(
-            array( __DIR__ . '/../Entities' ), $options['isDevMode']
+            array( __DIR__ . '/../Entities' ), $config->getIsDevMode()
         );
-        $namingStrategy = new PrefixNamingStrategy( $options['dbPrefix'] );
+        $namingStrategy = new PrefixNamingStrategy( $config->getDbPrefix() );
         $dbConfig->setNamingStrategy( $namingStrategy );
-        $dbParams = $options['dbOptions'];
+        $dbParams = $config->getDbConnectionParams();
         $this->injector->register( EntityManager::class, EntityManager::class )
             ->setArguments( array( $dbParams, $dbConfig ) )
             ->setFactory( array( EntityManager::class, 'create' ) );
@@ -85,12 +72,12 @@ class ActivityPubModule
             ->addArgument( new Reference( ObjectsService::class ) );
 
         $this->injector->register( AuthListener::class, AuthListener::class )
-            ->addArgument( $options['authFunction'] );
+            ->addArgument( $config->getAuthFunction() );
 
         $this->injector->register( AuthService::class, AuthService::class );
 
         $this->injector->register( ContextProvider::class, ContextProvider::class )
-            ->addArgument( $options['context'] );
+            ->addArgument( $config->getJsonLdContext() );
 
         $this->injector->register( CollectionsService::class, CollectionsService::class )
             ->addArgument( self::COLLECTION_PAGE_SIZE )
@@ -127,18 +114,5 @@ class ActivityPubModule
     {
         return $this->injector->get( $id );
     }
-
-    private function validateOptions( $options )
-    {
-        $required = array( 'dbOptions' );
-        $actual = array_keys( $options );
-        $missing = array_diff( $required, $actual );
-        if ( count( $missing ) > 0 ) {
-            throw new InvalidArgumentException(
-                'Missing required options: ' . print_r( $missing, t )
-            );
-        }
-    }
-
 }
 ?>

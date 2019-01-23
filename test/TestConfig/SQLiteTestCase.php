@@ -2,6 +2,7 @@
 namespace ActivityPub\Test\TestConfig;
 
 use ActivityPub\ActivityPub;
+use ActivityPub\Config\ActivityPubConfig;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\DbUnit\TestCaseTrait;
 use PHPUnit\DbUnit\Operation\Composite;
@@ -22,12 +23,13 @@ abstract class SQLiteTestCase extends TestCase
         if ( file_exists( $dbPath ) ) {
             unlink( $dbPath );
         }
-        $activityPub = new ActivityPub( array(
-            'dbOptions' => array(
-                'driver' => 'pdo_sqlite',
-                'path' => $dbPath,
-            ),
-        ) );
+        $config = ActivityPubConfig::createBuilder()
+                ->setDbConnectionParams( array(
+                    'driver' => 'pdo_sqlite',
+                    'path' => $dbPath,
+                ) )
+                ->build();
+        $activityPub = new ActivityPub( $config );
         $activityPub->updateSchema();
     }
 

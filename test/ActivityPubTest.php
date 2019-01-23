@@ -2,6 +2,7 @@
 namespace ActivityPub\Test;
     
 use ActivityPub\ActivityPub;
+use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Test\TestConfig\SQLiteTestCase;
 use ActivityPub\Test\TestConfig\ArrayDataSet;
 
@@ -19,12 +20,13 @@ class ActivityPubTest extends SQLiteTestCase
      * @depends testItCreatesSchema
      */
     public function testItUpdatesSchema() {
-        $activityPub = new ActivityPub(array(
-            'dbOptions' => array(
-                'driver' => 'pdo_sqlite',
-                'path' => $this->getDbPath(),
-            ),
-        ) );
+        $config = ActivityPubConfig::createBuilder()
+                ->setDbConnectionParams( array(
+                    'driver' => 'pdo_sqlite',
+                    'path' => $this->getDbPath(),
+                ) )
+                ->build();
+        $activityPub = new ActivityPub( $config );
         $activityPub->updateSchema();
         $this->assertTrue( file_exists( $this->getDbPath() ) );
     }

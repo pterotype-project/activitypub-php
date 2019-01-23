@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Test\Config;
 
+use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Config\ActivityPubModule;
 use ActivityPub\Http\Router;
 use Doctrine\ORM\EntityManager;
@@ -12,13 +13,13 @@ class ActivityPubModuleTest extends TestCase
 
     public function setUp()
     {
-        $opts = array(
-            'dbOptions' => array(
-                'driver' => 'pdo_sqlite',
-                'path' => ':memory:',
-            ),
-        );
-        $this->module = new ActivityPubModule( $opts );
+        $config = ActivityPubConfig::createBuilder()
+                ->setDbConnectionParams( array(
+                    'driver' => 'pdo_sqlite',
+                    'path' => ':memory:',
+                ) )
+                ->build();
+        $this->module = new ActivityPubModule( $config );
     }
     
     public function testItInjects()
