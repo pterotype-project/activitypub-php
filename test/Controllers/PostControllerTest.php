@@ -50,7 +50,9 @@ class PostControllerTest extends TestCase
             $this->returnCallback( function( $query ) {
                 if ( array_key_exists( 'id', $query ) &&
                      array_key_exists( $query['id'], self::OBJECTS ) ) {
-                    $object = TestActivityPubObject::fromArray( self::OBJECTS[$query['id']] );
+                    $object = TestActivityPubObject::fromArray(
+                        self::OBJECTS[$query['id']]
+                    );
                     if ( array_key_exists( $query['id'], self::REFS ) ) {
                         $ref = self::REFS[$query['id']];
                         $referencingObject = TestActivityPubObject::fromArray(
@@ -74,20 +76,26 @@ class PostControllerTest extends TestCase
                     '{"type": "Create"}',
                     array(
                         'signed' => true,
-                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        'actor' => TestActivityPubObject::fromArray(
+                            self::OBJECTS['https://example.com/actor/1']
+                        ),
                     )
                 ),
                 'expectedEventName' => InboxActivityEvent::NAME,
                 'expectedEvent' => new InboxActivityEvent(
                     array( 'type' => 'Create' ),
-                    TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    TestActivityPubObject::fromArray(
+                        self::OBJECTS['https://example.com/actor/1']
+                    ),
                     $this->makeRequest(
                         'https://example.com/actor/1/inbox',
                         Request::METHOD_POST,
                         '{"type": "Create"}',
                         array(
                             'signed' => true,
-                            'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                            'actor' => TestActivityPubObject::fromArray(
+                                self::OBJECTS['https://example.com/actor/1']
+                            ),
                         )
                     )
                 ),
@@ -99,19 +107,25 @@ class PostControllerTest extends TestCase
                     Request::METHOD_POST,
                     '{"type": "Create"}',
                     array(
-                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        'actor' => TestActivityPubObject::fromArray(
+                            self::OBJECTS['https://example.com/actor/1']
+                        ),
                     )
                 ),
                 'expectedEventName' => OutboxActivityEvent::NAME,
                 'expectedEvent' => new OutboxActivityEvent(
                     array( 'type' => 'Create' ),
-                    TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    TestActivityPubObject::fromArray(
+                        self::OBJECTS['https://example.com/actor/1']
+                    ),
                     $this->makeRequest(
                         'https://example.com/actor/1/outbox',
                         Request::METHOD_POST,
                         '{"type": "Create"}',
                         array(
-                            'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                            'actor' => TestActivityPubObject::fromArray(
+                                self::OBJECTS['https://example.com/actor/1']
+                            ),
                         )
                     )
                 ),
@@ -123,7 +137,9 @@ class PostControllerTest extends TestCase
                     Request::METHOD_POST,
                     '{"type": "Create"}',
                     array(
-                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        'actor' => TestActivityPubObject::fromArray(
+                            self::OBJECTS['https://example.com/actor/1']
+                        ),
                     )
                 ),
                 'expectedException' => UnauthorizedHttpException::class,
@@ -145,7 +161,9 @@ class PostControllerTest extends TestCase
                     Request::METHOD_POST,
                     '{"type": "Create"}',
                     array(
-                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        'actor' => TestActivityPubObject::fromArray(
+                            self::OBJECTS['https://example.com/actor/1']
+                        ),
                     )
                 ),
                 'expectedException' => NotFoundHttpException::class,
@@ -157,7 +175,9 @@ class PostControllerTest extends TestCase
                     Request::METHOD_POST,
                     '',
                     array(
-                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        'actor' => TestActivityPubObject::fromArray(
+                            self::OBJECTS['https://example.com/actor/1']
+                        ),
                     )
                 ),
                 'expectedException' => BadRequestHttpException::class,
@@ -169,7 +189,9 @@ class PostControllerTest extends TestCase
                     Request::METHOD_POST,
                     'this is not JSON',
                     array(
-                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        'actor' => TestActivityPubObject::fromArray(
+                            self::OBJECTS['https://example.com/actor/1']
+                        ),
                     )
                 ),
                 'expectedException' => BadRequestHttpException::class,
