@@ -16,6 +16,25 @@ class PostControllerTest extends TestCase
         'https://example.com/actor/1/inbox' => array(
             'id' => 'https://example.com/actor/1/inbox',
         ),
+        'https://example.com/actor/1' => array(
+            'id' => 'https://example.com/actor/1',
+            'inbox' => array(
+                'id' => 'https://example.com/actor/1/inbox',
+            ),
+            'outbox' => array(
+                'id' => 'https://example.com/actor/1/outbox',
+            ),
+        ),
+    );
+    const REFS = array(
+        'https://example.com/actor/1/inbox' => array(
+            'field' => 'inbox',
+            'referencingObject' => 'https://example.com/actor/1',
+        ),
+        'https://example.com/actor/1/outbox' => array(
+            'field' => 'outbox',
+            'referencingObject' => 'https://example.com/actor/1',
+        ),
     );
 
     public function testPostController()
@@ -25,9 +44,16 @@ class PostControllerTest extends TestCase
             $this->returnCallback( function( $query ) {
                 if ( array_key_exists( 'id', $query ) &&
                      array_key_exists( $query['id'], self::OBJECTS ) ) {
-                    return array( TestActivityPubObject::fromArray(
-                        self::OBJECTS[$query['id']]
-                    ) );
+                    $object = TestActivityPubObject::fromArray( self::OBJECTS[$query['id']] );
+                    if ( array_key_exists( $query['id'], self::REFS ) ) {
+                        $ref = self::REFS[$query['id']];
+                        $referencingObject = TestActivityPubObject::fromArray(
+                            self::OBJECTS[$ref['referencingObject']]
+                        );
+                        $referencingField = $referencingObject->getField( $ref['field'] );
+                        $object->addReferencingField( $referencingField );
+                    }
+                    return array( $object );
                 } else {
                     return array();
                 }
@@ -36,35 +62,37 @@ class PostControllerTest extends TestCase
         $testCases = array(
             array(
                 'id' => 'basicInboxTest',
-                'request' => Request::create(
+                'request' => $this->makeRequest(
                     'https://example.com/actor/1/inbox',
                     Request::METHOD_POST,
-                    array(), array(), array(), array(),
-                    '{"type": "Create"}'
-                ),
-                'requestAttributes' => array(
-                    'signed' => true,
-                    'actor' => TestActivityPubObject::fromArray( array(
-                        'id' => 'https://example.com/actor/1',
-                        'inbox' => array(
-                            'id' => 'https://example.com/actor/1/inbox',
-                        )
-                    ) ),
+                    '{"type": "Create"}',
+                    array(
+                        'signed' => true,
+                        'actor' => TestActivityPubObject::fromArray( array(
+                            'id' => 'https://example.com/actor/1',
+                            'inbox' => array(
+                                'id' => 'https://example.com/actor/1/inbox',
+                            )
+                        ) ),
+                    )
                 ),
                 'expectedEventName' => InboxActivityEvent::NAME,
                 'expectedEvent' => new InboxActivityEvent(
                     array( 'type' => 'Create' ),
-                    TestActivityPubObject::fromArray( array(
-                        'id' => 'https://example.com/actor/1',
-                        'inbox' => array(
-                            'id' => 'https://example.com/actor/1/inbox',
-                        )
-                    ) ),
-                    Request::create(
+                    TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    $this->makeRequest(
                         'https://example.com/actor/1/inbox',
                         Request::METHOD_POST,
-                        array(), array(), array(), array(),
-                        '{"type": "Create"}'
+                        '{"type": "Create"}',
+                        array(
+                            'signed' => true,
+                            'actor' => TestActivityPubObject::fromArray( array(
+                                'id' => 'https://example.com/actor/1',
+                                'inbox' => array(
+                                    'id' => 'https://example.com/actor/1/inbox',
+                                )
+                            ) ),
+                        )
                     )
                 ),
             ),
@@ -83,14 +111,22 @@ class PostControllerTest extends TestCase
             }
             $postController = new PostController( $eventDispatcher, $objectsService );
             $request = $testCase['request'];
-            if ( array_key_exists( 'requestAttributes', $testCase ) ) {
-                $request->attributes->add( $testCase['requestAttributes'] );
-            }
             if ( array_key_exists( 'expectedException', $testCase ) ) {
                 $this->expectException( $testCase['expectedException'] );
             }
             $postController->handle( $request );
         }
+    }
+
+    private function makeRequest( $uri, $method, $body, $attributes )
+    {
+        $request = Request::create(
+            $uri, $method, array(), array(), array(), array(), $body
+        );
+        $request->attributes->add( $attributes );
+        // This populates the pathInfo, requestUri, and baseUrl fields on the request:
+        $request->getUri();
+        return $request;
     }
 }
 ?>

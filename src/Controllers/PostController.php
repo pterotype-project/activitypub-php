@@ -3,6 +3,7 @@ namespace ActivityPub\Controllers;
 
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -43,10 +44,11 @@ class PostController
     public function handle( Request $request )
     {
         $uri = $this->getUriWithoutQuery( $request );
-        $object = $this->objectsService->query( array( 'id' => $uri ) );
-        if ( ! $object ) {
+        $results = $this->objectsService->query( array( 'id' => $uri ) );
+        if ( count( $results ) === 0 ) {
             throw new NotFoundHttpException;
         }
+        $object = $results[0];
         $inboxField = $object->getReferencingField( 'inbox' );
         if ( $inboxField ) {
             $actorWithInbox = $inboxField->getObject();
