@@ -54,7 +54,9 @@ class PostController
             $actorWithInbox = $inboxField->getObject();
             if ( ! $request->attributes->has( 'signed' ) ||
                  ! $this->authorized( $request, $actorWithInbox ) ) {
-                throw new UnauthorizedHttpException();
+                throw new UnauthorizedHttpException(
+                    'Signature realm="ActivityPub",headers="(request-target) host date"'
+                );
             }
             $activity = json_decode( $request->getContent(), true );
             if ( ! $activity ) {
@@ -68,7 +70,9 @@ class PostController
         if ( $outboxField ) {
             $actorWithOutbox = $outboxField->getObject();
             if ( ! $this->authorized( $request, $actorWithOutbox ) ) {
-                throw new UnauthorizedHttpException();
+                throw new UnauthorizedHttpException(
+                    'Signature realm="ActivityPub",headers="(request-target) host date"'
+                );
             }
             $activity = json_decode( $request->getContent(), true );
             if ( ! $activity ) {

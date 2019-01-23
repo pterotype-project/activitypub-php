@@ -9,12 +9,18 @@ use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class PostControllerTest extends TestCase
 {
     const OBJECTS = array(
         'https://example.com/actor/1/inbox' => array(
             'id' => 'https://example.com/actor/1/inbox',
+        ),
+        'https://example.com/actor/1/outbox' => array(
+            'id' => 'https://example.com/actor/1/outbox',
         ),
         'https://example.com/actor/1' => array(
             'id' => 'https://example.com/actor/1',
@@ -68,12 +74,7 @@ class PostControllerTest extends TestCase
                     '{"type": "Create"}',
                     array(
                         'signed' => true,
-                        'actor' => TestActivityPubObject::fromArray( array(
-                            'id' => 'https://example.com/actor/1',
-                            'inbox' => array(
-                                'id' => 'https://example.com/actor/1/inbox',
-                            )
-                        ) ),
+                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
                     )
                 ),
                 'expectedEventName' => InboxActivityEvent::NAME,
@@ -86,15 +87,92 @@ class PostControllerTest extends TestCase
                         '{"type": "Create"}',
                         array(
                             'signed' => true,
-                            'actor' => TestActivityPubObject::fromArray( array(
-                                'id' => 'https://example.com/actor/1',
-                                'inbox' => array(
-                                    'id' => 'https://example.com/actor/1/inbox',
-                                )
-                            ) ),
+                            'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
                         )
                     )
                 ),
+            ),
+            array(
+                'id' => 'basicOutboxTest',
+                'request' => $this->makeRequest(
+                    'https://example.com/actor/1/outbox',
+                    Request::METHOD_POST,
+                    '{"type": "Create"}',
+                    array(
+                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    )
+                ),
+                'expectedEventName' => OutboxActivityEvent::NAME,
+                'expectedEvent' => new OutboxActivityEvent(
+                    array( 'type' => 'Create' ),
+                    TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    $this->makeRequest(
+                        'https://example.com/actor/1/outbox',
+                        Request::METHOD_POST,
+                        '{"type": "Create"}',
+                        array(
+                            'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                        )
+                    )
+                ),
+            ),
+            array(
+                'id' => 'inboxRequestMustBeSigned',
+                'request' => $this->makeRequest(
+                    'https://example.com/actor/1/inbox',
+                    Request::METHOD_POST,
+                    '{"type": "Create"}',
+                    array(
+                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    )
+                ),
+                'expectedException' => UnauthorizedHttpException::class,
+            ),
+            array(
+                'id' => 'outboxRequestsMustBeAuthed',
+                'request' => $this->makeRequest(
+                    'https://example.com/actor/1/inbox',
+                    Request::METHOD_POST,
+                    '{"type": "Create"}',
+                    array()
+                ),
+                'expectedException' => UnauthorizedHttpException::class,
+            ),
+            array(
+                'id' => '404sIfNotFound',
+                'request' => $this->makeRequest(
+                    'https://example.com/actor/notreal/inbox',
+                    Request::METHOD_POST,
+                    '{"type": "Create"}',
+                    array(
+                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    )
+                ),
+                'expectedException' => NotFoundHttpException::class,
+            ),
+            array(
+                'id' => 'BadRequestIfNoBody',
+                'request' => $this->makeRequest(
+                    'https://example.com/actor/notreal/inbox',
+                    Request::METHOD_POST,
+                    '',
+                    array(
+                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    )
+                ),
+                'expectedException' => BadRequestHttpException::class,
+            ),
+            array(
+                'id' => 'BadRequestIfMalformedBody',
+                'request' => $this->makeRequest(
+                    'https://example.com/actor/notreal/inbox',
+                    Request::METHOD_POST,
+                    'this is not JSON',
+                    array(
+                        'actor' => TestActivityPubObject::fromArray( self::OBJECTS['https://example.com/actor/1'] ),
+                    )
+                ),
+                'expectedException' => BadRequestHttpException::class,
             ),
         );
         foreach ( $testCases as $testCase ) {
