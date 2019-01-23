@@ -28,7 +28,7 @@ class ActivityEvent extends Event
      */
     protected $request;
 
-    protected function __construct( array $activity, ActivityPubObject $actor,
+    public function __construct( array $activity, ActivityPubObject $actor,
                                     Request $request )
     {
         $this->activity = $activity;

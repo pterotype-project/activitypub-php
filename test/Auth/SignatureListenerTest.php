@@ -7,8 +7,8 @@ use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
-use ActivityPub\Test\TestUtils\TestUtils;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -44,8 +44,8 @@ oYi+1hqp1fIekaxsyQIDAQAB
         $objectsService = $this->createMock( ObjectsService::class );
         $objectsService->method( 'dereference' )
             ->will( $this->returnValueMap( array(
-                array( self::KEY_ID, TestUtils::objectFromArray( self::KEY ) ),
-                array( self::ACTOR_ID, TestUtils::objectFromArray( self::ACTOR ) ),
+                array( self::KEY_ID, TestActivityPubObject::fromArray( self::KEY ) ),
+                array( self::ACTOR_ID, TestActivityPubObject::fromArray( self::ACTOR ) ),
             ) ) );
         $this->signatureListener = new SignatureListener(
             $httpSignatureService, $objectsService
@@ -85,7 +85,7 @@ oYi+1hqp1fIekaxsyQIDAQAB
                 ),
                 'expectedAttributes' => array(
                     'signed' => true,
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/1',
                     ) ),
                 ),
@@ -96,13 +96,13 @@ oYi+1hqp1fIekaxsyQIDAQAB
                     'Authorization' => 'Signature keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
                 ),
                 'requestAttributes' => array(
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/2',
                     ) ),
                 ),
                 'expectedAttributes' => array(
                     'signed' => true,
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/2',
                     ) ),
                 ),
@@ -114,7 +114,7 @@ oYi+1hqp1fIekaxsyQIDAQAB
                 ),
                 'expectedAttributes' => array(
                     'signed' => true,
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/1',
                     ) ),
                 ),
@@ -137,27 +137,11 @@ oYi+1hqp1fIekaxsyQIDAQAB
                 }
             }
             $this->signatureListener->validateHttpSignature( $event );
-            foreach ( $testCase['expectedAttributes'] as $expectedKey => $expectedValue ) {
-                $this->assertTrue(
-                    $event->getRequest()->attributes->has( $expectedKey ),
-                    "Error on test $testCase[id]"
-                );
-                xdebug_break();
-                if ( $expectedValue instanceof ActivityPubObject ) {
-                    $this->assertTrue(
-                        $expectedValue->equals(
-                            $event->getRequest()->attributes->get( $expectedKey )
-                        ),
-                        "Error on test $testCase[id]"
-                    );
-                } else {
-                    $this->assertEquals(
-                        $expectedValue,
-                        $event->getRequest()->attributes->get( $expectedKey ),
-                        "Error on test $testCase[id]"
-                    );
-                }
-            }
+            $this->assertEquals(
+                $testCase['expectedAttributes'],
+                $event->getRequest()->attributes->all(),
+                "Error on test $testCase[id]"
+            );
         }
     }
 }

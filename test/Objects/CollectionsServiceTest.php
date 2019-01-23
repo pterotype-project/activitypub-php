@@ -5,7 +5,7 @@ use Exception;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
-use ActivityPub\Test\TestUtils\TestUtils;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -370,7 +370,8 @@ class CollectionsServiceTest extends TestCase
                 $request->attributes->add( $testCase['requestAttributes'] );
             }
             $actual = $this->collectionsService->pageAndFilterCollection(
-                $testCase['request'], TestUtils::objectFromArray( $testCase['collection'] )
+                $testCase['request'],
+                TestActivityPubObject::fromArray( $testCase['collection'] )
             );
             $this->assertEquals(
                 $testCase['expectedResult'], $actual, "Error on test $testCase[id]"

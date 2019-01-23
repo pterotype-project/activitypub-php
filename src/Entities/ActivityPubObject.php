@@ -202,6 +202,36 @@ class ActivityPubObject implements ArrayAccess
     }
 
     /**
+     * Returns true if the object is referenced by a field with key $name
+     *
+     * @return boolean
+     */
+    public function hasReferencingField( string $name )
+    {
+        foreach( $this->getReferencingFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns the referencing field named $field, if it exists
+     *
+     * @param string $name The name of the referencing to get
+     * @return Field|null
+     */
+    public function getReferencingField( string $name )
+    {
+        foreach( $this->getReferencingFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return $field;
+            }
+        }
+    }
+
+    /**
      * Adds a new field that references this object
      *
      * Don't call this directly; instead, use one of the

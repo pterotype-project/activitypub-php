@@ -8,7 +8,7 @@ use ActivityPub\Entities\Field;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
-use ActivityPub\Test\TestUtils\TestUtils;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -59,7 +59,7 @@ class GetControllerTest extends TestCase
         $objectsService->method( 'dereference' )->will(
             $this->returnCallback( function( $uri ) {
                 if ( array_key_exists( $uri, self::OBJECTS ) ) {
-                    return TestUtils::objectFromArray( self::OBJECTS[$uri] );
+                    return TestActivityPubObject::fromArray( self::OBJECTS[$uri] );
                 }
             })
         );

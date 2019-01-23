@@ -67,6 +67,15 @@ class Field
      */
     protected $lastUpdated;
 
+    protected function __construct( DateTime $time = null )
+    {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
+        $this->created = $time;
+        $this->lastUpdated = $time;
+    }
+
     /**
      * Create a new field with a string value
      *
@@ -80,12 +89,10 @@ class Field
         if ( ! $time ) {
             $time = new DateTime( "now" );
         }
-        $field = new Field();
+        $field = new Field( $time );
         $field->setObject( $object, $time );
         $field->setName( $name );
-        $field->setValue( $value );
-        $field->setCreated( $time );
-        $field->setLastUpdated( $time );
+        $field->setValue( $value, $time );
         return $field;
     }
 
@@ -97,17 +104,18 @@ class Field
      * @param ActivityPubObject $targetObject The object that this field holds
      * @return Field The new field
      */
-    public static function withObject( ActivityPubObject $object, string $name, Object $targetObject, DateTime $time = null )
+    public static function withObject( ActivityPubObject $object,
+                                       string $name,
+                                       ActivityPubObject $targetObject,
+                                       DateTime $time = null )
     {
         if ( ! $time ) {
             $time = new DateTime( "now" );
         }
-        $field = new Field();
+        $field = new Field( $time );
         $field->setObject( $object, $time );
         $field->setName( $name );
-        $field->setTargetObject( $targetObject );
-        $field->setCreated( $time );
-        $field->setLastUpdated( $time );
+        $field->setTargetObject( $targetObject, $time );
         return $field;
     }
 

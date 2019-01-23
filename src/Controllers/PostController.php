@@ -43,12 +43,13 @@ class PostController
     public function handle( Request $request )
     {
         $uri = $this->getUriWithoutQuery( $request );
-        $object = $this->objectsService->dereference( $uri );
+        $object = $this->objectsService->query( array( 'id' => $uri ) );
         if ( ! $object ) {
             throw new NotFoundHttpException;
         }
-        $actorWithInbox = $this->objectWithField( 'inbox', $uri );
-        if ( $actorWithInbox ) {
+        $inboxField = $object->getReferencingField( 'inbox' );
+        if ( $inboxField ) {
+            $actorWithInbox = $inboxField->getObject();
             if ( ! $request->attributes->has( 'signed' ) ||
                  ! $this->authorized( $request, $actorWithInbox ) ) {
                 throw new UnauthorizedHttpException();
@@ -61,8 +62,9 @@ class PostController
             $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
             return;
         }
-        $actorWithOutbox = $this->objectWithField( 'outbox', $uri );
-        if ( $actorWithOutbox ) {
+        $outboxField = $object->getReferencingField( 'outbox' );
+        if ( $outboxField ) {
+            $actorWithOutbox = $outboxField->getObject();
             if ( ! $this->authorized( $request, $actorWithOutbox ) ) {
                 throw new UnauthorizedHttpException();
             }

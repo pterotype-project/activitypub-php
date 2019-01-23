@@ -4,7 +4,7 @@ namespace ActivityPub\Test\Auth;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Entities\ActivityPubObject;
-use ActivityPub\Test\TestUtils\TestUtils;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
@@ -18,10 +18,10 @@ class AuthListenerTest extends TestCase
     {
         $this->objectsService = $this->createMock( ObjectsService::class );
         $this->objectsService->method( 'dereference' )->will( $this->returnValueMap( array(
-            array( 'https://example.com/actor/1', TestUtils::objectFromArray( array(
+            array( 'https://example.com/actor/1', TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/actor/1',
             ) ) ),
-            array( 'https://example.com/actor/2', TestUtils::objectFromArray( array(
+            array( 'https://example.com/actor/2', TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/actor/2',
             ) ) ),
         ) ) );
@@ -45,7 +45,7 @@ class AuthListenerTest extends TestCase
                     return 'https://example.com/actor/1';
                 },
                 'expectedAttributes' => array(
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/1',
                     ) ),
                 ),
@@ -56,12 +56,12 @@ class AuthListenerTest extends TestCase
                     return 'https://example.com/actor/1';
                 },
                 'requestAttributes' => array(
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/2',
                     ) ),
                 ),
                 'expectedAttributes' => array(
-                    'actor' => TestUtils::objectFromArray( array(
+                    'actor' => TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/2',
                     ) ),
                 ),

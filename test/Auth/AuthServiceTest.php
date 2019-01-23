@@ -2,7 +2,7 @@
 namespace ActivityPub\Test\Auth;
 
 use ActivityPub\Auth\AuthService;
-use ActivityPub\Test\TestUtils\TestUtils;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -64,7 +64,7 @@ class AuthServiceTest extends TestCase
             if ( array_key_exists( 'actor', $testCase ) ) {
                 $request->attributes->set( 'actor', $testCase['actor'] );
             }
-            $object = TestUtils::objectFromArray( $testCase['object'] );
+            $object = TestActivityPubObject::fromArray( $testCase['object'] );
             $actual = $this->authService->isAuthorized( $request, $object );
             $this->assertEquals(
                 $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
