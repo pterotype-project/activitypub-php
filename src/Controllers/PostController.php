@@ -51,17 +51,21 @@ class PostController
         $object = $results[0];
         $inboxField = $object->getReferencingField( 'inbox' );
         if ( $inboxField ) {
-            $actorWithInbox = $inboxField->getObject();
+            $activity = json_decode( $request->getContent(), true );
+            if ( ! $activity || ! array_key_exists( 'actor', $activity ) ) {
+                throw new BadRequestHttpException();
+            }
+            $activityActor = $this->getActivityActor( $activity );
+            if ( ! $activityActor) {
+                throw new BadRequestHttpException();
+            }
             if ( ! $request->attributes->has( 'signed' ) ||
-                 ! $this->authorized( $request, $actorWithInbox ) ) {
+                 ! $this->authorized( $request, $activityActor ) ) {
                 throw new UnauthorizedHttpException(
                     'Signature realm="ActivityPub",headers="(request-target) host date"'
                 );
             }
-            $activity = json_decode( $request->getContent(), true );
-            if ( ! $activity ) {
-                throw new BadRequestHttpException();
-            }
+            $actorWithInbox = $inboxField->getObject();
             $event = new InboxActivityEvent( $activity, $actorWithInbox, $request );
             $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
             return;
@@ -83,6 +87,17 @@ class PostController
             return;
         } 
         throw new MethodNotAllowedHttpException( array( Request::METHOD_GET ) );
+    }
+
+    private function getActivityActor( array $activity )
+    {
+        xdebug_break();
+        $actor = $activity['actor'];
+        if ( is_array( $actor ) && array_key_exists( 'id', $actor ) ) {
+            return $this->objectsService->dereference( $actor['id'] );
+        } else if ( is_string( $actor ) ) {
+            return $this->objectsService->dereference( $actor );
+        }
     }
 
     private function authorized( Request $request, ActivityPubObject $activityActor )
