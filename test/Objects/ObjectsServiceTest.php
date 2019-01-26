@@ -13,6 +13,7 @@ use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use Doctrine\ORM\Tools\Setup;
 use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response;
 use PHPUnit\DbUnit\TestCaseTrait;
 
 class ObjectsServiceTest extends SQLiteTestCase
@@ -44,7 +45,9 @@ class ObjectsServiceTest extends SQLiteTestCase
             'objects-service.create' => new DateTime( "12:00" ),
             'objects-service.update' => new DateTime( "12:01" ),
         ) );
-        $this->httpClient = new Client( array( 'http_errors' => false ) );
+        $this->httpClient = $this->createMock( Client::class );
+        $this->httpClient->method( 'send' )
+            ->willReturn( new Response( 404 ) );
         $this->objectsService = new ObjectsService(
             $this->entityManager, $this->dateTimeProvider, $this->httpClient
         );
