@@ -4,7 +4,6 @@ namespace ActivityPub\Activities;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ContextProvider;
-use ActivityPub\Objects\IdProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -19,11 +18,6 @@ class NonActivityHandler implements EventSubscriberInterface
      */
     private $contextProvider;
 
-    /**
-     * @var IdProvider
-     */
-    private $idProvider;
-    
     const ACTIVITY_TYPES = array(
         'Accept', 'Add', 'Announce', 'Arrive',
         'Block', 'Create', 'Delete', 'Dislike',
@@ -41,11 +35,9 @@ class NonActivityHandler implements EventSubscriberInterface
         );
     }
 
-    public function __construct( ContextProvider $contextProvider,
-                                 IdProvider $idProvider )
+    public function __construct( ContextProvider $contextProvider )
     {
         $this->contextProvider = $contextProvider;
-        $this->idProvider = $idProvider;
     }
 
     public function handle( OutboxActivityEvent $event )
@@ -75,7 +67,6 @@ class NonActivityHandler implements EventSubscriberInterface
         $create = array(
             '@context' => $this->contextProvider->getContext(),
             'type' => 'Create',
-            'id' => $this->idProvider->getId( $request, "activities" ),
             'actor' => $actor['id'],
             'object' => $object,
         );

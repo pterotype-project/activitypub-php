@@ -4,7 +4,6 @@ namespace ActivityPub\Test\Activities;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Objects\ContextProvider;
-use ActivityPub\Objects\IdProvider;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,9 +13,7 @@ class NonActivityHandlerTest extends TestCase
     public function testNonActivityHandler()
     {
         $contextProvider = new ContextProvider();
-        $idProvider = $this->createMock( IdProvider::class );
-        $idProvider->method( 'getId' )->willReturn( 'id1' );
-        $nonActivityHandler = new NonActivityHandler( $contextProvider, $idProvider );
+        $nonActivityHandler = new NonActivityHandler( $contextProvider );
         $testCases = array(
             array(
                 'id' => 'testItWrapsNonObjectActivity',
@@ -29,7 +26,6 @@ class NonActivityHandlerTest extends TestCase
                 'expectedActivity' => array(
                     '@context' => ContextProvider::DEFAULT_CONTEXT,
                     'type' => 'Create',
-                    'id' => 'id1',
                     'actor' => 'https://example.com/actor/1',
                     'object' => array(
                         'type' => 'Note',
@@ -68,7 +64,6 @@ class NonActivityHandlerTest extends TestCase
                 'expectedActivity' => array(
                     '@context' => ContextProvider::DEFAULT_CONTEXT,
                     'type' => 'Create',
-                    'id' => 'id1',
                     'actor' => 'https://example.com/actor/1',
                     'object' => array(
                         'type' => 'Note',
