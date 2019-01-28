@@ -35,6 +35,11 @@ class ActivityPubConfig
     private $jsonLdContext;
 
     /**
+     * @var string
+     */
+    private $idPathPrefix;
+
+    /**
      * Don't call this directly - instead, use 
      * ActivityPubConfig->createBuilder()->build()
      *
@@ -47,6 +52,7 @@ class ActivityPubConfig
         $this->dbPrefix = $builder->getDbPrefix();
         $this->authFunction = $builder->getAuthFunction();
         $this->jsonLdContext = $builder->getJsonLdContext();
+        $this->idPathPrefix = $builder->getIdPathPrefix();
     }
 
     public function createBuilder()
@@ -55,7 +61,7 @@ class ActivityPubConfig
     }
 
     /**
-     * @var array
+     * @return array
      */
     public function getDbConnectionParams()
     {
@@ -63,7 +69,7 @@ class ActivityPubConfig
     }
 
     /**
-     * @var bool
+     * @return bool
      */
     public function getIsDevMode()
     {
@@ -71,7 +77,7 @@ class ActivityPubConfig
     }
 
     /**
-     * @var string
+     * @return string
      */
     public function getDbPrefix()
     {
@@ -80,7 +86,7 @@ class ActivityPubConfig
     }
 
     /**
-     * @var Callable
+     * @return Callable
      */
     public function getAuthFunction()
     {
@@ -88,11 +94,19 @@ class ActivityPubConfig
     }
 
     /**
-     * @var array
+     * @return array
      */
     public function getJsonLdContext()
     {
         return $this->jsonLdContext;
+    }
+
+    /**
+     * @return string
+     */
+    public function getIdPathPrefix()
+    {
+        return $this->idPathPrefix;
     }
 }
 ?>

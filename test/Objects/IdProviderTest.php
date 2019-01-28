@@ -16,14 +16,17 @@ class IdProviderTest extends TestCase
     public function setUp()
     {
         $this->objectsService = $this->createMock( ObjectsService::class );
-        $this->objectsService->method( 'query' )->will( $this->returnCallback( function( $query) {
-            $existsId = sprintf( 'https://example.com/objects/%s', self::EXISTING_ID_STR );
-            if ( array_key_exists( 'id', $query ) && $query['id'] == $existsId ) {
-                return array( 'existingObject' );
-            } else {
-                return array();
-            }
-        } ) );
+        $this->objectsService->method( 'query' )
+            ->will( $this->returnCallback( function( $query) {
+                $existsId = sprintf(
+                    'https://example.com/ap/objects/%s', self::EXISTING_ID_STR
+                );
+                if ( array_key_exists( 'id', $query ) && $query['id'] == $existsId ) {
+                    return array( 'existingObject' );
+                } else {
+                    return array();
+                }
+            } ) );
     }
 
     public function testIdProvider()
@@ -32,18 +35,18 @@ class IdProviderTest extends TestCase
             array(
                 'id' => 'providesId',
                 'providedRnd' => array( 'foo' ),
-                'expectedId' => 'https://example.com/objects/foo',
+                'expectedId' => 'https://example.com/ap/objects/foo',
             ),
             array(
                 'id' => 'checksForExisting',
                 'providedRnd' => array( self::EXISTING_ID_STR, 'bar' ),
-                'expectedId' => 'https://example.com/objects/bar',
+                'expectedId' => 'https://example.com/ap/objects/bar',
             ),
             array(
                 'id' => 'addsPath',
                 'providedRnd' => array( 'foo' ),
                 'path' => 'notes',
-                'expectedId' => 'https://example.com/notes/foo',
+                'expectedId' => 'https://example.com/ap/notes/foo',
             ),
         );
         foreach ( $testCases as $testCase ) {
@@ -52,7 +55,7 @@ class IdProviderTest extends TestCase
                 array( $randomProvider->method( 'randomString' ), 'willReturnOnConsecutiveCalls' ),
                 $testCase['providedRnd']
             );
-            $idProvider = new IdProvider( $this->objectsService, $randomProvider );
+            $idProvider = new IdProvider( $this->objectsService, $randomProvider, 'ap' );
             $request = Request::create( 'https://example.com' );
             $id = '';
             if ( array_key_exists( 'path', $testCase ) ) {

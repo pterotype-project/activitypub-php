@@ -88,7 +88,8 @@ class ActivityPubModule
 
         $this->injector->register( IdProvider::class, IdProvider::class )
             ->addArgument( new Reference( ObjectsService::class ) )
-            ->addArgument( new Reference( RandomProvider::class ) );
+            ->addArgument( new Reference( RandomProvider::class ) )
+            ->addArgument( $config->getIdPathPrefix() );
 
         $this->injector->register( GetController::class, GetController::class )
             ->addArgument( new Reference( ObjectsService::class ) )

@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class IdProvider
 {
+    const DEFAULT_ID_PATH_PREFIX = 'ap';
     const ID_LENGTH = 12;
 
     /**
@@ -22,10 +23,21 @@ class IdProvider
      */
     private $randomProvider;
 
-    public function __construct( ObjectsService $objectsService, RandomProvider $randomProvider )
+    /**
+     * $pathPrefix gets prepended to all generated id paths
+     *
+     * It should not have a leading or a trailing slash.
+     * @var string
+     */
+    private $pathPrefix;
+
+    public function __construct( ObjectsService $objectsService,
+                                 RandomProvider $randomProvider,
+                                 string $pathPrefix )
     {
         $this->objectsService = $objectsService;
         $this->randomProvider = $randomProvider;
+        $this->pathPrefix = $pathPrefix;
     }
 
     /**
@@ -34,14 +46,14 @@ class IdProvider
      * Ids look like "https://$host/$path/$randomString"
      * @param Request $request The current request
      * @param string $path The path for the the id URL, just before the random string
-     *   Default: "object"
+     *   and after the path prefix. Default: "object"
      * @return string The new id
      */
     public function getId( Request $request, string $path = "objects" )
     {
         $baseUri = $request->getSchemeAndHttpHost();
         if ( ! empty( $path ) ) {
-            $baseUri = $baseUri . "/$path";
+            $baseUri = $baseUri . "/{$this->pathPrefix}/$path";
         }
         $rnd = $this->randomProvider->randomString( self::ID_LENGTH );
         $id = $baseUri . "/$rnd";
