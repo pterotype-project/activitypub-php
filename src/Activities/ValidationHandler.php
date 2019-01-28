@@ -8,6 +8,15 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class ValidationHandler implements EventSubscriberInterface
 {
+    const OBJECT_REQUIRED_TYPES = array(
+        'Create', 'Update', 'Delete', 'Follow',
+        'Add', 'Remove', 'Like', 'Block', 'Undo',
+    );
+
+    const TARGET_REQUIRED_TYPES = array(
+        'Add', 'Remove',
+    );
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -20,12 +29,24 @@ class ValidationHandler implements EventSubscriberInterface
     {
         $activity = $event->getActivity();
         $this->requireFields( $activity, array( 'type', 'id', 'actor' ) );
+        if ( in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
+            $this->requireFields( $activity, array( 'object' ) );
+        }
+        if ( in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
+            $this->requireFields( $activity, array( 'target' ) );
+        }
     }
 
     public function verifyOutboxActivity( OutboxActivityEvent $event )
     {
         $activity = $event->getActivity();
         $this->requireFields( $activity, array( 'type' ) );
+        if ( in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
+            $this->requireFields( $activity, array( 'object' ) );
+        }
+        if ( in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
+            $this->requireFields( $activity, array( 'target' ) );
+        }
     }
 
     private function requireFields( array $activity, array $fields )
