@@ -6,7 +6,7 @@ use ActivityPub\Activities\OutboxActivityEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class VerificationHandler implements EventSubscriberInterface
+class ValidationHandler implements EventSubscriberInterface
 {
     public static function getSubscribedEvents()
     {

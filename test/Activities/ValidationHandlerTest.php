@@ -3,14 +3,14 @@ namespace ActivityPub\Test\Activities;
 
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
-use ActivityPub\Activities\VerificationHandler;
+use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class VerificationHandlerTest extends TestCase
+class ValidationHandlerTest extends TestCase
 {
     /**
      * @var EventDispatcher
@@ -20,10 +20,10 @@ class VerificationHandlerTest extends TestCase
     public function setUp()
     {
         $this->eventDispatcher = new EventDispatcher();
-        $verificationHandler = new VerificationHandler();
-        $this->eventDispatcher->addSubscriber( $verificationHandler );
+        $validationHandler = new ValidationHandler();
+        $this->eventDispatcher->addSubscriber( $validationHandler );
     }
-    public function testVerificationHandler()
+    public function testValidationHandler()
     {
         $testCases = array(
             array(
