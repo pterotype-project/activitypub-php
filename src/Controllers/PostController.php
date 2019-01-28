@@ -68,7 +68,7 @@ class PostController
             $actorWithInbox = $inboxField->getObject();
             $event = new InboxActivityEvent( $activity, $actorWithInbox, $request );
             $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
-            return;
+            return $event->getResponse();
         }
         $outboxField = $object->getReferencingField( 'outbox' );
         if ( $outboxField ) {
@@ -84,14 +84,13 @@ class PostController
             }
             $event = new OutboxActivityEvent( $activity, $actorWithOutbox, $request );
             $this->eventDispatcher->dispatch( OutboxActivityEvent::NAME, $event );
-            return;
+            return $event->getResponse();
         } 
         throw new MethodNotAllowedHttpException( array( Request::METHOD_GET ) );
     }
 
     private function getActivityActor( array $activity )
     {
-        xdebug_break();
         $actor = $activity['actor'];
         if ( is_array( $actor ) && array_key_exists( 'id', $actor ) ) {
             return $this->objectsService->dereference( $actor['id'] );
