@@ -52,7 +52,7 @@ class ValidationHandlerTest extends TestCase
                     Request::create( 'https://example.com' )
                 ),
                 'expectedException' => BadRequestHttpException::class,
-                'expectedExceptionMessage' => 'Missing activity fields: type',
+                'expectedExceptionMessage' => 'Missing activity fields: type,actor',
             ),
             array(
                 'id' => 'inboxPassesValidActivity',
@@ -79,6 +79,7 @@ class ValidationHandlerTest extends TestCase
                 'event' => new OutboxActivityEvent(
                     array(
                         'type' => 'Create',
+                        'actor' => 'https://example.com/actor/1',
                         'object' => array(
                             'type' => 'Note',
                         ),
@@ -96,6 +97,7 @@ class ValidationHandlerTest extends TestCase
                 'event' => new OutboxActivityEvent(
                     array(
                         'type' => 'Create',
+                        'actor' => 'https://example.com/actor/1',
                     ),
                     TestActivityPubObject::fromArray( array(
                         'id' => 'https://example.com/actor/1',
@@ -144,9 +146,10 @@ class ValidationHandlerTest extends TestCase
                 'event' => new OutboxActivityEvent(
                     array(
                         'type' => 'Remove',
+                        'actor' => 'https://example.com/actor/1',
                     ),
                     TestActivityPubObject::fromArray( array(
-                        'id' => 'https://notexample.com/actor/1',
+                        'id' => 'https://example.com/actor/1',
                         'type' => 'Person',
                     ) ),
                     Request::create( 'https://example.com' )

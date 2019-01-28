@@ -28,25 +28,31 @@ class ValidationHandler implements EventSubscriberInterface
     public function verifyInboxActivity( InboxActivityEvent $event )
     {
         $activity = $event->getActivity();
-        $this->requireFields( $activity, array( 'type', 'id', 'actor' ) );
-        if ( in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
-            $this->requireFields( $activity, array( 'object' ) );
+        $requiredFields = array( 'type', 'id', 'actor' );
+        if ( array_key_exists( 'type', $activity ) &&
+             in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
+            $requiredFields[] = 'object';
         }
-        if ( in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
-            $this->requireFields( $activity, array( 'target' ) );
+        if ( array_key_exists( 'type', $activity ) &&
+             in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
+            $requiredFields[] = 'target';
         }
+        $this->requireFields( $activity, $requiredFields );
     }
 
     public function verifyOutboxActivity( OutboxActivityEvent $event )
     {
         $activity = $event->getActivity();
-        $this->requireFields( $activity, array( 'type' ) );
-        if ( in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
-            $this->requireFields( $activity, array( 'object' ) );
+        $requiredFields = array( 'type', 'actor' );
+        if ( array_key_exists( 'type', $activity ) &&
+             in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
+            $requiredFields[] = 'object';
         }
-        if ( in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
-            $this->requireFields( $activity, array( 'target' ) );
+        if ( array_key_exists( 'type', $activity ) &&
+             in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
+            $requiredFields[] = 'target';
         }
+        $this->requireFields( $activity, $requiredFields );
     }
 
     private function requireFields( array $activity, array $fields )
