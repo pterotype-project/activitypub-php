@@ -3,6 +3,8 @@ namespace ActivityPub;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use ActivityPub\Activities\NonActivityHandler;
+use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Config\ActivityPubConfig;
@@ -55,6 +57,8 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( SignatureListener::class ) );
         $dispatcher->addSubscriber( new ExceptionListener() );
 
+        $this->subscribeActivityHandler( $dispatcher );
+
         $controllerResolver = new ControllerResolver();
         $argumentResolver = new ArgumentResolver();
 
@@ -64,12 +68,31 @@ class ActivityPub
         return $kernel->handle( $request );
     }
 
+    /**
+     * Creates the database tables necessary for the library to function,
+     * if they have not already been created.
+     *
+     * For best performance, this should only get called once in an application
+     * (for example, when other database migrations get run).
+     */
     public function updateSchema()
     {
         $entityManager = $this->module->get( EntityManager::class );
         $schemaTool = new SchemaTool( $entityManager );
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool->updateSchema( $classes );
+    }
+
+    /**
+     * Sets up the activity handling pipeline
+     *
+     * @param EventDispatcher $dispatcher The dispatcher to attach the event
+     * subscribers to
+     */
+    private function subscribeActivityHandlers( EventDispatcher $dispatcher )
+    {
+        $dispatcher->addSubscriber( $this->module->get( NonActivityHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( ValidationHandler::class ) );
     }
 }
 ?>
