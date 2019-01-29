@@ -1,6 +1,9 @@
 <?php
 namespace ActivityPub\Config;
 
+use ActivityPub\Activities\CreateHandler;
+use ActivityPub\Activities\NonActivityHandler;
+use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Auth\SignatureListener;
@@ -104,6 +107,13 @@ class ActivityPubModule
         $this->injector->register( Router::class, Router::class )
             ->addArgument( new Reference( GetController::class ) )
             ->addArgument( new Reference( PostController::class ) );
+
+        $this->injector->register( NonActivityHandler::class, NonActivityHandler::class );
+        $this->injector->register( ValidationHandler::class, ValidationHandler::class );
+        $this->injector->register( CreateHandler::class, CreateHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( IdProvider::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) );
     }
 
     /**

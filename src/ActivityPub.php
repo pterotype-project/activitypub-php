@@ -3,6 +3,7 @@ namespace ActivityPub;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
@@ -93,6 +94,7 @@ class ActivityPub
     {
         $dispatcher->addSubscriber( $this->module->get( NonActivityHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( ValidationHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( CreateHandler::class );
     }
 }
 ?>
