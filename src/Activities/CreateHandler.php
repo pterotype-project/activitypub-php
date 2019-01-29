@@ -3,14 +3,27 @@ namespace ActivityPub\Activities;
 
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class CreateHandler implements EventSubscriberInterface
 {
+    /**
+     * @var ObjextsService
+     */
     private $objectsService;
+
+    /**
+     * @var IdProvider
+     */
     private $idProvider;
+
+    /**
+     * @var CollectionsService
+     */
+    private $collectionsService;
 
     public static function getSubscribedEvents()
     {
@@ -21,10 +34,12 @@ class CreateHandler implements EventSubscriberInterface
     }
 
     public function __construct( ObjectsService $objectsService,
-                                 IdProvider $idProvider )
+                                 IdProvider $idProvider,
+                                 CollectionsService $collectionsService )
     {
         $this->objectsService = $objectsService;
         $this->idProvider = $idProvider;
+        $this->collectionsService = $collectionsService;
     }
     public function handleInbox( InboxActivityEvent $event )
     {
@@ -32,8 +47,13 @@ class CreateHandler implements EventSubscriberInterface
         if ( $activity['type'] !== 'Create' ) {
             return;
         }
-        // normalize an incoming collection
-        // persist the object
+        $object = $activity['object'];
+        if ( in_array( $object['type'], array( 'Collection', 'OrderedCollection' ) ) ) {
+            $object = $this->collectionsService->normalizeCollection( $object );
+        }
+        $this->objectsService->persist( $object );
+        $activity['object'] = $object;
+        $event->setActivity( $activity );
     }
 
     public function handleOutbox( OutboxActivityEvent $event )
@@ -56,9 +76,12 @@ class CreateHandler implements EventSubscriberInterface
         $activity = $this->copyFields(
             array( 'to', 'bto', 'cc', 'bcc', 'audience' ), $object, $activity
         );
+        if ( in_array( $object['type'], array( 'Collection', 'OrderedCollection' ) ) ) {
+            $object = $this->collectionsService->normalizeCollection( $object );
+        }
         $activity['object'] = $object;
-        // normalize an incoming collection
-        // persist the object
+        $this->objectsService->persist( $object );
+        $event->setActivity( $activity );
     }
 
     private function getActorId( array $activity )
@@ -83,7 +106,7 @@ class CreateHandler implements EventSubscriberInterface
             } else if ( ! array_key_exists( $field, $targetObj ) ) {
                 $targetObj[$field] = $sourceObj[$field];
             } else if ( is_array( $sourceObj[$field] ) &&
-                        is_array( $targetObject[$field] ) ) {
+                        is_array( $targetObj[$field] ) ) {
                 $targetObj[$field] = array_unique(
                     array_merge( $sourceObj[$field], $targetObj[$field] )
                 );
