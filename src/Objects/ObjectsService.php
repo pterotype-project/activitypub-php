@@ -129,7 +129,7 @@ class ObjectsService
         if ( $response->getStatusCode() !== 200 || empty( $response->getBody() ) ) {
             return;
         }
-        $object = json_decode( $response->getBody() );
+        $object = json_decode( $response->getBody(), true );
         if ( ! $object ) {
             return;
         }
