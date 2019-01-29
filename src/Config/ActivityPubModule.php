@@ -82,7 +82,8 @@ class ActivityPubModule
         $this->injector->register( CollectionsService::class, CollectionsService::class )
             ->addArgument( self::COLLECTION_PAGE_SIZE )
             ->addArgument( new Reference( AuthService::class ) )
-            ->addArgument( new Reference( ContextProvider::class ) );
+            ->addArgument( new Reference( ContextProvider::class ) )
+            ->addArgument( new Reference( Client::class ) );
 
         $this->injector->register( RandomProvider::class, RandomProvider::class );
 

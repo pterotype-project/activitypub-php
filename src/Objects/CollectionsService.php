@@ -4,7 +4,10 @@ namespace ActivityPub\Objects;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ContextProvider;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Request as Psr7Request;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class CollectionsService
@@ -24,12 +27,20 @@ class CollectionsService
      */
     private $contextProvider;
 
-    public function __construct( int $pageSize, AuthService $authService,
-                                 ContextProvider $contextProvider )
+    /**
+     * @var Client
+     */
+    private $httpClient;
+
+    public function __construct( int $pageSize,
+                                 AuthService $authService,
+                                 ContextProvider $contextProvider,
+                                 Client $httpClient )
     {
         $this->pageSize = $pageSize;
         $this->authService = $authService;
         $this->contextProvider = $contextProvider;
+        $this->httpClient = $httpClient;
     }
 
     /**
@@ -63,6 +74,73 @@ class CollectionsService
         return $colArr;
     }
 
+    /**
+     * Given a collection as an array, normalize the collection by collapsing
+     * collection pages into a single `items` or `orderedItems` array
+     *
+     * @param array $collection The collection to normalize
+     * @return array The normalized collection
+     */
+    public function normalizeCollection( array $collection )
+    {
+        if ( $collection['type'] !== 'Collection' &&
+             $collection['type'] !== 'OrderedCollection' ) {
+            return $collection;
+        }
+        if ( ! array_key_exists( 'first', $collection ) ) {
+            return $collection;
+        }
+        $first = $collection['first'];
+        if ( is_string( $first ) ) {
+            $first = $this->fetchPage( $first );
+            if ( ! $first ) {
+                throw new BadRequestHttpException(
+                    "Unable to retrieve collection page '$first'"
+                );
+            }
+        }
+        $items = $this->getPageItems( $collection['first'] );
+        $itemsField = $collection['type'] === 'Collection' ? 'items' : 'orderedItems';
+        $collection[$itemsField] = $items;
+        unset( $collection['first'] );
+        if ( array_key_exists( 'last', $collection ) ) {
+            unset( $collection['last'] );
+        }
+        return $collection;
+    }
+
+    private function getPageItems( array $collectionPage )
+    {
+        $items = array();
+        if ( array_key_exists( 'items', $collectionPage ) ) {
+            $items = array_merge( $items, $collectionPage['items'] );
+        } else if ( array_key_exists( 'orderedItems', $collectionPage ) ) {
+            $items = array_merge( $items, $collectionPage['orderedItems'] );
+        }
+        if ( array_key_exists( 'next', $collectionPage ) ) {
+            $nextPage = $collectionPage['next'];
+            if ( is_string( $nextPage ) ) {
+                $nextPage = $this->fetchPage( $nextPage );
+            }
+            if ( $nextPage ) {
+                $items = array_merge( $items, $this->getPageItems( $nextPage ) );
+            }
+        }
+        return $items;
+    }
+
+    private function fetchPage( string $pageId )
+    {
+        $request = new Psr7Request( 'GET', $pageId, array(
+            'Accept' => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
+        ) );
+        $response = $this->httpClient->send( $request );
+        if ( $response->getStatusCode() !== 200 || empty( $response->getBody() ) ) {
+            return;
+        }
+        return json_decode( $response->getBody(), true );
+    }
+
     private function getCollectionPage( ActivityPubObject $collection,
                                         Request $request,
                                         int $offset,
@@ -77,7 +155,7 @@ class CollectionsService
         }
         if ( ! $collection->hasField( $itemsKey ) ) {
             throw new InvalidArgumentException(
-                "Collection does not have an \"$field\" key"
+                "Collection does not have an \"$itemsKey\" key"
             );
         }
         $collectionItems = $collection->getFieldValue( $itemsKey );
@@ -108,6 +186,7 @@ class CollectionsService
             $itemsKey => $pageItems,
             'partOf' => $collection['id'],
         );
+        // TODO set 'first' and 'last' on the page
         $nextIdx = $this->hasNextItem( $request, $collectionItems, $idx );
         if ( $nextIdx ) {
             $page['next'] = $collection['id'] . "?offset=$nextIdx";

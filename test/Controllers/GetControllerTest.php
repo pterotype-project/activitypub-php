@@ -9,6 +9,7 @@ use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
+use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -65,7 +66,8 @@ class GetControllerTest extends TestCase
         );
         $authService = new AuthService();
         $contextProvider = new ContextProvider();
-        $collectionsService = new CollectionsService( 4, $authService, $contextProvider );
+        $httpClient = $this->createMock( Client::class );
+        $collectionsService = new CollectionsService( 4, $authService, $contextProvider, $httpClient );
         $this->getController = new GetController(
             $objectsService, $collectionsService, $authService
         );

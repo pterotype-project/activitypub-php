@@ -6,6 +6,8 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
+use GuzzleHttp\Client;
+use GuzzleHttp\Psr7\Response as Psr7Response;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -18,12 +20,22 @@ class CollectionsServiceTest extends TestCase
     {
         $authService = new AuthService();
         $contextProvider = new ContextProvider();
+        $httpClient = $this->createMock( Client::class );
+        $httpClient->method( 'send' )->willReturn(
+            new Psr7Response( 200, array(), json_encode( array(
+                'type' => 'OrderedCollectionPage',
+                'orderedItems' => array(
+                    'item3',
+                    'item4',
+                ),
+            ) ) )
+        );
         $this->collectionsService = new CollectionsService(
-            4, $authService, $contextProvider
+            4, $authService, $contextProvider, $httpClient
         );
     }
 
-    public function testCollectionsService()
+    public function testCollectionPaging()
     {
         $testCases = array(
             array(
@@ -373,6 +385,114 @@ class CollectionsServiceTest extends TestCase
                 $testCase['request'],
                 TestActivityPubObject::fromArray( $testCase['collection'] )
             );
+            $this->assertEquals(
+                $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
+            );
+        }
+    }
+
+    public function testCollectionNormalizing()
+    {
+        $testCases = array(
+            array(
+                'id' => 'basicNormalizingTest',
+                'collection' => array(
+                    'type' => 'Collection',
+                    'first' => array(
+                        'type' => 'CollectionPage',
+                        'items' => array(
+                            'item1',
+                            'item2',
+                        ),
+                    ),
+                ),
+                'expectedResult' => array(
+                    'type' => 'Collection',
+                    'items' => array(
+                        'item1',
+                        'item2',
+                    ),
+                ),
+            ),
+            array(
+                'id' => 'orderedNormalizingTest',
+                'collection' => array(
+                    'type' => 'OrderedCollection',
+                    'first' => array(
+                        'type' => 'OrderedCollectionPage',
+                        'orderedItems' => array(
+                            'item1',
+                            'item2',
+                        ),
+                    ),
+                ),
+                'expectedResult' => array(
+                    'type' => 'OrderedCollection',
+                    'orderedItems' => array(
+                        'item1',
+                        'item2',
+                    ),
+                ),
+            ),
+            array(
+                'id' => 'pageTraversal',
+                'collection' => array(
+                    'type' => 'OrderedCollection',
+                    'first' => array(
+                        'type' => 'OrderedCollectionPage',
+                        'orderedItems' => array(
+                            'item1',
+                            'item2',
+                        ),
+                        'next' => array(
+                            'type' => 'OrderedCollectionPage',
+                            'orderedItems' => array(
+                                'item3',
+                                'item4',
+                            ),
+                        ),
+                    ),
+                ),
+                'expectedResult' => array(
+                    'type' => 'OrderedCollection',
+                    'orderedItems' => array(
+                        'item1',
+                        'item2',
+                        'item3',
+                        'item4',
+                    ),
+                ),
+            ),
+            array(
+                'id' => 'pageTraversal',
+                'collection' => array(
+                    'type' => 'OrderedCollection',
+                    'first' => array(
+                        'type' => 'OrderedCollectionPage',
+                        'orderedItems' => array(
+                            'item1',
+                            'item2',
+                        ),
+                        'next' => 'https://example.com/collection/1?page=2',
+                    ),
+                ),
+                'expectedResult' => array(
+                    'type' => 'OrderedCollection',
+                    'orderedItems' => array(
+                        'item1',
+                        'item2',
+                        'item3',
+                        'item4',
+                    ),
+                ),
+            ),
+        );
+        foreach ( $testCases as $testCase ) {
+            $collection = $testCase['collection'];
+            if ( array_key_exists( 'expectedException', $testCase ) ) {
+                $this->expectException( $testCase['expectedException'] );
+            }
+            $actual = $this->collectionsService->normalizeCollection( $collection );
             $this->assertEquals(
                 $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
             );
