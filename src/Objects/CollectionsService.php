@@ -46,8 +46,7 @@ class CollectionsService
     /**
      * Returns an array representation of the $collection
      *
-     * If the collection's size is greater than 30, return a PagedCollection instead,
-     * and filter all items by the request's permissions
+     * Returns the collection paged and filtered by the request's authorization status
      */
     public function pageAndFilterCollection( Request $request,
                                              ActivityPubObject $collection )
