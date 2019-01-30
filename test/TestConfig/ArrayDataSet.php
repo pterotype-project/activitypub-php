@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Test\TestConfig;
 
+use InvalidArgumentException;
 use PHPUnit\DbUnit\DataSet\AbstractDataSet;
 use PHPUnit\DbUnit\DataSet\DefaultTableMetadata;
 use PHPUnit\DbUnit\DataSet\DefaultTable;

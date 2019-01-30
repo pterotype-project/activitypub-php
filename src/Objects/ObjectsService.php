@@ -246,27 +246,44 @@ class ObjectsService
         if ( ! $object ) {
             return;
         }
-        foreach( $object->getFields() as $field ) {
-            if ( array_key_exists( $field->getName(), $updatedFields ) ) {
-                $newValue = $updatedFields[$field->getName()];
-                if ( is_array( $newValue ) ) {
-                    $referencedObject = $this->persist( $newValue, 'objects-service.update' );
-                    $oldTargetObject = $field->getTargetObject();
-                    $field->setTargetObject(
-                        $referencedObject, $this->dateTimeProvider->getTime( 'objects-service.update' )
-                    );
-                    $this->entityManager->persist( $field );
-                    if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
-                        $this->entityManager->remove( $oldTargetObject );
-                    }
-                } else if ( $newValue === null ) {
-                    $object->removeField( $field );
-                    $this->entityManager->persist( $object );
-                    $this->entityManager->remove( $field );
-                } else {
-                    $field->setValue( $newValue, $this->dateTimeProvider->getTime( 'objects-service.update' ) );
-                    $this->entityManager->persist( $field );
+        foreach( $updatedFields as $fieldName => $newValue ) {
+            if ( $newValue === null && $object->hasField( $fieldName ) ) {
+                $field = $object->getField( $fieldName );
+                if ( $field->hasTargetObject() && ! $field->getTargetObject()->hasField( 'id' ) ) {
+                    $targetObject = $field->getTargetObject();
+                    // Clear the target object by setting a dummy value
+                    $field->setValue( '' );
+                    $this->entityManager->remove( $targetObject );
                 }
+                $object->removeField( $field );
+                $this->entityManager->persist( $object );
+                $this->entityManager->remove( $field );
+            } else if ( $object->hasField( $fieldName ) ) {
+                $field = $object->getField( $fieldName );
+                $oldTargetObject = $field->getTargetObject();
+                if ( is_array( $newValue ) ) {
+                    $newTargetObject = $this->persist( $newValue, 'objects-service.update' );
+                    $field->setTargetObject(
+                        $newTargetObject,
+                        $this->dateTimeProvider->getTime( 'objects-service.update' )
+                    );
+                } else {
+                    $field->setValue(
+                        $newValue, $this->dateTimeProvider->getTime( 'objects-service.update' )
+                    );
+                }
+                if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
+                    $this->entityManager->remove( $oldTargetObject );
+                }
+                $this->entityManager->persist( $field );
+            } else {
+                if ( is_array( $newValue ) ) {
+                    $newTargetObject = $this->persist( $newValue );
+                    $field = Field::withObject( $object, $fieldName, $newTargetObject );
+                } else {
+                    $field = Field::withValue( $object, $fieldName, $newValue );
+                }
+                $this->entityManager->persist( $field );
             }
         }
         $object->setLastUpdated( $this->dateTimeProvider->getTime( 'objects-service.update' ) );
@@ -289,15 +306,12 @@ class ObjectsService
         if ( ! $existing ) {
             return;
         }
-        $delta = array();
         foreach ( $existing->getFields() as $field ) {
-            if ( array_key_exists( $field->getName(), $replacement ) ) {
-                $delta[$field->getName()] = $replacement[$field->getName()];
-            } else {
-                $delta[$field->getName()] = null;
+            if ( ! array_key_exists( $field->getName(), $replacement ) ) {
+                $replacement[$field->getName()] = null;
             }
         }
-        return $this->update( $id, $delta );
+        return $this->update( $id, $replacement );
     }
 }
 ?>

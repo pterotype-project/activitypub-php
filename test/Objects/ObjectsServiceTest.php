@@ -10,6 +10,7 @@ use ActivityPub\Entities\Field;
 use Doctrine\ORM\EntityManager;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Database\PrefixNamingStrategy;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use Doctrine\ORM\Tools\Setup;
 use GuzzleHttp\Client;
@@ -1199,8 +1200,98 @@ class ObjectsServiceTest extends SQLiteTestCase
 
     public function testReplace()
     {
-        // TODO implement me
-        $this->assertTrue( false );
+        $testCases = array(
+            array(
+                'id' => 'basicTest',
+                'object' => array(
+                    'id' => 'https://example.com/objects/1',
+                    'type' => 'Article',
+                    'summary' => 'An article',
+                ),
+                'replacementId' => 'https://example.com/objects/1',
+                'replacement' => array(
+                    'id' => 'https://example.com/objects/1',
+                    'type' => 'Note',
+                    'contents' => 'This is a note',
+                ),
+                'expectedObject' => array(
+                    'id' => 'https://example.com/objects/1',
+                    'type' => 'Note',
+                    'contents' => 'This is a note',
+                ),
+            ),
+            array(
+                'id' => 'itUpdatesTargetObject',
+                'object' => array(
+                    'id' => 'https://example.com/objects/2',
+                    'type' => 'Article',
+                    'attributedTo' => array(
+                        'id' => 'https://example.com/actors/1'
+                    ),
+                    'foo' => array(
+                        'bar' => 'baz',
+                    ),
+                ),
+                'replacementId' => 'https://example.com/objects/2',
+                'replacement' => array(
+                    'id' => 'https://example.com/objects/2',
+                    'type' => 'Article',
+                    'attributedTo' => 'https://example.com/actors/1',
+                ),
+                'expectedObject' => array(
+                    'id' => 'https://example.com/objects/2',
+                    'type' => 'Article',
+                    'attributedTo' => 'https://example.com/actors/1',
+                ),
+                'expectedDatabaseState' => array(
+                    'objects' => array(
+                        array(
+                            'id' => 1,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'updated' => $this->getTime( 'objects-service.update' ),
+                        ),
+                        array(
+                            'id' => 2,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'updated' => $this->getTime( 'objects-service.update' ),
+                        ),
+                        array(
+                            'id' => 3,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'updated' => $this->getTime( 'objects-service.update' ),
+                        ),
+                    ),
+                    'fields' => array(
+
+                    ),
+                ),
+            ),
+        );
+        foreach ( $testCases as $testCase ) {
+            $this->objectsService->persist( $testCase['object'] );
+            $replacement = $this->objectsService->replace(
+                $testCase['replacementId'],
+                $testCase['replacement']
+            );
+            $this->assertEquals(
+                $testCase['expectedObject'],
+                $replacement->asArray(),
+                "Error on test $testCase[id]"
+            );
+            if ( array_key_exists( 'expectedDatabaseState', $testCase ) ) {
+                $expectedDb = new ArrayDataSet( $testCase['expectedDatabaseState'] );
+                $expectedObjectsTable = $expectedDb->getTable('objects');
+                $expectedFieldsTable = $expectedDb->getTable('fields');
+                $objectsQueryTable = $this->getConnection()->createQueryTable(
+                    'objects', 'SELECT * FROM objects'
+                );
+                $fieldsQueryTable = $this->getConnection()->createQueryTable(
+                    'fields', 'SELECT * FROM fields'
+                );
+                $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
+                $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
+            }
+        }
     }
 }
 ?>
