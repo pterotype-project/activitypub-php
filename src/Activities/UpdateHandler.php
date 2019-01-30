@@ -3,11 +3,19 @@ namespace ActivityPub\Activities;
 
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class UpdateHandler implements EventSubscriberInterface
 {
+    /**
+     * @var ObjectsService
+     */
+    private $objectsService;
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -16,14 +24,27 @@ class UpdateHandler implements EventSubscriberInterface
         );
     }
 
+    public function __construct( ObjectsService $objectsService )
+    {
+        $this->objectsService = $objectsService;
+    }
+
     public function handleInbox( InboxActivityEvent $event )
     {
         $activity = $event->getActivity();
         if ( $activity['type'] !== 'Update' ) {
             return;
         }
-        // make sure the request is authorized to update the object
-        // replace the object with $activity->object
+        $object = $activity['object'];
+        if ( ! array_key_exists( 'id', $object ) ) {
+            throw new BadRequestHttpException( 'Update object has no "id" field' );
+        }
+        if ( ! $this->authorized( $event->getRequest(), $object ) ) {
+            throw new UnauthorizedHttpException(
+                'Signature realm="ActivityPub",headers="(request-target) host date"'
+            );
+        }
+        $this->objectsService->replace( $object['id'], $object );
     }
 
     public function handleOutbox( OutboxActivityEvent $event )
@@ -33,14 +54,17 @@ class UpdateHandler implements EventSubscriberInterface
             return;
         }
         $updateFields = $activity['object'];
+        if ( ! array_key_exists( 'id', $updateFields ) ) {
+            throw new BadRequestHttpException( 'Update object has no "id" field' );
+        }
         if ( ! $this->authorized( $event->getRequest(), $updateFields ) ) {
             throw new UnauthorizedHttpException(
                 'Signature realm="ActivityPub",headers="(request-target) host date"'
             );
         }
-        // make sure the request is authorized to update the object
-        // replace the specified fields in the object with their updated values
-        // set the $activity[object] to be the fully-updated object for delivery
+        $updated = $this->objectsService->update( $updateFields['id'], $updateFields );
+        $activity['object'] = $updated->asArray();
+        $event->setActivity( $activity );
     }
 
     /**
@@ -55,7 +79,11 @@ class UpdateHandler implements EventSubscriberInterface
         if ( ! $request->attributes->has( 'actor' ) ) {
             return false;
         }
-        if ( ! array_key_exists( 'attributedTo', $object ) ) {
+        if ( ! array_key_exists( 'id', $object ) ) {
+            return false;
+        }
+        $object = $this->objectsService->dereference( $object['id'] );
+        if ( ! $object->hasField( 'attributedTo' ) ) {
             return false;
         }
         $attributedActorId = $object['attributedTo'];

@@ -274,5 +274,18 @@ class ObjectsService
         $this->entityManager->flush();
         return $object;
     }
+
+    /**
+     * Fully replaces the object referenced by $id by the new $fields
+     *
+     * @param string $id The id of the object to replace
+     * @param array $fields The new fields to replace the object with
+     * @return ActivityPubObject|null The replaced object, or null 
+     *   if no object with $id exists
+     */
+    public function replace( $id, $fields )
+    {
+        // TODO implement me
+    }
 }
 ?>

@@ -1196,5 +1196,11 @@ class ObjectsServiceTest extends SQLiteTestCase
         );
         $this->assertEquals( $expected, $object->asArray( 3 ) );
     }
+
+    public function testReplace()
+    {
+        // TODO implement me
+        $this->assertTrue( false );
+    }
 }
 ?>
