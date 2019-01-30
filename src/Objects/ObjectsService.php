@@ -259,7 +259,7 @@ class ObjectsService
                     if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
                         $this->entityManager->remove( $oldTargetObject );
                     }
-                } else if ( ! $newValue ) {
+                } else if ( $newValue === null ) {
                     $object->removeField( $field );
                     $this->entityManager->persist( $object );
                     $this->entityManager->remove( $field );
