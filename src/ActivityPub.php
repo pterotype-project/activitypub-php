@@ -1,8 +1,6 @@
 <?php
 namespace ActivityPub;
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Activities\ValidationHandler;
