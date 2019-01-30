@@ -94,7 +94,7 @@ class ActivityPub
     {
         $dispatcher->addSubscriber( $this->module->get( NonActivityHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( ValidationHandler::class ) );
-        $dispatcher->addSubscriber( $this->module->get( CreateHandler::class );
+        $dispatcher->addSubscriber( $this->module->get( CreateHandler::class ) );
     }
 }
 ?>
