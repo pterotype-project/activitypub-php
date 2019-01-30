@@ -279,13 +279,25 @@ class ObjectsService
      * Fully replaces the object referenced by $id by the new $fields
      *
      * @param string $id The id of the object to replace
-     * @param array $fields The new fields to replace the object with
+     * @param array $replacement The new fields to replace the object with
      * @return ActivityPubObject|null The replaced object, or null 
      *   if no object with $id exists
      */
-    public function replace( $id, $fields )
+    public function replace( $id, $replacement )
     {
-        // TODO implement me
+        $existing = $this->getObject( $id );
+        if ( ! $existing ) {
+            return;
+        }
+        $delta = array();
+        foreach ( $existing->getFields() as $field ) {
+            if ( array_key_exists( $field->getName(), $replacement ) ) {
+                $delta[$field->getName()] = $replacement[$field->getName()];
+            } else {
+                $delta[$field->getName()] = null;
+            }
+        }
+        return $this->update( $id, $delta );
     }
 }
 ?>
