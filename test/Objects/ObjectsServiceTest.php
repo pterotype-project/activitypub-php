@@ -1221,7 +1221,7 @@ class ObjectsServiceTest extends SQLiteTestCase
                 ),
             ),
             array(
-                'id' => 'itUpdatesTargetObject',
+                'id' => 'itDeletesOrphanedNodes',
                 'object' => array(
                     'id' => 'https://example.com/objects/2',
                     'type' => 'Article',
@@ -1243,31 +1243,22 @@ class ObjectsServiceTest extends SQLiteTestCase
                     'type' => 'Article',
                     'attributedTo' => 'https://example.com/actors/1',
                 ),
-                'expectedDatabaseState' => array(
-                    'objects' => array(
-                        array(
-                            'id' => 1,
-                            'created' => $this->getTime( 'objects-service.create' ),
-                            'updated' => $this->getTime( 'objects-service.update' ),
-                        ),
-                        array(
-                            'id' => 2,
-                            'created' => $this->getTime( 'objects-service.create' ),
-                            'updated' => $this->getTime( 'objects-service.update' ),
-                        ),
-                        array(
-                            'id' => 3,
-                            'created' => $this->getTime( 'objects-service.create' ),
-                            'updated' => $this->getTime( 'objects-service.update' ),
+                'expectedQueryResults' => array(
+                    array(
+                        'query' => array( 'id' => 'https://example.com/actors/1' ),
+                        'expectedResult' => array(
+                            array( 'id' => 'https://example.com/actors/1' )
                         ),
                     ),
-                    'fields' => array(
-
+                    array(
+                        'query' => array( 'bar' => 'baz' ),
+                        'expectedResult' => array(),
                     ),
                 ),
             ),
         );
         foreach ( $testCases as $testCase ) {
+            $this->setUp();
             $this->objectsService->persist( $testCase['object'] );
             $replacement = $this->objectsService->replace(
                 $testCase['replacementId'],
@@ -1278,20 +1269,23 @@ class ObjectsServiceTest extends SQLiteTestCase
                 $replacement->asArray(),
                 "Error on test $testCase[id]"
             );
-            if ( array_key_exists( 'expectedDatabaseState', $testCase ) ) {
-                $expectedDb = new ArrayDataSet( $testCase['expectedDatabaseState'] );
-                $expectedObjectsTable = $expectedDb->getTable('objects');
-                $expectedFieldsTable = $expectedDb->getTable('fields');
-                $objectsQueryTable = $this->getConnection()->createQueryTable(
-                    'objects', 'SELECT * FROM objects'
-                );
-                $fieldsQueryTable = $this->getConnection()->createQueryTable(
-                    'fields', 'SELECT * FROM fields'
-                );
-                $this->assertTablesEqual( $expectedObjectsTable, $objectsQueryTable );
-                $this->assertTablesEqual( $expectedFieldsTable, $fieldsQueryTable );
+            if ( array_key_exists( 'expectedQueryResults', $testCase ) ) {
+                foreach ( $testCase['expectedQueryResults'] as $expectedQueryResult ) {
+                    $result = array_map(
+                        function( $obj ) { return $obj->asArray(); },
+                        $this->objectsService->query( $expectedQueryResult['query'] )
+                    );
+               }
             }
         }
     }
 }
 ?>
+
+
+
+
+
+
+
+
