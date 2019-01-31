@@ -3,6 +3,7 @@ namespace ActivityPub;
 
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\NonActivityHandler;
+use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\SignatureListener;
@@ -56,7 +57,7 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( SignatureListener::class ) );
         $dispatcher->addSubscriber( new ExceptionListener() );
 
-        $this->subscribeActivityHandler( $dispatcher );
+        $this->subscribeActivityHandlers( $dispatcher );
 
         $controllerResolver = new ControllerResolver();
         $argumentResolver = new ArgumentResolver();
@@ -93,6 +94,8 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( NonActivityHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( ValidationHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( CreateHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( UpdateHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( DeleteHandler::class ) );
     }
 }
 ?>

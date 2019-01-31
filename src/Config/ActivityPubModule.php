@@ -3,6 +3,8 @@ namespace ActivityPub\Config;
 
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\NonActivityHandler;
+use ActivityPub\Activities\DeleteHandler;
+use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\AuthService;
@@ -109,11 +111,20 @@ class ActivityPubModule
             ->addArgument( new Reference( PostController::class ) );
 
         $this->injector->register( NonActivityHandler::class, NonActivityHandler::class );
+
         $this->injector->register( ValidationHandler::class, ValidationHandler::class );
+
         $this->injector->register( CreateHandler::class, CreateHandler::class )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( IdProvider::class ) )
             ->addArgument( new Reference( CollectionsService::class ) );
+
+        $this->injector->register( UpdateHandler::class, UpdateHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) );
+
+        $this->injector->register( DeleteHandler::class, DeleteHandler::class )
+            ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
+            ->addArgument( new Reference( ObjectsService::class ) );
     }
 
     /**
