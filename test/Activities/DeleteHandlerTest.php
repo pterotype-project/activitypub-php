@@ -1,0 +1,172 @@
+<?php
+namespace ActivityPub\Test\Activities;
+
+use ActivityPub\Activities\DeleteHandler;
+use ActivityPub\Activities\InboxActivityEvent;
+use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
+use ActivityPub\Test\TestUtils\TestDateTimeProvider;
+use DateTime;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\EventDispatcher\EventDispatcher;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+
+class DeleteHandlerTest extends TestCase
+{
+    const OBJECTS = array(
+        'https://elsewhere.com/objects/1' => array(
+            'id' => 'https://elsewhere.com/objects/1',
+            'type' => 'Note',
+            'attributedTo' => 'https://elsewhere.com/actors/1',
+        ),
+        'https://example.com/objects/1' => array(
+            'id' => 'https://example.com/objects/1',
+            'type' => 'Note',
+            'attributedTo' => 'https://example.com/actors/1',
+        )
+    );
+
+    public function testDeleteHandler()
+    {
+        $testCases = array(
+            array(
+                'id' => 'basicInboxTest',
+                'eventName' => InboxActivityEvent::NAME,
+                'event' => new InboxActivityEvent(
+                    array(
+                        'id' => 'https://elsewhere.com/activities/1',
+                        'type' => 'Delete',
+                        'object' => 'https://elsewhere.com/objects/1'
+                    ),
+                    TestActivityPubObject::fromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
+                    self::requestWithAttributes(
+                        'https://example.com/inbox',
+                        array( 'actor' => TestActivityPubObject::fromArray( array(
+                            'id' => 'https://elsewhere.com/actors/1',
+                        ) ) )
+                    )
+                ),
+                'expectedTombstone' => array(
+                    '@context' => 'https://www.w3.org/ns/activitystreams',
+                    'id' => 'https://elsewhere.com/objects/1',
+                    'formerType' => 'Note',
+                    'type' => 'Tombstone',
+                    'deleted' => '2014-01-05T21:31:40+0000',
+                ),
+            ),
+            array(
+                'id' => 'basicOutboxTest',
+                'eventName' => OutboxActivityEvent::NAME,
+                'event' => new OutboxActivityEvent(
+                    array(
+                        'id' => 'https://example.com/activities/1',
+                        'type' => 'Delete',
+                        'object' => 'https://example.com/objects/1'
+                    ),
+                    TestActivityPubObject::fromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
+                    self::requestWithAttributes(
+                        'https://example.com/outbox',
+                        array( 'actor' => TestActivityPubObject::fromArray( array(
+                            'id' => 'https://example.com/actors/1',
+                        ) ) )
+                    )
+                ),
+                'expectedTombstone' => array(
+                    '@context' => 'https://www.w3.org/ns/activitystreams',
+                    'id' => 'https://example.com/objects/1',
+                    'formerType' => 'Note',
+                    'type' => 'Tombstone',
+                    'deleted' => '2014-01-05T21:31:40+0000',
+                ),
+            ),
+            array(
+                'id' => 'outboxAuthTest',
+                'eventName' => OutboxActivityEvent::NAME,
+                'event' => new OutboxActivityEvent(
+                    array(
+                        'id' => 'https://example.com/activities/1',
+                        'type' => 'Delete',
+                        'object' => 'https://example.com/objects/1'
+                    ),
+                    TestActivityPubObject::fromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
+                    self::requestWithAttributes(
+                        'https://example.com/outbox',
+                        array( 'actor' => TestActivityPubObject::fromArray( array(
+                            'id' => 'https://example.com/actors/2',
+                        ) ) )
+                    )
+                ),
+                'expectedException' => UnauthorizedHttpException::class,
+            ),
+            array(
+                'id' => 'inboxAuthTest',
+                'eventName' => InboxActivityEvent::NAME,
+                'event' => new InboxActivityEvent(
+                    array(
+                        'id' => 'https://elsewhere.com/activities/1',
+                        'type' => 'Delete',
+                        'object' => 'https://elsewhere.com/objects/1'
+                    ),
+                    TestActivityPubObject::fromArray( array(
+                        'id' => 'https://example.com/actor/1',
+                    ) ),
+                    self::requestWithAttributes(
+                        'https://example.com/inbox',
+                        array( 'actor' => TestActivityPubObject::fromArray( array(
+                            'id' => 'https://elsewhere.com/actors/2',
+                        ) ) )
+                    )
+                ),
+                'expectedException' => UnauthorizedHttpException::class,
+            ),
+        );
+        foreach ( $testCases as $testCase ) {
+            $eventDispatcher = new EventDispatcher();
+            $dateTimeProvider = new TestDateTimeProvider( array(
+                'activities.delete' => DateTime::createFromFormat(
+                    DateTime::RFC2822, 'Sun, 05 Jan 2014 21:31:40 GMT'
+                ),
+            ) );
+            $objectsService = $this->getMockBuilder( ObjectsService::class )
+                            ->disableOriginalConstructor()
+                            ->setMethods( array( 'dereference', 'replace' ) )
+                            ->getMock();
+            $objectsService->method( 'dereference' )->will( $this->returnCallback( 
+                function( $id ) {
+                    if ( array_key_exists( $id, self::OBJECTS ) ) {
+                        return TestActivityPubObject::fromArray( self::OBJECTS[$id] );
+                    }
+                }
+            ) );
+            if ( array_key_exists( 'expectedException', $testCase ) ) {
+                $this->expectException( $testCase['expectedException'] );
+            } else {
+                $objectsService->expects( $this->once() )
+                    ->method( 'replace' )
+                    ->with(
+                        $this->anything(),
+                        $this->equalTo( $testCase['expectedTombstone'] )
+                    );
+            }
+            $deleteHandler = new DeleteHandler( $dateTimeProvider, $objectsService );
+            $eventDispatcher->addSubscriber( $deleteHandler );
+            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        }
+    }
+
+    public static function requestWithAttributes( $uri, $attributes )
+    {
+        $request = Request::create( $uri );
+        $request->attributes->add( $attributes );
+        return $request;
+    }
+}
+?>

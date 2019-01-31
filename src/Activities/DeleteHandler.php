@@ -4,10 +4,13 @@ namespace ActivityPub\Activities;
 use ActivityPub\Activities\ActivityEvent;
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\DateTimeProvider;
 use DateTime;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class DeleteHandler implements EventSubscriberInterface
 {
@@ -36,7 +39,7 @@ class DeleteHandler implements EventSubscriberInterface
         $this->objectsService = $objectsService;
     }
 
-    private function handleDelete( ActivityEvent $event )
+    public function handleDelete( ActivityEvent $event )
     {
         $activity = $event->getActivity();
         if ( $activity['type'] !== 'Delete' ) {
@@ -50,8 +53,14 @@ class DeleteHandler implements EventSubscriberInterface
                 throw new BadRequestHttpException( 'Object must have an "id" field' );
             }
         }
+        if ( ! $this->authorized( $event->getRequest(), $objectId ) ) {
+            throw new UnauthorizedHttpException(
+                'Signature realm="ActivityPub",headers="(request-target) host date"'
+            );
+        }
         $tombstone = array(
             '@context' => 'https://www.w3.org/ns/activitystreams',
+            'id' => $objectId,
             'type' => 'Tombstone',
             'deleted' => $this->getNowTimestamp(),
         );
@@ -66,6 +75,23 @@ class DeleteHandler implements EventSubscriberInterface
     {
         return $this->dateTimeProvider->getTime( 'activities.delete' )
             ->format( DateTime::ISO8601 );
+    }
+
+    public function authorized( Request $request, string $objectId )
+    {
+        if ( ! $request->attributes->has( 'actor' ) ) {
+            return false;
+        }
+        $requestActor = $request->attributes->get( 'actor' );
+        $object = $this->objectsService->dereference( $objectId );
+        if ( ! $object || ! $object->hasField( 'attributedTo' ) ) {
+            return false;
+        }
+        $attributedActorId = $object['attributedTo'];
+        if ( ! is_string( $attributedActorId ) ) {
+            $attributedActorId = $attributedActorId['id'];
+        }
+        return $requestActor['id'] === $attributedActorId;
     }
 }
 ?>
