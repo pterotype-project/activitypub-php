@@ -117,6 +117,8 @@ class ObjectsService
      */
     public function dereference( $id )
     {
+        // TOOD pass a $request into here, so that I can sign the request below and so that
+        // I can check for local objects that should not result in network calls
         $object = $this->getObject( $id );
         if ( $object ) {
             return $object;
