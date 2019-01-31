@@ -76,7 +76,7 @@ class UpdateHandlerTest extends TestCase
                         ),
                     ),
                     TestActivityPubObject::fromArray( array(
-                        'id' => 'https://elsewhere.com/actor/1',
+                        'id' => 'https://example.com/actor/1',
                     ) ),
                     self::requestWithAttributes(
                         'https://example.com/inbox',
@@ -95,7 +95,7 @@ class UpdateHandlerTest extends TestCase
 
                     ),
                     TestActivityPubObject::fromArray( array(
-                        'id' => 'https://elsewhere.com/actor/1',
+                        'id' => 'https://example.com/actor/1',
                     ) ),
                     self::requestWithAttributes(
                         'https://example.com/inbox',
@@ -162,13 +162,13 @@ class UpdateHandlerTest extends TestCase
                         ),
                     ),
                     TestActivityPubObject::fromArray( array(
-                        'id' => 'https://elsewhere.com/actors/2',
+                        'id' => 'https://example.com/actors/1',
                     ) ),
                     self::requestWithAttributes(
                         'https://example.com/inbox',
                         array(
                             'actor' => TestActivityPubObject::fromArray( array(
-                                'id' => 'https://elsewhere.com/actors/1',
+                                'id' => 'https://elsewhere.com/actors/2',
                             ) )
                         )
                     )
@@ -187,7 +187,7 @@ class UpdateHandlerTest extends TestCase
                         ),
                     ),
                     TestActivityPubObject::fromArray( array(
-                        'id' => 'https://example.com/actors/2',
+                        'id' => 'https://example.com/actors/1',
                     ) ),
                     self::requestWithAttributes(
                         'https://example.com/outbox',
