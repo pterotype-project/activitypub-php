@@ -50,6 +50,10 @@ class GetControllerTest extends TestCase
                 'id' => 'https://example.com/actor/2',
             ),
         ),
+        'https://example.com/objects/4' => array(
+            'id' => 'https://example.com/objects/4',
+            'type' => 'Tombstone',
+        ),
     );
 
     private $getController;
@@ -147,6 +151,19 @@ class GetControllerTest extends TestCase
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
+    }
+
+    public function testItReturns410ForTombstones()
+    {
+        $request = Request::create( 'https://example.com/objects/4' );
+        $response = $this->getController->handle( $request );
+        $this->assertNotNull( $response );
+        $this->assertEquals(
+            json_encode( self::OBJECTS['https://example.com/objects/4'] ),
+            $response->getContent()
+        );
+        $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
+        $this->assertEquals( 410, $response->getStatusCode() );
     }
 }
 ?>

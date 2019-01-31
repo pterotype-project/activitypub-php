@@ -67,7 +67,12 @@ class GetController
                $object['type'] === 'OrderedCollection' ) ) {
             return $this->collectionsService->pageAndFilterCollection( $request, $object );
         }
-        return new JsonResponse( $object->asArray() );
+        $response = new JsonResponse( $object->asArray() );
+        if ( $object->hasField( 'type' ) &&
+             $object['type'] === 'Tombstone' ) {
+            $response->setStatusCode( 410 );
+        }
+        return $response;
     }
 }
 ?>
