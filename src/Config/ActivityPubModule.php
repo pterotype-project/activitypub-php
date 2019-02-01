@@ -54,6 +54,9 @@ class ActivityPubModule
             ->setArguments( array( $dbParams, $dbConfig ) )
             ->setFactory( array( EntityManager::class, 'create' ) );
 
+        // TODO set a global timeout on the client, and add a middleware
+        // that ensures that the client will return null rather than throwing
+        // when it gets a timeout
         $this->injector->register( Client::class, Client::class )
             ->addArgument( array( 'http_errors' => false ) );
 
