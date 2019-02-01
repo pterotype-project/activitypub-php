@@ -17,11 +17,6 @@ class FollowHandler implements EventSubscriberInterface
     private $autoAccepts;
 
     /**
-     * @var Client
-     */
-    private $httpClient;
-
-    /**
      * @var ContextProvider
      */
     private $contextProvider;
@@ -34,11 +29,9 @@ class FollowHandler implements EventSubscriberInterface
     }
 
     public function __construct( bool $autoAccepts,
-                                 Client $httpClient,
                                  ContextProvider $contextProvider )
     {
         $this->autoAccepts = $autoAccepts;
-        $this->httpsClient = $httpClient;
         $this->contextProvider = $contextProvider;
     }
 
@@ -52,6 +45,13 @@ class FollowHandler implements EventSubscriberInterface
         }
         if ( $this->autoAccepts ) {
             $localActor = $event->getActor();
+            $objectId = $activity['object'];
+            if ( is_array( $objectId ) && array_key_exists( 'id', $objectId ) ) {
+                $objectId = $objectId['id'];
+            }
+            if ( $localActor['id'] !== $objectId ) {
+                return;
+            }
             $accept = array(
                 '@context' => $this->contextProvider->getContext(),
                 'type' => 'Accept',
