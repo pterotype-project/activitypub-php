@@ -8,15 +8,15 @@ use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 
-class AuthListenerTest extends TestCase
+class AuthListenerTest extends APTestCase
 {
     private $objectsService;
 
     public function setUp()
     {
-        $this->objectsService = $this->createMock( ObjectsService::class );
+        $this->objectsService = $this->getMock( ObjectsService::class );
         $this->objectsService->method( 'dereference' )->will( $this->returnValueMap( array(
             array( 'https://example.com/actor/1', TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/actor/1',
@@ -29,7 +29,7 @@ class AuthListenerTest extends TestCase
 
     public function getEvent()
     {
-        $kernel = $this->createMock( HttpKernelInterface::class );
+        $kernel = $this->getMock( HttpKernelInterface::class );
         $request = Request::create( 'https://example.com/foo', Request::METHOD_GET );
         return new GetResponseEvent(
             $kernel, $request, HttpKernelInterface::MASTER_REQUEST
@@ -108,4 +108,4 @@ class AuthListenerTest extends TestCase
         }
     }
 }
-?>
+

@@ -33,7 +33,7 @@ class IdProvider
 
     public function __construct( ObjectsService $objectsService,
                                  RandomProvider $randomProvider,
-                                 string $pathPrefix )
+                                 $pathPrefix )
     {
         $this->objectsService = $objectsService;
         $this->randomProvider = $randomProvider;
@@ -49,7 +49,7 @@ class IdProvider
      *   and after the path prefix. Default: "object"
      * @return string The new id
      */
-    public function getId( Request $request, string $path = "objects" )
+    public function getId( Request $request, $path = "objects" )
     {
         $baseUri = $request->getSchemeAndHttpHost();
         if ( ! empty( $path ) ) {
@@ -66,4 +66,4 @@ class IdProvider
         return $id;
     }
 }
-?>
+

@@ -86,4 +86,4 @@ class ActivityEvent extends Event
         $this->response = $response;
     }
 }
-?>
+

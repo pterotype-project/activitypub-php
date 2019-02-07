@@ -12,12 +12,11 @@ use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 
-class SignatureListenerTest extends TestCase
+class SignatureListenerTest extends APTestCase
 {
     const ACTOR_ID = 'https://example.com/actor/1';
-    const ACTOR = array( 'id' => self::ACTOR_ID );
     const KEY_ID = 'https://example.com/actor/1/key';
     const PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCFENGw33yGihy92pDjZQhl0C3
@@ -25,13 +24,25 @@ MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCFENGw33yGihy92pDjZQhl0C3
 Z4UMR7EOcpfdUE9Hf3m/hs+FUR45uBJeDK1HSFHD8bHKD6kv8FPGfJTotc+2xjJw
 oYi+1hqp1fIekaxsyQIDAQAB
 -----END PUBLIC KEY-----";
-    const KEY = array(
-        'id' => self::KEY_ID,
-        'owner' => 'https://example.com/actor/1',
-        'publicKeyPem' => self::PUBLIC_KEY,
-    );
-    
+
+    /**
+     * @var SignatureListener
+     */
     private $signatureListener;
+
+    private static function getActor()
+    {
+        return array( 'id' => self::ACTOR_ID );
+    }
+
+    private static function getKey()
+    {
+        return array(
+            'id' => self::KEY_ID,
+            'owner' => 'https://example.com/actor/1',
+            'publicKeyPem' => self::PUBLIC_KEY,
+        );
+    }
 
     public function setUp()
     {
@@ -41,11 +52,11 @@ oYi+1hqp1fIekaxsyQIDAQAB
             ),
         ) );
         $httpSignatureService = new HttpSignatureService( $dateTimeProvider );
-        $objectsService = $this->createMock( ObjectsService::class );
+        $objectsService = $this->getMock( ObjectsService::class );
         $objectsService->method( 'dereference' )
             ->will( $this->returnValueMap( array(
-                array( self::KEY_ID, TestActivityPubObject::fromArray( self::KEY ) ),
-                array( self::ACTOR_ID, TestActivityPubObject::fromArray( self::ACTOR ) ),
+                array( self::KEY_ID, TestActivityPubObject::fromArray( self::getKey()) ),
+                array( self::ACTOR_ID, TestActivityPubObject::fromArray( self::getActor()) ),
             ) ) );
         $this->signatureListener = new SignatureListener(
             $httpSignatureService, $objectsService
@@ -54,7 +65,7 @@ oYi+1hqp1fIekaxsyQIDAQAB
 
     private function getEvent()
     {
-        $kernel = $this->createMock( HttpKernelInterface::class );
+        $kernel = $this->getMock( HttpKernelInterface::class );
         $request = Request::create(
             'https://example.com/foo?param=value&pet=dog',
             Request::METHOD_POST,
@@ -145,4 +156,4 @@ oYi+1hqp1fIekaxsyQIDAQAB
         }
     }
 }
-?>
+

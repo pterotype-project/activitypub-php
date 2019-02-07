@@ -22,7 +22,7 @@ class RsaKeypair
      */
     private $privateKey;
     
-    public function __construct( string $publicKey, string $privateKey )
+    public function __construct( $publicKey,  $privateKey )
     {
         $this->publicKey = $publicKey;
         $this->privateKey = $privateKey;
@@ -112,7 +112,7 @@ class RsaKeypair
      * @param string $publicKey The public key
      * @return RsaKeypair
      */
-    public function fromPublicKey( string $publicKey )
+    public static function fromPublicKey( $publicKey )
     {
         return new RsaKeypair( $publicKey, '' );
     }
@@ -126,9 +126,9 @@ class RsaKeypair
      * @param string $privateKey The private key
      * @return RsaKeypair
      */
-    public function fromPrivateKey( string $privateKey)
+    public static function fromPrivateKey( $privateKey)
     {
         return new RsaKeypair( '', $privateKey );
     }
 }
-?>
+

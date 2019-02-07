@@ -35,4 +35,4 @@ class ActivityPubTest extends SQLiteTestCase
         return dirname( __FILE__ ) . '/db.sqlite';
     }
 }
-?>
+

@@ -3,14 +3,11 @@ namespace ActivityPub\Test\TestConfig;
 
 use ActivityPub\ActivityPub;
 use ActivityPub\Config\ActivityPubConfig;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\DbUnit\TestCaseTrait;
-use PHPUnit\DbUnit\Operation\Composite;
-use PHPUnit\DbUnit\Operation\Factory;
+use ActivityPub\Test\TestConfig\APTestCase;
 
-abstract class SQLiteTestCase extends TestCase
+abstract class SQLiteTestCase extends APTestCase
 {
-    use TestCaseTrait;
+    use \PHPUnit_Extensions_Database_TestCase_Trait;
 
     private $pdo = null;
     private $conn = null;
@@ -58,4 +55,4 @@ abstract class SQLiteTestCase extends TestCase
         return $this->conn;
     }
 }
-?>
+

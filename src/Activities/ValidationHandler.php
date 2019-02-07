@@ -8,14 +8,20 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class ValidationHandler implements EventSubscriberInterface
 {
-    const OBJECT_REQUIRED_TYPES = array(
-        'Create', 'Update', 'Delete', 'Follow',
-        'Add', 'Remove', 'Like', 'Block', 'Undo',
-    );
+    public static function getObjectRequiredTypes()
+    {
+        return array(
+            'Create', 'Update', 'Delete', 'Follow',
+            'Add', 'Remove', 'Like', 'Block', 'Undo',
+        );
+    }
 
-    const TARGET_REQUIRED_TYPES = array(
-        'Add', 'Remove',
-    );
+    public static function getTargetRequiredTypes()
+    {
+        return array(
+            'Add', 'Remove',
+        );
+    }
 
     public static function getSubscribedEvents()
     {
@@ -30,11 +36,11 @@ class ValidationHandler implements EventSubscriberInterface
         $activity = $event->getActivity();
         $requiredFields = array( 'type', 'id', 'actor' );
         if ( array_key_exists( 'type', $activity ) &&
-             in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
+             in_array( $activity['type'], self::getObjectRequiredTypes() ) ) {
             $requiredFields[] = 'object';
         }
         if ( array_key_exists( 'type', $activity ) &&
-             in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
+             in_array( $activity['type'], self::getTargetRequiredTypes() ) ) {
             $requiredFields[] = 'target';
         }
         $this->requireFields( $activity, $requiredFields );
@@ -45,11 +51,11 @@ class ValidationHandler implements EventSubscriberInterface
         $activity = $event->getActivity();
         $requiredFields = array( 'type', 'actor' );
         if ( array_key_exists( 'type', $activity ) &&
-             in_array( $activity['type'], self::OBJECT_REQUIRED_TYPES ) ) {
+             in_array( $activity['type'], self::getObjectRequiredTypes() ) ) {
             $requiredFields[] = 'object';
         }
         if ( array_key_exists( 'type', $activity ) &&
-             in_array( $activity['type'], self::TARGET_REQUIRED_TYPES ) ) {
+             in_array( $activity['type'], self::getTargetRequiredTypes() ) ) {
             $requiredFields[] = 'target';
         }
         $this->requireFields( $activity, $requiredFields );
@@ -70,4 +76,4 @@ class ValidationHandler implements EventSubscriberInterface
         }
     }
 }
-?>
+

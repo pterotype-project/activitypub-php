@@ -18,4 +18,4 @@ class SimpleDateTimeProvider implements DateTimeProvider
         return new DateTime( "now" );
     }
 }
-?>
+

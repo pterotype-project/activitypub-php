@@ -16,4 +16,4 @@ $config = ActivityPubConfig::createBuilder()
     ->build();
 $activityPub = new ActivityPub( $config );
 $activityPub->updateSchema();
-?>
+

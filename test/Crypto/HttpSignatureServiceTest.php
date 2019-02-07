@@ -5,10 +5,10 @@ use DateTime;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use GuzzleHttp\Psr7\Request as PsrRequest;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
-class HttpSignatureServiceTest extends TestCase
+class HttpSignatureServiceTest extends APTestCase
 {
     const PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDCFENGw33yGihy92pDjZQhl0C3
@@ -230,4 +230,4 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
         }
     }
 }
-?>
+

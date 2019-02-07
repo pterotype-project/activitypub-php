@@ -1,7 +1,9 @@
 <?php
+
 namespace ActivityPub;
 
 use ActivityPub\Activities\CreateHandler;
+use ActivityPub\Activities\DeleteHandler;
 use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Activities\ValidationHandler;
@@ -12,13 +14,14 @@ use ActivityPub\Config\ActivityPubModule;
 use ActivityPub\Http\Router;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\HttpKernel;
-use Symfony\Component\EventDispatcher;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Controller\ArgumentResolver;
 use Symfony\Component\HttpKernel\Controller\ControllerResolver;
 use Symfony\Component\HttpKernel\EventListener\ExceptionListener;
+use Symfony\Component\HttpKernel\HttpKernel;
 
 class ActivityPub
 {
@@ -98,4 +101,4 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( DeleteHandler::class ) );
     }
 }
-?>
+

@@ -3,10 +3,10 @@ namespace ActivityPub\Test\Auth;
 
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
-class AuthServiceTest extends TestCase
+class AuthServiceTest extends APTestCase
 {
     private $authService;
 
@@ -72,4 +72,4 @@ class AuthServiceTest extends TestCase
         }
     }
 }
-?>
+

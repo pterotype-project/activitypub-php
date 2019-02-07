@@ -1,12 +1,11 @@
 <?php
 namespace ActivityPub\Test\Crypto;
 
-use BadMethodCallException;
 use ActivityPub\Crypto\RsaKeypair;
-use PHPUnit\Framework\TestCase;
-use PHPUnit\Framework\Error\Error;
+use ActivityPub\Test\TestConfig\APTestCase;
+use BadMethodCallException;
 
-class RsaKeypairTest extends TestCase
+class RsaKeypairTest extends APTestCase
 {
     public function testItCreatesKeypair()
     {
@@ -37,7 +36,7 @@ class RsaKeypairTest extends TestCase
         $keypair = RsaKeypair::generate();
         $data = 'This is some data';
         $signature = 'not a real signature';
-        $this->expectException( Error::class );
+        $this->setExpectedException( \PHPUnit_Framework_Error::class );
         $verified = $keypair->verify( $data, $signature );
     }
 
@@ -66,9 +65,8 @@ class RsaKeypairTest extends TestCase
         $fullKeypair = RsaKeypair::generate();
         $publicKeyOnly = RsaKeypair::fromPublicKey( $fullKeypair->getPublicKey() );
         $data = 'This is some data';
-        $this->expectException( BadMethodCallException::class );
-        $this->expectExceptionMessage( 'Unable to sign data without a private key' );
-        $signature = $publicKeyOnly->sign( $data );
+        $this->setExpectedException( BadMethodCallException::class, 'Unable to sign data without a private key' );
+        $publicKeyOnly->sign( $data );
     }
 
     public function testItSignsAndVerifiesEmptyData()
@@ -90,4 +88,4 @@ class RsaKeypairTest extends TestCase
         $this->assertFalse( $verified );
     }
 }
-?>
+

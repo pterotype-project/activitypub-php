@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Test\Objects;
 
+use ActivityPub\Utils\SimpleDateTimeProvider;
 use Exception;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\ContextProvider;
@@ -8,19 +9,22 @@ use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response as Psr7Response;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class CollectionsServiceTest extends TestCase
+class CollectionsServiceTest extends APTestCase
 {
+    /**
+     * @var CollectionsService
+     */
     private $collectionsService;
 
     public function setUp()
     {
         $authService = new AuthService();
         $contextProvider = new ContextProvider();
-        $httpClient = $this->createMock( Client::class );
+        $httpClient = $this->getMock( Client::class );
         $httpClient->method( 'send' )->willReturn(
             new Psr7Response( 200, array(), json_encode( array(
                 'type' => 'OrderedCollectionPage',
@@ -31,7 +35,7 @@ class CollectionsServiceTest extends TestCase
             ) ) )
         );
         $this->collectionsService = new CollectionsService(
-            4, $authService, $contextProvider, $httpClient
+            4, $authService, $contextProvider, $httpClient, new SimpleDateTimeProvider()
         );
     }
 
@@ -375,7 +379,7 @@ class CollectionsServiceTest extends TestCase
         );
         foreach ( $testCases as $testCase ) {
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException( $testCase['expectedException'] );
+                $this->setExpectedException( $testCase['expectedException'] );
             }
             $request = $testCase['request'];
             if ( array_key_exists( 'requestAttributes', $testCase ) ) {
@@ -490,7 +494,7 @@ class CollectionsServiceTest extends TestCase
         foreach ( $testCases as $testCase ) {
             $collection = $testCase['collection'];
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException( $testCase['expectedException'] );
+                $this->setExpectedException( $testCase['expectedException'] );
             }
             $actual = $this->collectionsService->normalizeCollection( $collection );
             $this->assertEquals(
@@ -499,4 +503,4 @@ class CollectionsServiceTest extends TestCase
         }
     }
 }
-?>
+

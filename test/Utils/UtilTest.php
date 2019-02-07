@@ -2,9 +2,9 @@
 namespace ActivityPub\Test\Utils;
 
 use ActivityPub\Utils\Util;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 
-class UtilTest extends TestCase
+class UtilTest extends APTestCase
 {
     public function testItFindsAssocArray()
     {
@@ -82,4 +82,4 @@ class UtilTest extends TestCase
         $this->assertTrue( $keysExist );
     }
 }
-?>
+

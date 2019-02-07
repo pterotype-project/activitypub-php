@@ -1,8 +1,6 @@
 <?php
 namespace ActivityPub\Activities;
 
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
@@ -11,7 +9,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 class CreateHandler implements EventSubscriberInterface
 {
     /**
-     * @var ObjextsService
+     * @var ObjectsService
      */
     private $objectsService;
 
@@ -128,4 +126,4 @@ class CreateHandler implements EventSubscriberInterface
         return $targetObj;
     }
 }
-?>
+

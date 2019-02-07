@@ -4,10 +4,10 @@ namespace ActivityPub\Test\Objects;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\RandomProvider;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
-class IdProviderTest extends TestCase
+class IdProviderTest extends APTestCase
 {
     const EXISTING_ID_STR = 'exists';
 
@@ -15,7 +15,7 @@ class IdProviderTest extends TestCase
 
     public function setUp()
     {
-        $this->objectsService = $this->createMock( ObjectsService::class );
+        $this->objectsService = $this->getMock( ObjectsService::class );
         $this->objectsService->method( 'query' )
             ->will( $this->returnCallback( function( $query) {
                 $existsId = sprintf(
@@ -50,7 +50,7 @@ class IdProviderTest extends TestCase
             ),
         );
         foreach ( $testCases as $testCase ) {
-            $randomProvider = $this->createMock( RandomProvider::class );
+            $randomProvider = $this->getMock( RandomProvider::class );
             call_user_func_array(
                 array( $randomProvider->method( 'randomString' ), 'willReturnOnConsecutiveCalls' ),
                 $testCase['providedRnd']
@@ -67,4 +67,4 @@ class IdProviderTest extends TestCase
         }
     }
 }
-?>
+

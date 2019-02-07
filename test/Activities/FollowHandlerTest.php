@@ -6,11 +6,11 @@ use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
-class FollowHandlerTest extends TestCase
+class FollowHandlerTest extends APTestCase
 {
     public function testFollowHandler()
     {
@@ -29,12 +29,12 @@ class FollowHandlerTest extends TestCase
             'object' => 'https://example.com/actor/1',
         );
         $eventDispatcher->addListener( OutboxActivityEvent::NAME, function( $event, $name )
-            use ( &$outboxDispatched, $actor )
+            use ( &$outboxDispatched, $actor, $follow )
         {
             $this->assertEquals( OutboxActivityEvent::NAME, $name );
             $outboxDispatched = true;
             $accept = array(
-                '@context' => ContextProvider::DEFAULT_CONTEXT,
+                '@context' => ContextProvider::getDefaultContext(),
                 'type' => 'Accept',
                 'actor' => 'https://example.com/actor/1',
                 'object' => 'https://elsewhere.com/activities/1',
@@ -49,7 +49,10 @@ class FollowHandlerTest extends TestCase
                 ),
                 json_encode( $accept )
             );
-            $expectedRequest->attributes->set( 'actor', $actor );
+            $expectedRequest->attributes->add( array(
+                'actor' => $actor,
+                'follow' => $follow,
+            ) );
             $this->assertEquals(
                 new OutboxActivityEvent( $accept, $actor, $expectedRequest ), $event
             );
@@ -91,4 +94,4 @@ class FollowHandlerTest extends TestCase
         $this->assertFalse( $outboxDispatched );
     }
 }
-?>
+

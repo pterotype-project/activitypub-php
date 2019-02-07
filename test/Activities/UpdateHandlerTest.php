@@ -6,45 +6,55 @@ use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
-class UpdateHandlerTest extends TestCase
+class UpdateHandlerTest extends APTestCase
 {
-    const OBJECTS = array(
-        'https://elsewhere.com/objects/1' => array(
-            'id' => 'https://elsewhere.com/objects/1',
-            'attributedTo' => 'https://elsewhere.com/actors/1',
-        ),
-        'https://example.com/objects/1' => array(
-            'id' => 'https://example.com/objects/1',
-            'attributedTo' => 'https://example.com/actors/1',
-            'type' => 'Note',
-            'content' => 'This is a note',
-        ),
-    );
+    private static function getObjects()
+    {
+        return array(
+            'https://elsewhere.com/objects/1' => array(
+                'id' => 'https://elsewhere.com/objects/1',
+                'attributedTo' => 'https://elsewhere.com/actors/1',
+            ),
+            'https://example.com/objects/1' => array(
+                'id' => 'https://example.com/objects/1',
+                'attributedTo' => 'https://example.com/actors/1',
+                'type' => 'Note',
+                'content' => 'This is a note',
+            ),
+        );
+    }
 
     /**
      * @var EventDispatcher
      */
     private $eventDispatcher;
 
+    /**
+     * @var array
+     */
+    private $objects;
+
     public function setUp()
     {
-        $objectsService = $this->createMock( ObjectsService::class );
+        $this->objects = self::getObjects();
+        $objectsService = $this->getMock( ObjectsService::class );
         $objectsService->method( 'dereference' )->will( $this->returnCallback(
             function( $id ) {
-                if ( array_key_exists( $id, self::OBJECTS ) ) {
-                    return TestActivityPubObject::fromArray( self::OBJECTS[$id] );
+                if ( array_key_exists( $id, $this->objects ) ) {
+                    return TestActivityPubObject::fromArray( $this->objects[$id] );
                 }
+                return null;
             }
         ) );
         $objectsService->method( 'update' )->will( $this->returnCallback(
             function( $id, $updateFields ) {
-                if ( array_key_exists( $id, self::OBJECTS ) ) {
-                    $existing = self::OBJECTS[$id];
+                if ( array_key_exists( $id, $this->objects ) ) {
+                    $existing = $this->objects[$id];
                     foreach ( $updateFields as $field => $newValue ) {
                         if ( $newValue === null && array_key_exists( $field, $existing ) ) {
                             unset( $existing[$field] );
@@ -54,6 +64,7 @@ class UpdateHandlerTest extends TestCase
                     }
                     return TestActivityPubObject::fromArray( $existing );
                 }
+                return null;
             }
         ) );
         $updateHandler = new UpdateHandler( $objectsService );
@@ -204,7 +215,7 @@ class UpdateHandlerTest extends TestCase
         foreach ( $testCases as $testCase ) {
             $event = $testCase['event'];
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException( $testCase['expectedException'] );
+                $this->setExpectedException( $testCase['expectedException'] );
             }
             $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
             if ( array_key_exists( 'expectedEvent', $testCase ) ) {
@@ -222,4 +233,4 @@ class UpdateHandlerTest extends TestCase
         return $request;
     }
 }
-?>
+

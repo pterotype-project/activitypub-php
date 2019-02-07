@@ -77,7 +77,7 @@ class DeleteHandler implements EventSubscriberInterface
             ->format( DateTime::ISO8601 );
     }
 
-    public function authorized( Request $request, string $objectId )
+    public function authorized( Request $request,  $objectId )
     {
         if ( ! $request->attributes->has( 'actor' ) ) {
             return false;
@@ -94,4 +94,4 @@ class DeleteHandler implements EventSubscriberInterface
         return $requestActor['id'] === $attributedActorId;
     }
 }
-?>
+

@@ -5,10 +5,10 @@ use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
-class NonActivityHandlerTest extends TestCase
+class NonActivityHandlerTest extends APTestCase
 {
     public function testNonActivityHandler()
     {
@@ -24,7 +24,7 @@ class NonActivityHandlerTest extends TestCase
                     'id' => 'https://example.com/actor/1',
                 ) ),
                 'expectedActivity' => array(
-                    '@context' => ContextProvider::DEFAULT_CONTEXT,
+                    '@context' => ContextProvider::getDefaultContext(),
                     'type' => 'Create',
                     'actor' => 'https://example.com/actor/1',
                     'object' => array(
@@ -62,7 +62,7 @@ class NonActivityHandlerTest extends TestCase
                     'id' => 'https://example.com/actor/1',
                 ) ),
                 'expectedActivity' => array(
-                    '@context' => ContextProvider::DEFAULT_CONTEXT,
+                    '@context' => ContextProvider::getDefaultContext(),
                     'type' => 'Create',
                     'actor' => 'https://example.com/actor/1',
                     'object' => array(
@@ -103,4 +103,4 @@ class NonActivityHandlerTest extends TestCase
         }
     }
 }
-?>
+

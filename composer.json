@@ -30,11 +30,13 @@
         "symfony/dependency-injection": "^4.2",
         "symfony/http-kernel": "^4.2",
         "symfony/psr-http-message-bridge": "^1.1",
-        "zendframework/zend-diactoros": "^1.8"
+        "zendframework/zend-diactoros": "^1.8",
+        "ext-json": "*"
     },
     "require-dev": {
-        "phpunit/dbunit": "^4.0",
-        "phpunit/phpunit": "^7.4"
+        "phpunit/dbunit": "^2.0",
+        "phpunit/phpunit": "^4.0",
+        "ext-pdo": "*"
     },
     "autoload": {
 	"psr-4": {

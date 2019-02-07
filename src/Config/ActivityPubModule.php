@@ -91,7 +91,8 @@ class ActivityPubModule
             ->addArgument( self::COLLECTION_PAGE_SIZE )
             ->addArgument( new Reference( AuthService::class ) )
             ->addArgument( new Reference( ContextProvider::class ) )
-            ->addArgument( new Reference( Client::class ) );
+            ->addArgument( new Reference( Client::class ) )
+            ->addArgument( new Reference( SimpleDateTimeProvider::class ));
 
         $this->injector->register( RandomProvider::class, RandomProvider::class );
 
@@ -136,9 +137,9 @@ class ActivityPubModule
      * @param string $id The id of the service instance to get
      * @return object The service instance
      */
-    public function get( string $id )
+    public function get( $id )
     {
         return $this->injector->get( $id );
     }
 }
-?>
+

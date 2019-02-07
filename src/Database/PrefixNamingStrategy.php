@@ -49,4 +49,4 @@ class PrefixNamingStrategy implements NamingStrategy
         return $propertyName.'_'.$embeddedColumnName;
     }
 }
-?>
+

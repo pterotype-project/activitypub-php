@@ -97,6 +97,7 @@ class PostController
         } else if ( is_string( $actor ) ) {
             return $this->objectsService->dereference( $actor );
         }
+        return null;
     }
 
     private function authorized( Request $request, ActivityPubObject $activityActor )
@@ -111,7 +112,7 @@ class PostController
         return true;
     }
 
-    private function objectWithField( string $name, string $value )
+    private function objectWithField( $name,  $value )
     {
         $results = $this->objectsService->query( array( $name => $value ) );
         if ( count( $results ) === 0 ) {
@@ -130,4 +131,4 @@ class PostController
         return $uri;
     }
 }
-?>
+

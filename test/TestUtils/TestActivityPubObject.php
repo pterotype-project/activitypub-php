@@ -62,4 +62,4 @@ class TestActivityPubObject extends ActivityPubObject
         return $object;
     }
 }
-?>
+

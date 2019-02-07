@@ -5,9 +5,9 @@ use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Config\ActivityPubModule;
 use ActivityPub\Http\Router;
 use Doctrine\ORM\EntityManager;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 
-class ActivityPubModuleTest extends TestCase
+class ActivityPubModuleTest extends APTestCase
 {
     private $module;
 
@@ -33,4 +33,4 @@ class ActivityPubModuleTest extends TestCase
         $this->assertInstanceOf( Router::class, $router );
     }
 }
-?>
+

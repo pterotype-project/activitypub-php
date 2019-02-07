@@ -13,7 +13,7 @@ class RandomProvider
      * @param int $length The length of the random string to generate
      * @return string
      */
-    public function randomString( int $length )
+    public function randomString( $length )
     {
         $str = '';
         for ( $i = 0; $i < $length; $i++ ) {
@@ -22,4 +22,4 @@ class RandomProvider
         return $str;
     }
 }
-?>
+

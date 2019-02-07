@@ -110,4 +110,4 @@ class EntityTest extends SQLiteTestCase
         $this->assertTablesEqual( $expectedKeysTable, $keysQueryTable );
     }
 }
-?>
+

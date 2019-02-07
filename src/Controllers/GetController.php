@@ -2,13 +2,13 @@
 namespace ActivityPub\Controllers;
 
 use ActivityPub\Auth\AuthService;
-use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 /**
  * The GetController is responsible for rendering ActivityPub objects as JSON
@@ -75,4 +75,4 @@ class GetController
         return $response;
     }
 }
-?>
+

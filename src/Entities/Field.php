@@ -84,7 +84,7 @@ class Field
      * @param string $value The value of the field
      * @return Field The new field
      */
-    public static function withValue( ActivityPubObject $object, string $name, string $value, DateTime $time = null )
+    public static function withValue( ActivityPubObject $object,  $name,  $value, DateTime $time = null )
     {
         if ( ! $time ) {
             $time = new DateTime( "now" );
@@ -105,7 +105,7 @@ class Field
      * @return Field The new field
      */
     public static function withObject( ActivityPubObject $object,
-                                       string $name,
+                                       $name,
                                        ActivityPubObject $targetObject,
                                        DateTime $time = null )
     {
@@ -143,12 +143,12 @@ class Field
         $this->lastUpdated = $time;
     }
 
-    protected function setName( string $name )
+    protected function setName( $name )
     {
         $this->name= $name;
     }
 
-    public function setValue( string $value, DateTime $time = null )
+    public function setValue( $value, DateTime $time = null )
     {
         if ( ! $time ) {
             $time = new DateTime( "now" );
@@ -284,4 +284,4 @@ class Field
         }
     }
 }
-?>
+

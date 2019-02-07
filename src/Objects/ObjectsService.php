@@ -7,6 +7,7 @@ use ActivityPub\Entities\Field;
 use ActivityPub\Utils\Util;
 use ActivityPub\Utils\DateTimeProvider;
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 
@@ -47,7 +48,7 @@ class ObjectsService
      *
      * @return ActivityPubObject The created object
      */
-    public function persist( array $fields, string $context = 'objects-service.create' )
+    public function persist( array $fields, $context = 'objects-service.create' )
     {
         // TODO should I do JSON-LD compaction here?
         if ( array_key_exists( 'id', $fields ) ) {
@@ -62,6 +63,7 @@ class ObjectsService
         foreach ( $fields as $name => $value ) {
             $this->persistField( $object, $name, $value, $context );
         }
+        /** @noinspection PhpUnhandledExceptionInspection */
         $this->entityManager->flush();
         return $object;
     }
@@ -129,11 +131,11 @@ class ObjectsService
         ) );
         $response = $this->httpClient->send( $request );
         if ( $response->getStatusCode() !== 200 || empty( $response->getBody() ) ) {
-            return;
+            return null;
         }
         $object = json_decode( $response->getBody(), true );
         if ( ! $object ) {
-            return;
+            return null;
         }
         return $this->persist( $object );
     }
@@ -225,6 +227,7 @@ class ObjectsService
         if ( ! empty( $results ) ) {
             return $results[0];
         }
+        return null;
     }
 
     /**
@@ -246,7 +249,7 @@ class ObjectsService
     {
         $object = $this->getObject( $id );
         if ( ! $object ) {
-            return;
+            return null;
         }
         foreach( $updatedFields as $fieldName => $newValue ) {
             if ( $newValue === null && $object->hasField( $fieldName ) ) {
@@ -306,7 +309,7 @@ class ObjectsService
     {
         $existing = $this->getObject( $id );
         if ( ! $existing ) {
-            return;
+            return null;
         }
         foreach ( $existing->getFields() as $field ) {
             if ( ! array_key_exists( $field->getName(), $replacement ) ) {
@@ -316,4 +319,4 @@ class ObjectsService
         return $this->update( $id, $replacement );
     }
 }
-?>
+

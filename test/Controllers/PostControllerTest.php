@@ -6,60 +6,78 @@ use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Controllers\PostController;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
-class PostControllerTest extends TestCase
+class PostControllerTest extends APTestCase
 {
-    const OBJECTS = array(
-        'https://example.com/actor/1/inbox' => array(
-            'id' => 'https://example.com/actor/1/inbox',
-        ),
-        'https://example.com/actor/1/outbox' => array(
-            'id' => 'https://example.com/actor/1/outbox',
-        ),
-        'https://example.com/actor/1' => array(
-            'id' => 'https://example.com/actor/1',
-            'inbox' => array(
+    private static function getObjects()
+    {
+        return array(
+            'https://example.com/actor/1/inbox' => array(
                 'id' => 'https://example.com/actor/1/inbox',
             ),
-            'outbox' => array(
+            'https://example.com/actor/1/outbox' => array(
                 'id' => 'https://example.com/actor/1/outbox',
             ),
-        ),
-        'https://elsewhere.com/actor/1' => array(
-            'id' => 'https://elsewhere.com/actor/1',
-        ),
-    );
-    const REFS = array(
-        'https://example.com/actor/1/inbox' => array(
-            'field' => 'inbox',
-            'referencingObject' => 'https://example.com/actor/1',
-        ),
-        'https://example.com/actor/1/outbox' => array(
-            'field' => 'outbox',
-            'referencingObject' => 'https://example.com/actor/1',
-        ),
-    );
+            'https://example.com/actor/1' => array(
+                'id' => 'https://example.com/actor/1',
+                'inbox' => array(
+                    'id' => 'https://example.com/actor/1/inbox',
+                ),
+                'outbox' => array(
+                    'id' => 'https://example.com/actor/1/outbox',
+                ),
+            ),
+            'https://elsewhere.com/actor/1' => array(
+                'id' => 'https://elsewhere.com/actor/1',
+            ),
+        );
+    }
+    private static function getRefs()
+    {
+        return array(
+            'https://example.com/actor/1/inbox' => array(
+                'field' => 'inbox',
+                'referencingObject' => 'https://example.com/actor/1',
+            ),
+            'https://example.com/actor/1/outbox' => array(
+                'field' => 'outbox',
+                'referencingObject' => 'https://example.com/actor/1',
+            ),
+        );
+    }
+
+    /**
+     * @var array
+     */
+    private $objects;
+
+    /**
+     * @var array
+     */
+    private $refs;
 
     public function testPostController()
     {
-        $objectsService = $this->createMock( ObjectsService::class );
+        $this->objects = self::getObjects();
+        $this->refs = self::getRefs();
+        $objectsService = $this->getMock( ObjectsService::class );
         $objectsService->method( 'query' )->will(
             $this->returnCallback( function( $query ) {
                 if ( array_key_exists( 'id', $query ) &&
-                     array_key_exists( $query['id'], self::OBJECTS ) ) {
+                     array_key_exists( $query['id'], $this->objects ) ) {
                     $object = TestActivityPubObject::fromArray(
-                        self::OBJECTS[$query['id']]
+                        $this->objects[$query['id']]
                     );
-                    if ( array_key_exists( $query['id'], self::REFS ) ) {
-                        $ref = self::REFS[$query['id']];
+                    if ( array_key_exists( $query['id'], $this->refs ) ) {
+                        $ref = $this->refs[$query['id']];
                         $referencingObject = TestActivityPubObject::fromArray(
-                            self::OBJECTS[$ref['referencingObject']]
+                            $this->objects[$ref['referencingObject']]
                         );
                         $referencingField = $referencingObject->getField( $ref['field'] );
                         $object->addReferencingField( $referencingField );
@@ -72,8 +90,8 @@ class PostControllerTest extends TestCase
         );
         $objectsService->method( 'dereference' )->will(
             $this->returnCallback( function( $id ) {
-                if ( array_key_exists( $id, self::OBJECTS ) ) {
-                    return TestActivityPubObject::fromArray( self::OBJECTS[$id] );
+                if ( array_key_exists( $id, $this->objects ) ) {
+                    return TestActivityPubObject::fromArray( $this->objects[$id] );
                 } else {
                     return null;
                 }
@@ -89,7 +107,7 @@ class PostControllerTest extends TestCase
                     array(
                         'signed' => true,
                         'actor' => TestActivityPubObject::fromArray(
-                            self::OBJECTS['https://elsewhere.com/actor/1']
+                            $this->objects['https://elsewhere.com/actor/1']
                         ),
                     )
                 ),
@@ -100,7 +118,7 @@ class PostControllerTest extends TestCase
                         'actor' => 'https://elsewhere.com/actor/1'
                     ),
                     TestActivityPubObject::fromArray(
-                        self::OBJECTS['https://example.com/actor/1']
+                        $this->objects['https://example.com/actor/1']
                     ),
                     $this->makeRequest(
                         'https://example.com/actor/1/inbox',
@@ -109,7 +127,7 @@ class PostControllerTest extends TestCase
                         array(
                             'signed' => true,
                             'actor' => TestActivityPubObject::fromArray(
-                                self::OBJECTS['https://elsewhere.com/actor/1']
+                                $this->objects['https://elsewhere.com/actor/1']
                             ),
                         )
                     )
@@ -123,7 +141,7 @@ class PostControllerTest extends TestCase
                     '{"type": "Create"}',
                     array(
                         'actor' => TestActivityPubObject::fromArray(
-                            self::OBJECTS['https://example.com/actor/1']
+                            $this->objects['https://example.com/actor/1']
                         ),
                     )
                 ),
@@ -131,7 +149,7 @@ class PostControllerTest extends TestCase
                 'expectedEvent' => new OutboxActivityEvent(
                     array( 'type' => 'Create' ),
                     TestActivityPubObject::fromArray(
-                        self::OBJECTS['https://example.com/actor/1']
+                        $this->objects['https://example.com/actor/1']
                     ),
                     $this->makeRequest(
                         'https://example.com/actor/1/outbox',
@@ -139,7 +157,7 @@ class PostControllerTest extends TestCase
                         '{"type": "Create"}',
                         array(
                             'actor' => TestActivityPubObject::fromArray(
-                                self::OBJECTS['https://example.com/actor/1']
+                                $this->objects['https://example.com/actor/1']
                             ),
                         )
                     )
@@ -153,7 +171,7 @@ class PostControllerTest extends TestCase
                     '{"type": "Create", "actor": "https://elsewhere.com/actor/1"}',
                     array(
                         'actor' => TestActivityPubObject::fromArray(
-                            self::OBJECTS['https://elsewhere.com/actor/1']
+                            $this->objects['https://elsewhere.com/actor/1']
                         ),
                     )
                 ),
@@ -178,7 +196,7 @@ class PostControllerTest extends TestCase
                     array(
                         'signed' => true,
                         'actor' => TestActivityPubObject::fromArray(
-                            self::OBJECTS['https://elsewhere.com/actor/1']
+                            $this->objects['https://elsewhere.com/actor/1']
                         ),
                     )
                 ),
@@ -193,7 +211,7 @@ class PostControllerTest extends TestCase
                     array(
                         'signed' => true,
                         'actor' => TestActivityPubObject::fromArray(
-                            self::OBJECTS['https://elsewhere.com/actor/1']
+                            $this->objects['https://elsewhere.com/actor/1']
                         ),
                     )
                 ),
@@ -208,7 +226,7 @@ class PostControllerTest extends TestCase
                     array(
                         'signed' => 'true',
                         'actor' => TestActivityPubObject::fromArray(
-                            self::OBJECTS['https://elsewhere.com/actor/1']
+                            $this->objects['https://elsewhere.com/actor/1']
                         ),
                     )
                 ),
@@ -230,7 +248,7 @@ class PostControllerTest extends TestCase
             $postController = new PostController( $eventDispatcher, $objectsService );
             $request = $testCase['request'];
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException( $testCase['expectedException'] );
+                $this->setExpectedException( $testCase['expectedException'] );
             }
             $postController->handle( $request );
         }
@@ -247,4 +265,4 @@ class PostControllerTest extends TestCase
         return $request;
     }
 }
-?>
+

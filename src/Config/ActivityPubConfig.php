@@ -55,7 +55,7 @@ class ActivityPubConfig
         $this->idPathPrefix = $builder->getIdPathPrefix();
     }
 
-    public function createBuilder()
+    public static function createBuilder()
     {
         return new ActivityPubConfigBuilder();
     }
@@ -109,4 +109,4 @@ class ActivityPubConfig
         return $this->idPathPrefix;
     }
 }
-?>
+

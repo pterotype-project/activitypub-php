@@ -5,12 +5,12 @@ use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class ValidationHandlerTest extends TestCase
+class ValidationHandlerTest extends APTestCase
 {
     /**
      * @var EventDispatcher
@@ -161,19 +161,16 @@ class ValidationHandlerTest extends TestCase
         foreach ( $testCases as $testCase ) {
             $event = $testCase['event'];
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException(
-                    $testCase['expectedException'],
-                    "Error on test $testCase[id]"
-                );
-            }
-            if ( array_key_exists( 'expectedExceptionMessage', $testCase ) ) {
-                $this->expectExceptionMessage(
-                    $testCase['expectedExceptionMessage'],
-                    "Error on test $testCase[id]"
+                $expectedExceptionMessage = '';
+                if ( array_key_exists( 'expectedExceptionMessage', $testCase )) {
+                    $expectedExceptionMessage = $testCase['expectedExceptionMessage'];
+                }
+                $this->setExpectedException(
+                    $testCase['expectedException'], $expectedExceptionMessage
                 );
             }
             $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
         }
     }
 }
-?>
+

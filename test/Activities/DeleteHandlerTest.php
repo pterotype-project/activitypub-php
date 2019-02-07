@@ -8,25 +8,28 @@ use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use DateTime;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
-class DeleteHandlerTest extends TestCase
+class DeleteHandlerTest extends APTestCase
 {
-    const OBJECTS = array(
-        'https://elsewhere.com/objects/1' => array(
-            'id' => 'https://elsewhere.com/objects/1',
-            'type' => 'Note',
-            'attributedTo' => 'https://elsewhere.com/actors/1',
-        ),
-        'https://example.com/objects/1' => array(
-            'id' => 'https://example.com/objects/1',
-            'type' => 'Note',
-            'attributedTo' => 'https://example.com/actors/1',
-        )
-    );
+    private static function getObjects()
+    {
+        return array(
+            'https://elsewhere.com/objects/1' => array(
+                'id' => 'https://elsewhere.com/objects/1',
+                'type' => 'Note',
+                'attributedTo' => 'https://elsewhere.com/actors/1',
+            ),
+            'https://example.com/objects/1' => array(
+                'id' => 'https://example.com/objects/1',
+                'type' => 'Note',
+                'attributedTo' => 'https://example.com/actors/1',
+            )
+        );
+    }
 
     public function testDeleteHandler()
     {
@@ -141,13 +144,15 @@ class DeleteHandlerTest extends TestCase
                             ->getMock();
             $objectsService->method( 'dereference' )->will( $this->returnCallback( 
                 function( $id ) {
-                    if ( array_key_exists( $id, self::OBJECTS ) ) {
-                        return TestActivityPubObject::fromArray( self::OBJECTS[$id] );
+                    if ( array_key_exists( $id, self::getObjects()) ) {
+                        $objects = self::getObjects();
+                        return TestActivityPubObject::fromArray( $objects[$id] );
                     }
+                    return null;
                 }
             ) );
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException( $testCase['expectedException'] );
+                $this->setExpectedException( $testCase['expectedException'] );
             } else {
                 $objectsService->expects( $this->once() )
                     ->method( 'replace' )
@@ -169,4 +174,4 @@ class DeleteHandlerTest extends TestCase
         return $request;
     }
 }
-?>
+

@@ -4,14 +4,14 @@ namespace ActivityPub\Test\Http;
 use ActivityPub\Controllers\GetController;
 use ActivityPub\Controllers\PostController;
 use ActivityPub\Http\Router;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\HttpKernel;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
-use Symfony\Component\HttpKernel\Kernel;
 
-class RouterTest extends TestCase
+class RouterTest extends APTestCase
 {
     /**
      * @var Router
@@ -24,10 +24,10 @@ class RouterTest extends TestCase
 
     public function setUp()
     {
-        $this->getController = $this->createMock( GetController::class );
-        $this->postController = $this->createMock( PostController::class );
+        $this->getController = $this->getMock( GetController::class );
+        $this->postController = $this->getMock( PostController::class );
         $this->router = new Router( $this->getController, $this->postController );
-        $this->kernel = $this->createMock( Kernel::class );
+        $this->kernel = $this->getMock( HttpKernel::class );
     }
     
     public function testRouter()
@@ -55,7 +55,7 @@ class RouterTest extends TestCase
                 $this->kernel, $request, HttpKernelInterface::MASTER_REQUEST
             );
             if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->expectException( $testCase['expectedException'] );
+                $this->setExpectedException( $testCase['expectedException'] );
             }
             $this->router->route( $event );
             $this->assertEquals(
@@ -66,4 +66,4 @@ class RouterTest extends TestCase
         }
     }
 }
-?>
+

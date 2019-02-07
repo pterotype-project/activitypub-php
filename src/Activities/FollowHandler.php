@@ -28,7 +28,7 @@ class FollowHandler implements EventSubscriberInterface
         );
     }
 
-    public function __construct( bool $autoAccepts,
+    public function __construct( $autoAccepts,
                                  ContextProvider $contextProvider )
     {
         $this->autoAccepts = $autoAccepts;
@@ -36,7 +36,7 @@ class FollowHandler implements EventSubscriberInterface
     }
 
     public function handleInbox( InboxActivityEvent $event,
-                                 string $eventName,
+                                 $eventName,
                                  EventDispatcher $eventDispatcher )
     {
         $activity = $event->getActivity();
@@ -68,10 +68,13 @@ class FollowHandler implements EventSubscriberInterface
                 ),
                 json_encode( $accept )
             );
-            $request->attributes->set( 'actor', $localActor );
+            $request->attributes->add( array(
+                'actor' => $localActor,
+                'follow' => $activity,
+            ) );
             $outboxEvent = new OutboxActivityEvent( $accept, $localActor, $request );
             $eventDispatcher->dispatch( OutboxActivityEvent::NAME, $outboxEvent );
         }
     }
 }
-?>
+

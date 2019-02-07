@@ -15,12 +15,6 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 class HttpSignatureService
 {
     // TODO handle the Digest header better, both on generating and verifying
-    const DEFAULT_HEADERS = array(
-        '(request-target)',
-        'host',
-        'date',
-    );
-
     const REPLAY_THRESHOLD = 300;
 
     /**
@@ -47,7 +41,16 @@ class HttpSignatureService
         $this->dateTimeProvider = $dateTimeProvider;
         $this->psr7Factory = new DiactorosFactory();
     }
-    
+
+    public static function getDefaultHeaders()
+    {
+        return array(
+            '(request-target)',
+            'host',
+            'date',
+        );
+    }
+
     /**
      * Generates a signature given the request and private key
      *
@@ -58,9 +61,12 @@ class HttpSignatureService
      *                       (default ['(request-target)', 'host', 'date'])
      * @return string The Signature header value
      */
-    public function sign( RequestInterface $request, string $privateKey,
-                          string $keyId, $headers = self::DEFAULT_HEADERS )
+    public function sign( RequestInterface $request,  $privateKey,
+                          $keyId, $headers = null )
     {
+        if ( ! $headers ) {
+            $headers = self::getDefaultHeaders();
+        }
         $headers = array_map( 'strtolower', $headers );
         $signingString = $this->getSigningString( $request, $headers );
         $keypair = RsaKeypair::fromPrivateKey( $privateKey );
@@ -79,7 +85,7 @@ class HttpSignatureService
      * @param string $publicKey The public key to use to verify the request
      * @return bool True if the signature is valid, false if it is missing or invalid
      */
-    public function verify( Request $request, string $publicKey )
+    public function verify( Request $request,  $publicKey )
     {
         $params = array();
         $headers = $request->headers;
@@ -155,7 +161,7 @@ class HttpSignatureService
      * e.g. 'keyId="theKey",algorithm="rsa-sha256"'
      * @return array The params as an associative array
      */
-    private function parseSignatureParams( string $paramsStr )
+    private function parseSignatureParams( $paramsStr )
     {
         $params = array();
         $split = HeaderUtils::split( $paramsStr, ',=' );
@@ -170,4 +176,4 @@ class HttpSignatureService
         return $params;
     }
 }
-?>
+

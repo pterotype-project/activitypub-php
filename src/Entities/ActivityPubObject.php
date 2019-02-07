@@ -73,7 +73,7 @@ class ActivityPubObject implements ArrayAccess
      *
      * @return array|string Either the object or its id if $depth is < 0
      */
-    public function asArray( int $depth = 1 ) {
+    public function asArray( $depth = 1 ) {
         if ( $depth < 0 && $this->hasField( 'id' ) ) {
             return $this->getFieldValue( 'id' );
         }
@@ -139,7 +139,7 @@ class ActivityPubObject implements ArrayAccess
      *
      * @return boolean
      */
-    public function hasField( string $name )
+    public function hasField( $name )
     {
         foreach( $this->getFields() as $field ) {
             if ( $field->getName() === $name ) {
@@ -155,13 +155,14 @@ class ActivityPubObject implements ArrayAccess
      * @param string $name The name of the field to get
      * @return Field|null
      */
-    public function getField( string $name )
+    public function getField( $name )
     {
         foreach( $this->getFields() as $field ) {
             if ( $field->getName() === $name ) {
                 return $field;
             }
         }
+        return null;
     }
 
     /**
@@ -173,7 +174,7 @@ class ActivityPubObject implements ArrayAccess
      * @return string|ActivityPubObject|null The field's value, or null if
      *   the field is not found
      */
-    public function getFieldValue( string $name )
+    public function getFieldValue( $name )
     {
         foreach( $this->getFields() as $field ) {
             if ( $field->getName() === $name ) {
@@ -206,7 +207,7 @@ class ActivityPubObject implements ArrayAccess
      *
      * @return boolean
      */
-    public function hasReferencingField( string $name )
+    public function hasReferencingField( $name )
     {
         foreach( $this->getReferencingFields() as $field ) {
             if ( $field->getName() === $name ) {
@@ -222,13 +223,14 @@ class ActivityPubObject implements ArrayAccess
      * @param string $name The name of the referencing to get
      * @return Field|null
      */
-    public function getReferencingField( string $name )
+    public function getReferencingField( $name )
     {
         foreach( $this->getReferencingFields() as $field ) {
             if ( $field->getName() === $name ) {
                 return $field;
             }
         }
+        return null;
     }
 
     /**
@@ -262,7 +264,7 @@ class ActivityPubObject implements ArrayAccess
     /**
      * Removes a field from the object
      * @param Field $field The field to remove
-     *
+     * @param DateTime|null $time
      */
     public function removeField( Field $field, DateTime $time = null )
     {
@@ -299,7 +301,7 @@ class ActivityPubObject implements ArrayAccess
      *
      * @param string $key The new private key value
      */
-    public function setPrivateKey( string $key )
+    public function setPrivateKey( $key )
     {
         if ( $this->hasPrivateKey() ) {
             $this->privateKey->setKey( $key );
@@ -353,4 +355,4 @@ class ActivityPubObject implements ArrayAccess
         return true;
     }
 }
-?>
+

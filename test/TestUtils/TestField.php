@@ -1,6 +1,7 @@
 <?php
 namespace ActivityPub\Test\TestUtils;
 
+use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 
@@ -20,7 +21,7 @@ class TestField extends Field
         $this->fixedTime = $time;
     }
 
-    public function setTargetObject( $targetObject, $time = null )
+    public function setTargetObject( ActivityPubObject $targetObject, $time = null )
     {
         parent::setTargetObject( $targetObject, $time );
         $this->lastUpdated = $this->fixedTime;
@@ -43,4 +44,4 @@ class TestField extends Field
     }
 
 }
-?>
+

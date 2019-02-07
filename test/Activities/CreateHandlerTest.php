@@ -10,26 +10,28 @@ use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
+use ActivityPub\Utils\SimpleDateTimeProvider;
 use GuzzleHttp\Client;
-use PHPUnit\Framework\TestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
-class CreateHandlerTest extends TestCase
+class CreateHandlerTest extends APTestCase
 {
     private $eventDispatcher;
 
     public function setUp()
     {
         $this->eventDispatcher = new EventDispatcher();
-        $objectsService = $this->createMock( ObjectsService::class );
-        $idProvider = $this->createMock( IdProvider::class );
+        $objectsService = $this->getMock( ObjectsService::class );
+        $idProvider = $this->getMock( IdProvider::class );
         // TODO provision mocks
         $collectionsService = new CollectionsService(
             4, 
-            $this->createMock( AuthService::class ),
+            $this->getMock( AuthService::class ),
             new ContextProvider(),
-            $this->createMock( Client::class )
+            $this->getMock( Client::class ),
+            new SimpleDateTimeProvider()
         );
         $createHandler = new CreateHandler(
             $objectsService, $idProvider, $collectionsService
@@ -259,4 +261,4 @@ class CreateHandlerTest extends TestCase
         }
     }
 }
-?>
+

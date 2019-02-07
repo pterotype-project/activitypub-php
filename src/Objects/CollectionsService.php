@@ -3,9 +3,11 @@ namespace ActivityPub\Objects;
 
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Entities\ActivityPubObject;
-use ActivityPub\Objects\ContextProvider;
+use ActivityPub\Entities\Field;
+use ActivityPub\Utils\DateTimeProvider;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request as Psr7Request;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -32,15 +34,22 @@ class CollectionsService
      */
     private $httpClient;
 
-    public function __construct( int $pageSize,
+    /**
+     * @var DateTimeProvider
+     */
+    private $dateTimeProvider;
+
+    public function __construct( $pageSize,
                                  AuthService $authService,
                                  ContextProvider $contextProvider,
-                                 Client $httpClient )
+                                 Client $httpClient,
+                                 DateTimeProvider $dateTimeProvider )
     {
         $this->pageSize = $pageSize;
         $this->authService = $authService;
         $this->contextProvider = $contextProvider;
         $this->httpClient = $httpClient;
+        $this->dateTimeProvider = $dateTimeProvider;
     }
 
     /**
@@ -53,7 +62,7 @@ class CollectionsService
     {
         if ( $request->query->has( 'offset' ) ) {
             return $this->getCollectionPage(
-                $collection, $request, $request->query->get( 'offset' ), $this->pageSize
+                $collection, $request, intval( $request->query->get( 'offset' ) ), $this->pageSize
             );
         }
         $colArr = array();
@@ -108,6 +117,24 @@ class CollectionsService
         return $collection;
     }
 
+    /**
+     * Adds $item to $collection
+     *
+     * @param ActivityPubObject $collection
+     * @param array $item
+     */
+    public function addItem( ActivityPubObject $collection, array $item )
+    {
+        if ( ! $collection->hasField( 'items' ) ) {
+            $items = new ActivityPubObject(
+                $this->dateTimeProvider->getTime( 'collections-service.create' )
+            );
+            $itemsField = Field::withObject( $collection, 'items', $items );
+        } else {
+            $items = $collection['items'];
+        }
+    }
+
     private function getPageItems( array $collectionPage )
     {
         $items = array();
@@ -128,22 +155,22 @@ class CollectionsService
         return $items;
     }
 
-    private function fetchPage( string $pageId )
+    private function fetchPage( $pageId )
     {
         $request = new Psr7Request( 'GET', $pageId, array(
             'Accept' => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
         ) );
         $response = $this->httpClient->send( $request );
         if ( $response->getStatusCode() !== 200 || empty( $response->getBody() ) ) {
-            return;
+            return null;
         }
         return json_decode( $response->getBody(), true );
     }
 
     private function getCollectionPage( ActivityPubObject $collection,
                                         Request $request,
-                                        int $offset,
-                                        int $pageSize )
+                                        $offset,
+                                        $pageSize )
     {
         $itemsKey = 'items';
         $pageType = 'CollectionPage';
@@ -162,7 +189,7 @@ class CollectionsService
         $idx = $offset;
         $count = 0;
         while ( $count < $pageSize ) {
-            $item = $collectionItems->getFieldValue( $idx );
+            $item = $collectionItems->getFieldValue( strval( $idx ) );
             if ( ! $item ) {
                 break;
             }
@@ -196,16 +223,16 @@ class CollectionsService
         return $page;
     }
 
-    private function hasNextItem( $request, $collectionItems, $idx )
+    private function hasNextItem( Request $request, ActivityPubObject $collectionItems, $idx )
     {
-        $next = $collectionItems->getFieldValue( $idx );
+        $next = $collectionItems->getFieldValue( strval( $idx ) );
         while ( $next ) {
             if ( is_string( $next ) ||
                  $this->authService->isAuthorized( $request, $next ) ) {
                 return $idx;
             }
             $idx++;
-            $next = $collectionsItems->getFieldValue( $idx );
+            $next = $collectionItems->getFieldValue( strval( $idx ) );
         }
         return false;
     }
@@ -223,4 +250,4 @@ class CollectionsService
         }
     }
 }
-?>
+

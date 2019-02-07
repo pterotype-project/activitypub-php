@@ -4,6 +4,7 @@ namespace ActivityPub\Config;
 use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
+use Exception;
 
 /**
  * The ActivityPubConfigBuilder is a builder class to create ActivityPub config data
@@ -64,7 +65,7 @@ class ActivityPubConfigBuilder
         $this->authFunction = function() {
             return false;
         };
-        $this->jsonLDContext = ContextProvider::DEFAULT_CONTEXT;
+        $this->jsonLdContext = ContextProvider::getDefaultContext();
         $this->idPathPrefix = IdProvider::DEFAULT_ID_PATH_PREFIX;
     }
 
@@ -72,6 +73,7 @@ class ActivityPubConfigBuilder
      * Validates and builds the config instance
      *
      * @return ActivityPubConfig
+     * @throws Exception If the configuration is invalid
      */
     public function build()
     {
@@ -79,6 +81,9 @@ class ActivityPubConfigBuilder
         return new ActivityPubConfig( $this );
     }
 
+    /**
+     * @throws Exception
+     */
     private function validate()
     {
         if ( ! $this->dbConnectionParams ) {
@@ -119,7 +124,7 @@ class ActivityPubConfigBuilder
      * @param bool $isDevMode
      * @return ActivityPubConfigBuilder The builder instance
      */
-    public function setIsDevMode( bool $isDevMode )
+    public function setIsDevMode( $isDevMode )
     {
         $this->isDevMode = $isDevMode;
         return $this;
@@ -145,7 +150,7 @@ class ActivityPubConfigBuilder
      * @param string $dbPrefix
      * @return ActivityPubConfigBuilder The builder instance
      */
-    public function setDbPrefix( string $dbPrefix )
+    public function setDbPrefix( $dbPrefix )
     {
         $this->dbPrefix = $dbPrefix;
         return $this;
@@ -217,7 +222,7 @@ class ActivityPubConfigBuilder
      * @param string $idPathPrefix The id path prefix
      * @return ActivityPubConfigBuilder The builder instance
      */
-    public function setIdPathPrefix( string $idPathPrefix )
+    public function setIdPathPrefix( $idPathPrefix )
     {
         $this->idPathPrefix = $idPathPrefix;
         return $this;
@@ -231,4 +236,4 @@ class ActivityPubConfigBuilder
         return $this->idPathPrefix;
     }
 }
-?>
+

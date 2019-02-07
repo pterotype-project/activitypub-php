@@ -41,7 +41,7 @@ class PrivateKey
      * @param string $key The private key as a string
      * @param ActivityPubObject $object The object associated with this key
      */
-    public function __construct( string $key, ActivityPubObject $object )
+    public function __construct( $key, ActivityPubObject $object )
     {
         $this->key = $key;
         $this->object = $object;
@@ -53,9 +53,9 @@ class PrivateKey
      * Don't call this directly - instead, use ActivityPubObject->setPrivateKey()
      * @param string $key The private key as a string
      */
-    public function setKey( string $key )
+    public function setKey( $key )
     {
         $this->key = $key;
     }
 }
-?>
+

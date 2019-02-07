@@ -18,15 +18,18 @@ class NonActivityHandler implements EventSubscriberInterface
      */
     private $contextProvider;
 
-    const ACTIVITY_TYPES = array(
-        'Accept', 'Add', 'Announce', 'Arrive',
-        'Block', 'Create', 'Delete', 'Dislike',
-        'Flag', 'Follow', 'Ignore', 'Invite',
-        'Join', 'Leave', 'Like', 'Listen',
-        'Move', 'Offer', 'Question', 'Reject',
-        'Read', 'Remove', 'TentativeReject', 'TentativeAccept',
-        'Travel', 'Undo', 'Update', 'View',
-    );
+    public static function activityTypes()
+    {
+        return array(
+            'Accept', 'Add', 'Announce', 'Arrive',
+            'Block', 'Create', 'Delete', 'Dislike',
+            'Flag', 'Follow', 'Ignore', 'Invite',
+            'Join', 'Leave', 'Like', 'Listen',
+            'Move', 'Offer', 'Question', 'Reject',
+            'Read', 'Remove', 'TentativeReject', 'TentativeAccept',
+            'Travel', 'Undo', 'Update', 'View',
+        );
+    }
     
     public static function getSubscribedEvents()
     {
@@ -43,7 +46,7 @@ class NonActivityHandler implements EventSubscriberInterface
     public function handle( OutboxActivityEvent $event )
     {
         $object = $event->getActivity();
-        if ( in_array( $object['type'], self::ACTIVITY_TYPES ) ) {
+        if ( in_array( $object['type'], self::activityTypes() ) ) {
             return;
         }
         $request = $event->getRequest();
@@ -78,4 +81,4 @@ class NonActivityHandler implements EventSubscriberInterface
         return $create;
     }
 }
-?>
+

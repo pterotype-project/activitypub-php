@@ -1,6 +1,8 @@
 <?php
 namespace ActivityPub\Utils;
 
+use DateTime;
+
 /**
  * An interface to provide DateTime objects, so that DateTimes can be fixed in tests
  */
@@ -15,4 +17,4 @@ interface DateTimeProvider
      */
     public function getTime( $context = '' );
 }
-?>
+
