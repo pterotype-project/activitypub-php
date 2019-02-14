@@ -1,4 +1,7 @@
-<?php
+<?php /** @noinspection PhpDocMissingThrowsInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Config;
 
 use ActivityPub\Activities\CreateHandler;
@@ -11,7 +14,6 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Controllers\GetController;
 use ActivityPub\Controllers\PostController;
-use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\Router;

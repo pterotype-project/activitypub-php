@@ -1,8 +1,6 @@
 <?php
 namespace ActivityPub\Activities;
 
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;

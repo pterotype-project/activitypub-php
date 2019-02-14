@@ -1,13 +1,13 @@
 <?php
 namespace ActivityPub\Crypto;
 
+use ActivityPub\Utils\HeaderUtils;
 use DateTime;
 use ActivityPub\Utils\DateTimeProvider;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Psr\Http\Message\RequestInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\DiactorosFactory;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\HeaderUtils;
 
 /**
  * The HttpSignatureService provides methods to generate and verify HTTP signatures
@@ -54,10 +54,10 @@ class HttpSignatureService
     /**
      * Generates a signature given the request and private key
      *
-     * @param RequestInterface $psrRequest The request to be signed
+     * @param RequestInterface $request The request to be signed
      * @param string $privateKey The private key to use to sign the request
      * @param string $keyId The id of the signing key
-     * @param array $headers The headers to use in the signature 
+     * @param array $headers|null The headers to use in the signature
      *                       (default ['(request-target)', 'host', 'date'])
      * @return string The Signature header value
      */
@@ -70,7 +70,7 @@ class HttpSignatureService
         $headers = array_map( 'strtolower', $headers );
         $signingString = $this->getSigningString( $request, $headers );
         $keypair = RsaKeypair::fromPrivateKey( $privateKey );
-        $signature = base64_encode( $keypair->sign( $signingString, 'rsa256' ) );
+        $signature = base64_encode( $keypair->sign( $signingString, 'sha256' ) );
         $headersStr = implode( ' ', $headers );
         return "keyId=\"$keyId\"," .
             "algorithm=\"rsa-sha256\"," .
@@ -127,7 +127,7 @@ class HttpSignatureService
     /**
      * Returns the signing string from the request
      *
-     * @param Request $request The request
+     * @param RequestInterface $request The request
      * @param array $headers The headers to use to generate the signing string
      * @return string The signing string
      */

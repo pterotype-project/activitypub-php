@@ -1,4 +1,7 @@
-<?php
+<?php /** @noinspection PhpDocMissingThrowsInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Entities;
 
 use DateTime;
@@ -82,7 +85,9 @@ class Field
      * @param ActivityPubObject $object The object to which this field belongs
      * @param string $name The name of the field
      * @param string $value The value of the field
+     * @param DateTime|null $time
      * @return Field The new field
+     * @throws \Exception
      */
     public static function withValue( ActivityPubObject $object,  $name,  $value, DateTime $time = null )
     {
@@ -102,7 +107,9 @@ class Field
      * @param ActivityPubObject $object The object to which this field belongs
      * @param string $name The name of the field
      * @param ActivityPubObject $targetObject The object that this field holds
+     * @param DateTime|null $time
      * @return Field The new field
+     * @throws \Exception
      */
     public static function withObject( ActivityPubObject $object,
                                        $name,
@@ -269,6 +276,7 @@ class Field
     /**
      * Returns true if $this is equal to $other
      *
+     * @param Field $other
      * @return bool
      */
     public function equals( Field $other )

@@ -1,8 +1,9 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Test\Entities;
 
+use ActivityPub\Utils\DateTimeProvider;
 use DateTime;
-use ActivityPub\Crypto\RsaKeypair;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Test\TestConfig\ArrayDataSet;
@@ -13,7 +14,13 @@ use Doctrine\ORM\Tools\Setup;
 
 class EntityTest extends SQLiteTestCase
 {
+    /**
+     * @var EntityManager
+     */
     protected $entityManager;
+    /**
+     * @var DateTimeProvider
+     */
     protected $dateTimeProvider;
 
     protected function getDataSet()
@@ -87,7 +94,7 @@ class EntityTest extends SQLiteTestCase
         $this->entityManager->flush();
         $newPrivateKey = 'a new private key';
         $object->setPrivateKey( $newPrivateKey );
-        $this->entityManager->persiste( $object );
+        $this->entityManager->persist( $object );
         $this->entityManager->flush();
         $now = $this->getTime( 'objects-service.create' );
         $expected = new ArrayDataSet( array(

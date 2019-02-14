@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Auth;
 
 use Exception;
@@ -40,7 +41,7 @@ class AuthListener implements EventSubscriberInterface
      * Constructs a new AuthenticationService
      *
      * @param Callable $authFunction A Callable that should accept
-     *
+     * @param ObjectsService $objectsService
      */
     public function __construct( Callable $authFunction, ObjectsService $objectsService )
     {

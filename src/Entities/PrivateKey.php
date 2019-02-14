@@ -1,8 +1,6 @@
 <?php
 namespace ActivityPub\Entities;
 
-use ActivityPub\Entities\ActivityPubObject;
-
 /**
  * The keys table holds the private keys associated with ActivityPub actors
  *

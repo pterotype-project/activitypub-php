@@ -65,7 +65,7 @@ class RsaKeypair
             );
         }
         $rsa = new RSA();
-        $rsa->setHash( 'sha256' );
+        $rsa->setHash( $hash );
         $rsa->setSignatureMode(RSA::SIGNATURE_PKCS1);
         $rsa->loadKey( $this->privateKey );
         return $rsa->sign( $data );

@@ -3,8 +3,6 @@ namespace ActivityPub\Test\Controllers;
 
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Controllers\GetController;
-use ActivityPub\Entities\ActivityPubObject;
-use ActivityPub\Entities\Field;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;

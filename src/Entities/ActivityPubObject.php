@@ -1,10 +1,12 @@
-<?php
+<?php /** @noinspection PhpDocMissingThrowsInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Entities;
 
 use ArrayAccess;
 use BadMethodCallException;
 use DateTime;
-use ActivityPub\Utils\Util;
 use Doctrine\Common\Collections\ArrayCollection;
 
 /**
@@ -137,6 +139,7 @@ class ActivityPubObject implements ArrayAccess
     /**
      * Returns true if the object contains a field with key $name
      *
+     * @param mixed $name
      * @return boolean
      */
     public function hasField( $name )
@@ -171,6 +174,7 @@ class ActivityPubObject implements ArrayAccess
      * The value is either a string, another ActivityPubObject, or null
      *   if no such key exists.
      *
+     * @param mixed $name
      * @return string|ActivityPubObject|null The field's value, or null if
      *   the field is not found
      */
@@ -192,6 +196,7 @@ class ActivityPubObject implements ArrayAccess
      *   $object.
      *
      * @param Field $field
+     * @param DateTime|null $time
      */
     public function addField( Field $field, DateTime $time = null )
     {
@@ -205,6 +210,7 @@ class ActivityPubObject implements ArrayAccess
     /**
      * Returns true if the object is referenced by a field with key $name
      *
+     * @param mixed $name
      * @return boolean
      */
     public function hasReferencingField( $name )

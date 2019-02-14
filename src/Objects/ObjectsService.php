@@ -1,10 +1,11 @@
-<?php
+<?php /** @noinspection PhpDocMissingThrowsInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Objects;
 
-use DateTime;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
-use ActivityPub\Utils\Util;
 use ActivityPub\Utils\DateTimeProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
@@ -66,17 +67,17 @@ class ObjectsService
         /** @noinspection PhpUnhandledExceptionInspection */
         $this->entityManager->flush();
         return $object;
-    }
+    }/** @noinspection PhpDocMissingThrowsInspection */
 
     /**
-     * Persists a field. 
+     * Persists a field.
      *
      * If the field is an array, persist it as a child object
      *
      * @param ActivityPubObject $object
      * @param string $fieldName
      * @param string|array $fieldValue
-     *
+     * @param string $context
      */
     private function persistField( $object, $fieldName, $fieldValue, $context = 'objects-service.create' )
     {

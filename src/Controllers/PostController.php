@@ -7,6 +7,7 @@ use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -40,6 +41,7 @@ class PostController
      * Either dispatches an inbox/outbox activity event or throws the appropriate
      * HTTP error.
      * @param Request $request The request
+     * @return Response
      */
     public function handle( Request $request )
     {
@@ -110,15 +112,6 @@ class PostController
             return false;
         }
         return true;
-    }
-
-    private function objectWithField( $name,  $value )
-    {
-        $results = $this->objectsService->query( array( $name => $value ) );
-        if ( count( $results ) === 0 ) {
-            return false;
-        }
-        return $results[0];
     }
 
     private function getUriWithoutQuery( Request $request )

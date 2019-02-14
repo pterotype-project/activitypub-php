@@ -33,6 +33,9 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
 7U1yQXnTAEFYM560yJlzUpOb1V4cScGd365tiSMvxLOvTA==
 -----END RSA PRIVATE KEY-----";
 
+    /**
+     * @var HttpSignatureService
+     */
     private $httpSignatureService;
 
     public function setUp()

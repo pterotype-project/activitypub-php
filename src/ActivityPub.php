@@ -1,4 +1,6 @@
-<?php
+<?php /** @noinspection PhpDocMissingThrowsInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
 
 namespace ActivityPub;
 

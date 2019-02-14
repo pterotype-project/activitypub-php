@@ -65,7 +65,8 @@ class GetController
         if ( $object->hasField( 'type' ) &&
              ( $object['type'] === 'Collection' ||
                $object['type'] === 'OrderedCollection' ) ) {
-            return $this->collectionsService->pageAndFilterCollection( $request, $object );
+            $pagedCollection = $this->collectionsService->pageAndFilterCollection( $request, $object );
+            return new JsonResponse( $pagedCollection );
         }
         $response = new JsonResponse( $object->asArray() );
         if ( $object->hasField( 'type' ) &&

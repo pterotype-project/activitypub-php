@@ -1,9 +1,9 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Test\TestUtils;
 
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
-use ActivityPub\Test\TestUtils\TestField;
 use DateTime;
 
 /**

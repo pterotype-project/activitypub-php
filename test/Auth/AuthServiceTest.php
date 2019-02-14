@@ -8,6 +8,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 class AuthServiceTest extends APTestCase
 {
+    /**
+     * @var AuthService
+     */
     private $authService;
 
     public function setUp()

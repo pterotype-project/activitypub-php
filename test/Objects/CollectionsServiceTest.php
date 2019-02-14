@@ -2,7 +2,6 @@
 namespace ActivityPub\Test\Objects;
 
 use ActivityPub\Utils\SimpleDateTimeProvider;
-use Exception;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;

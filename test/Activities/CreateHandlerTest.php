@@ -18,6 +18,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 class CreateHandlerTest extends APTestCase
 {
+    /**
+     * @var EventDispatcher
+     */
     private $eventDispatcher;
 
     public function setUp()

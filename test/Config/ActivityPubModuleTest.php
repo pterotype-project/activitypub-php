@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Test\Config;
 
 use ActivityPub\Config\ActivityPubConfig;
@@ -9,6 +10,9 @@ use ActivityPub\Test\TestConfig\APTestCase;
 
 class ActivityPubModuleTest extends APTestCase
 {
+    /**
+     * @var ActivityPubModule
+     */
     private $module;
 
     public function setUp()

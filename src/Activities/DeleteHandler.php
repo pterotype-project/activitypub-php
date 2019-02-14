@@ -1,9 +1,6 @@
 <?php
 namespace ActivityPub\Activities;
 
-use ActivityPub\Activities\ActivityEvent;
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\DateTimeProvider;
 use DateTime;

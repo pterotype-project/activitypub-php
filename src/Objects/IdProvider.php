@@ -1,7 +1,6 @@
 <?php
 namespace ActivityPub\Objects;
 
-use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\RandomProvider;
 use Symfony\Component\HttpFoundation\Request;
 

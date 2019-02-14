@@ -81,7 +81,7 @@ class FollowHandlerTest extends APTestCase
             'type' => 'Follow',
             'object' => 'https://example.com/actor/2',
         );
-        $eventDispatcher->addListener( OutboxActivityEvent::NAME, function( $event )
+        $eventDispatcher->addListener( OutboxActivityEvent::NAME, function()
             use ( &$outboxDispatched )
             {
                 $outboxDispatched = true;

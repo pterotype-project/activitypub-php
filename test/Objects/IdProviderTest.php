@@ -57,7 +57,6 @@ class IdProviderTest extends APTestCase
             );
             $idProvider = new IdProvider( $this->objectsService, $randomProvider, 'ap' );
             $request = Request::create( 'https://example.com' );
-            $id = '';
             if ( array_key_exists( 'path', $testCase ) ) {
                 $id = $idProvider->getId( $request, $testCase['path'] );
             } else {

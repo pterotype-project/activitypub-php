@@ -1,9 +1,6 @@
 <?php
 namespace ActivityPub\Config;
 
-use ActivityPub\Config\ActivityPubConfigBuilder;
-use ActivityPub\Objects\ContextProvider;
-
 /**
  * The ActivityPubConfig is a data class to hold ActivityPub configuration options
  */

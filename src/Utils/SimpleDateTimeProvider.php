@@ -1,11 +1,12 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Utils;
 
 use DateTime;
-use ActivityPub\Utils\DateTimeProvider;
 
 class SimpleDateTimeProvider implements DateTimeProvider
 {
+    /** @noinspection PhpDocMissingThrowsInspection */
     /**
      * Returns a new DateTime for the given context
      *

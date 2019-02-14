@@ -1,4 +1,5 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Test\Auth;
 
 use ActivityPub\Auth\AuthListener;

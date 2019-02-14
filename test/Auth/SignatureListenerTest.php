@@ -4,8 +4,6 @@ namespace ActivityPub\Test\Auth;
 use DateTime;
 use ActivityPub\Auth\SignatureListener;
 use ActivityPub\Crypto\HttpSignatureService;
-use ActivityPub\Entities\ActivityPubObject;
-use ActivityPub\Entities\Field;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;

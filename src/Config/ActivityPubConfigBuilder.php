@@ -1,7 +1,6 @@
 <?php
 namespace ActivityPub\Config;
 
-use ActivityPub\Config\ActivityPubConfig;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
 use Exception;

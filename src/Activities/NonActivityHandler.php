@@ -1,11 +1,9 @@
 <?php
 namespace ActivityPub\Activities;
 
-use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ContextProvider;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * The NonActivityHandler wraps non-activity objects sent to the outbox in a
@@ -49,22 +47,20 @@ class NonActivityHandler implements EventSubscriberInterface
         if ( in_array( $object['type'], self::activityTypes() ) ) {
             return;
         }
-        $request = $event->getRequest();
         $actor = $event->getActor();
-        $create = $this->makeCreate( $request, $object, $actor );
+        $create = $this->makeCreate( $object, $actor );
         $event->setActivity( $create );
     }
 
     /**
      * Makes a new Create activity with $object as the object
      *
-     * @param Request $request The current request
      * @param array $object The object
-     * @param ActivityPubObject $actorId The actor creating the object
+     * @param ActivityPubObject $actor The actor creating the object
      *
      * @return array The Create activity
      */
-    private function makeCreate( Request $request, array $object,
+    private function makeCreate( array $object,
                                  ActivityPubObject $actor )
     {
         $create = array(

@@ -1,4 +1,7 @@
-<?php
+<?php /** @noinspection PhpDocMissingThrowsInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Objects;
 
 use ActivityPub\Auth\AuthService;
@@ -56,6 +59,9 @@ class CollectionsService
      * Returns an array representation of the $collection
      *
      * Returns the collection paged and filtered by the request's authorization status
+     * @param Request $request
+     * @param ActivityPubObject $collection
+     * @return array
      */
     public function pageAndFilterCollection( Request $request,
                                              ActivityPubObject $collection )
@@ -125,6 +131,7 @@ class CollectionsService
      */
     public function addItem( ActivityPubObject $collection, array $item )
     {
+        // TODO implement me
         if ( ! $collection->hasField( 'items' ) ) {
             $items = new ActivityPubObject(
                 $this->dateTimeProvider->getTime( 'collections-service.create' )
@@ -189,7 +196,7 @@ class CollectionsService
         $idx = $offset;
         $count = 0;
         while ( $count < $pageSize ) {
-            $item = $collectionItems->getFieldValue( strval( $idx ) );
+            $item = $collectionItems->getFieldValue( $idx );
             if ( ! $item ) {
                 break;
             }
@@ -225,14 +232,14 @@ class CollectionsService
 
     private function hasNextItem( Request $request, ActivityPubObject $collectionItems, $idx )
     {
-        $next = $collectionItems->getFieldValue( strval( $idx ) );
+        $next = $collectionItems->getFieldValue( $idx );
         while ( $next ) {
             if ( is_string( $next ) ||
                  $this->authService->isAuthorized( $request, $next ) ) {
                 return $idx;
             }
             $idx++;
-            $next = $collectionItems->getFieldValue( strval( $idx ) );
+            $next = $collectionItems->getFieldValue( $idx );
         }
         return false;
     }

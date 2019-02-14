@@ -1,9 +1,12 @@
-<?php
+<?php /** @noinspection PhpUnhandledExceptionInspection */
+/** @noinspection PhpUnhandledExceptionInspection */
+
+/** @noinspection PhpUnhandledExceptionInspection */
+
 namespace ActivityPub\Test\TestConfig;
 
 use ActivityPub\ActivityPub;
 use ActivityPub\Config\ActivityPubConfig;
-use ActivityPub\Test\TestConfig\APTestCase;
 
 abstract class SQLiteTestCase extends APTestCase
 {
