@@ -3,9 +3,6 @@ namespace ActivityPub\Utils;
 
 class RandomProvider
 {
-    const ID_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const ID_CHARS_LEN = 62;
-
     /**
      * Generates a random alphanumeric string of length $length
      *
@@ -17,7 +14,7 @@ class RandomProvider
     {
         $str = '';
         for ( $i = 0; $i < $length; $i++ ) {
-            $str = $str . self::ID_CHARS[rand( 0, self::ID_CHARS_LEN - 1)];
+            $str = $str . '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'[rand( 0, 61 )];
         }
         return $str;
     }
