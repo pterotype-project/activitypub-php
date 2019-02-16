@@ -1,39 +1,23 @@
 <?php
+
 namespace ActivityPub\Test\Activities;
 
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Objects\ObjectsService;
-use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class UpdateHandlerTest extends APTestCase
 {
-    private static function getObjects()
-    {
-        return array(
-            'https://elsewhere.com/objects/1' => array(
-                'id' => 'https://elsewhere.com/objects/1',
-                'attributedTo' => 'https://elsewhere.com/actors/1',
-            ),
-            'https://example.com/objects/1' => array(
-                'id' => 'https://example.com/objects/1',
-                'attributedTo' => 'https://example.com/actors/1',
-                'type' => 'Note',
-                'content' => 'This is a note',
-            ),
-        );
-    }
-
     /**
      * @var EventDispatcher
      */
     private $eventDispatcher;
-
     /**
      * @var array
      */
@@ -44,7 +28,7 @@ class UpdateHandlerTest extends APTestCase
         $this->objects = self::getObjects();
         $objectsService = $this->getMock( ObjectsService::class );
         $objectsService->method( 'dereference' )->will( $this->returnCallback(
-            function( $id ) {
+            function ( $id ) {
                 if ( array_key_exists( $id, $this->objects ) ) {
                     return TestActivityPubObject::fromArray( $this->objects[$id] );
                 }
@@ -52,7 +36,7 @@ class UpdateHandlerTest extends APTestCase
             }
         ) );
         $objectsService->method( 'update' )->will( $this->returnCallback(
-            function( $id, $updateFields ) {
+            function ( $id, $updateFields ) {
                 if ( array_key_exists( $id, $this->objects ) ) {
                     $existing = $this->objects[$id];
                     foreach ( $updateFields as $field => $newValue ) {
@@ -70,6 +54,22 @@ class UpdateHandlerTest extends APTestCase
         $updateHandler = new UpdateHandler( $objectsService );
         $this->eventDispatcher = new EventDispatcher();
         $this->eventDispatcher->addSubscriber( $updateHandler );
+    }
+
+    private static function getObjects()
+    {
+        return array(
+            'https://elsewhere.com/objects/1' => array(
+                'id' => 'https://elsewhere.com/objects/1',
+                'attributedTo' => 'https://elsewhere.com/actors/1',
+            ),
+            'https://example.com/objects/1' => array(
+                'id' => 'https://example.com/objects/1',
+                'attributedTo' => 'https://example.com/actors/1',
+                'type' => 'Note',
+                'content' => 'This is a note',
+            ),
+        );
     }
 
     public function testUpdateHandler()

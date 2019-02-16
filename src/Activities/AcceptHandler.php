@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Objects\CollectionsService;
@@ -16,20 +17,20 @@ class AcceptHandler implements EventSubscriberInterface
      * @var CollectionsService
      */
     private $collectionsService;
-    
-    public static function getSubscribedEvents()
-    {
-        return array(
-            InboxActivityEvent::NAME => 'handleInbox',
-            OutboxActivityEvent::NAME => 'handleOutbox',
-        );
-    }
 
     public function __construct( ObjectsService $objectsService,
                                  CollectionsService $collectionsService )
     {
         $this->objectsService = $objectsService;
         $this->collectionsService = $collectionsService;
+    }
+
+    public static function getSubscribedEvents()
+    {
+        return array(
+            InboxActivityEvent::NAME => 'handleInbox',
+            OutboxActivityEvent::NAME => 'handleOutbox',
+        );
     }
 
     public function handleInbox( InboxActivityEvent $event )
@@ -54,17 +55,17 @@ class AcceptHandler implements EventSubscriberInterface
         // or there isn't, in which case this is an ordinary Accept
         // sent by a client and the Follow is in the database
         $follow = $request->attributes->get( 'follow' );
-        if ( ! $follow ) {
+        if ( !$follow ) {
             $followId = $activity['object'];
             if ( is_array( $followId ) && array_key_exists( 'id', $followId ) ) {
                 $followId = $followId['id'];
             }
-            if ( ! is_string( $followId ) ) {
+            if ( !is_string( $followId ) ) {
                 return;
             }
             $follow = $this->objectsService->dereference( $followId )->asArray( -1 );
         }
-        if ( ! $follow || ! array_key_exists( 'object', $follow ) ) {
+        if ( !$follow || !array_key_exists( 'object', $follow ) ) {
             return;
         }
         $followObjectId = $follow['object'];

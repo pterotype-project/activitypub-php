@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Auth;
 
 use ActivityPub\Entities\ActivityPubObject;
@@ -9,7 +10,7 @@ class AuthService
     public function isAuthorized( Request $request,
                                   ActivityPubObject $object )
     {
-        if ( ! $this->hasAudience( $object ) ) {
+        if ( !$this->hasAudience( $object ) ) {
             return true;
         }
         $audience = $this->getAudience( $object );
@@ -43,8 +44,8 @@ class AuthService
         // TODO do I need to traverse the inReplyTo chain here?
         $objectArr = $object->asArray( 0 );
         $audience = array();
-        foreach( array( 'to', 'bto', 'cc', 'bcc', 'audience', 'attributedTo', 'actor' )
-                 as $attribute ) {
+        foreach ( array( 'to', 'bto', 'cc', 'bcc', 'audience', 'attributedTo', 'actor' )
+                  as $attribute ) {
             $audience = $this->checkAudienceAttribute( $audience, $attribute, $objectArr );
         }
         return $audience;
@@ -54,7 +55,7 @@ class AuthService
     {
         if ( array_key_exists( $attribute, $objectArr ) ) {
             $audienceValue = $objectArr[$attribute];
-            if ( ! is_array( $audienceValue ) ) {
+            if ( !is_array( $audienceValue ) ) {
                 $audienceValue = array( $audienceValue );
             }
             return array_merge( $audience, $audienceValue );

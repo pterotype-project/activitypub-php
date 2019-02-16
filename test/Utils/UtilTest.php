@@ -1,8 +1,9 @@
 <?php
+
 namespace ActivityPub\Test\Utils;
 
-use ActivityPub\Utils\Util;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Utils\Util;
 
 class UtilTest extends APTestCase
 {

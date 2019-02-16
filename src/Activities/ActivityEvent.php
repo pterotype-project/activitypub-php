@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Entities\ActivityPubObject;
@@ -37,7 +38,7 @@ class ActivityEvent extends Event
     protected $response;
 
     public function __construct( array $activity, ActivityPubObject $actor,
-                                    Request $request )
+                                 Request $request )
     {
         $this->activity = $activity;
         $this->actor = $actor;

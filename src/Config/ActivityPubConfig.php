@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Config;
 
 /**
@@ -37,7 +38,7 @@ class ActivityPubConfig
     private $idPathPrefix;
 
     /**
-     * Don't call this directly - instead, use 
+     * Don't call this directly - instead, use
      * ActivityPubConfig->createBuilder()->build()
      *
      * @param ActivityPubConfigBuilder $builder

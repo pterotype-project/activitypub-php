@@ -1,11 +1,12 @@
 <?php
+
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Activities\NonActivityHandler;
+use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Objects\ContextProvider;
-use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\HttpFoundation\Request;
 
 class NonActivityHandlerTest extends APTestCase

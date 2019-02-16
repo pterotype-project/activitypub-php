@@ -39,7 +39,7 @@ class ActivityPub
      */
     public function __construct( ActivityPubConfig $config )
     {
-        $this->module = new ActivityPubModule( $config);
+        $this->module = new ActivityPubModule( $config );
     }
 
     /**
@@ -52,7 +52,7 @@ class ActivityPub
      */
     public function handle( $request = null )
     {
-        if ( ! $request ) {
+        if ( !$request ) {
             $request = Request::createFromGlobals();
         }
 
@@ -74,21 +74,6 @@ class ActivityPub
     }
 
     /**
-     * Creates the database tables necessary for the library to function,
-     * if they have not already been created.
-     *
-     * For best performance, this should only get called once in an application
-     * (for example, when other database migrations get run).
-     */
-    public function updateSchema()
-    {
-        $entityManager = $this->module->get( EntityManager::class );
-        $schemaTool = new SchemaTool( $entityManager );
-        $classes = $entityManager->getMetadataFactory()->getAllMetadata();
-        $schemaTool->updateSchema( $classes );
-    }
-
-    /**
      * Sets up the activity handling pipeline
      *
      * @param EventDispatcher $dispatcher The dispatcher to attach the event
@@ -101,6 +86,21 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( CreateHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( UpdateHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( DeleteHandler::class ) );
+    }
+
+    /**
+     * Creates the database tables necessary for the library to function,
+     * if they have not already been created.
+     *
+     * For best performance, this should only get called once in an application
+     * (for example, when other database migrations get run).
+     */
+    public function updateSchema()
+    {
+        $entityManager = $this->module->get( EntityManager::class );
+        $schemaTool = new SchemaTool( $entityManager );
+        $classes = $entityManager->getMetadataFactory()->getAllMetadata();
+        $schemaTool->updateSchema( $classes );
     }
 }
 

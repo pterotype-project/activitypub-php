@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Entities\ActivityPubObject;
@@ -16,29 +17,16 @@ class NonActivityHandler implements EventSubscriberInterface
      */
     private $contextProvider;
 
-    public static function activityTypes()
+    public function __construct( ContextProvider $contextProvider )
     {
-        return array(
-            'Accept', 'Add', 'Announce', 'Arrive',
-            'Block', 'Create', 'Delete', 'Dislike',
-            'Flag', 'Follow', 'Ignore', 'Invite',
-            'Join', 'Leave', 'Like', 'Listen',
-            'Move', 'Offer', 'Question', 'Reject',
-            'Read', 'Remove', 'TentativeReject', 'TentativeAccept',
-            'Travel', 'Undo', 'Update', 'View',
-        );
+        $this->contextProvider = $contextProvider;
     }
-    
+
     public static function getSubscribedEvents()
     {
         return array(
             OutboxActivityEvent::NAME => 'handle',
         );
-    }
-
-    public function __construct( ContextProvider $contextProvider )
-    {
-        $this->contextProvider = $contextProvider;
     }
 
     public function handle( OutboxActivityEvent $event )
@@ -50,6 +38,19 @@ class NonActivityHandler implements EventSubscriberInterface
         $actor = $event->getActor();
         $create = $this->makeCreate( $object, $actor );
         $event->setActivity( $create );
+    }
+
+    public static function activityTypes()
+    {
+        return array(
+            'Accept', 'Add', 'Announce', 'Arrive',
+            'Block', 'Create', 'Delete', 'Dislike',
+            'Flag', 'Follow', 'Ignore', 'Invite',
+            'Join', 'Leave', 'Like', 'Listen',
+            'Move', 'Offer', 'Question', 'Reject',
+            'Read', 'Remove', 'TentativeReject', 'TentativeAccept',
+            'Travel', 'Undo', 'Update', 'View',
+        );
     }
 
     /**

@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Controllers;
 
 use ActivityPub\Auth\AuthService;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
  */
 class GetController
 {
-    
+
     /**
      * @var ObjectsService
      */
@@ -54,23 +55,23 @@ class GetController
             $uri = substr( $uri, 0, $queryPos );
         }
         $object = $this->objectsService->dereference( $uri );
-        if ( ! $object ) {
+        if ( !$object ) {
             throw new NotFoundHttpException();
         }
-        if ( ! $this->authService->isAuthorized( $request, $object ) ) {
+        if ( !$this->authService->isAuthorized( $request, $object ) ) {
             throw new UnauthorizedHttpException(
                 'Signature realm="ActivityPub",headers="(request-target) host date"'
             );
         }
         if ( $object->hasField( 'type' ) &&
-             ( $object['type'] === 'Collection' ||
-               $object['type'] === 'OrderedCollection' ) ) {
+            ( $object['type'] === 'Collection' ||
+                $object['type'] === 'OrderedCollection' ) ) {
             $pagedCollection = $this->collectionsService->pageAndFilterCollection( $request, $object );
             return new JsonResponse( $pagedCollection );
         }
         $response = new JsonResponse( $object->asArray() );
         if ( $object->hasField( 'type' ) &&
-             $object['type'] === 'Tombstone' ) {
+            $object['type'] === 'Tombstone' ) {
             $response->setStatusCode( 410 );
         }
         return $response;

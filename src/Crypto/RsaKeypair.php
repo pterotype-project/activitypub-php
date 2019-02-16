@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Crypto;
 
 use BadMethodCallException;
@@ -21,11 +22,51 @@ class RsaKeypair
      *
      */
     private $privateKey;
-    
-    public function __construct( $publicKey,  $privateKey )
+
+    public function __construct( $publicKey, $privateKey )
     {
         $this->publicKey = $publicKey;
         $this->privateKey = $privateKey;
+    }
+
+    /**
+     * Generates a new keypair
+     *
+     * @return RsaKeypair
+     */
+    public static function generate()
+    {
+        $rsa = new RSA();
+        $key = $rsa->createKey( 2048 );
+        return new RsaKeypair( $key['publickey'], $key['privatekey'] );
+    }
+
+    /**
+     * Generates an RsaKeypair with the given public key
+     *
+     * The generated RsaKeypair will be able to verify signatures but
+     *   not sign data, since it won't have a private key.
+     *
+     * @param string $publicKey The public key
+     * @return RsaKeypair
+     */
+    public static function fromPublicKey( $publicKey )
+    {
+        return new RsaKeypair( $publicKey, '' );
+    }
+
+    /**
+     * Generates an RsaKeypair with the given private key
+     *
+     * The generated RsaKeypair will be able to sign data but
+     *   not verify signatures, since it won't have a public key.
+     *
+     * @param string $privateKey The private key
+     * @return RsaKeypair
+     */
+    public static function fromPrivateKey( $privateKey )
+    {
+        return new RsaKeypair( '', $privateKey );
     }
 
     /**
@@ -66,7 +107,7 @@ class RsaKeypair
         }
         $rsa = new RSA();
         $rsa->setHash( $hash );
-        $rsa->setSignatureMode(RSA::SIGNATURE_PKCS1);
+        $rsa->setSignatureMode( RSA::SIGNATURE_PKCS1 );
         $rsa->loadKey( $this->privateKey );
         return $rsa->sign( $data );
     }
@@ -86,49 +127,9 @@ class RsaKeypair
         // I have no idea what that means or how to fix it
         $rsa = new RSA();
         $rsa->setHash( $hash );
-        $rsa->setSignatureMode(RSA::SIGNATURE_PKCS1);
+        $rsa->setSignatureMode( RSA::SIGNATURE_PKCS1 );
         $rsa->loadKey( $this->publicKey );
         return $rsa->verify( $data, $signature );
-    }
-
-    /**
-     * Generates a new keypair
-     *
-     * @return RsaKeypair
-     */
-    public static function generate()
-    {
-        $rsa = new RSA();
-        $key = $rsa->createKey( 2048 );
-        return new RsaKeypair( $key['publickey'], $key['privatekey'] );
-    }
-
-    /**
-     * Generates an RsaKeypair with the given public key
-     *
-     * The generated RsaKeypair will be able to verify signatures but
-     *   not sign data, since it won't have a private key.
-     *
-     * @param string $publicKey The public key
-     * @return RsaKeypair
-     */
-    public static function fromPublicKey( $publicKey )
-    {
-        return new RsaKeypair( $publicKey, '' );
-    }
-
-    /**
-     * Generates an RsaKeypair with the given private key
-     *
-     * The generated RsaKeypair will be able to sign data but
-     *   not verify signatures, since it won't have a public key.
-     *
-     * @param string $privateKey The private key
-     * @return RsaKeypair
-     */
-    public static function fromPrivateKey( $privateKey)
-    {
-        return new RsaKeypair( '', $privateKey );
     }
 }
 

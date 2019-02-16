@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Objects\ObjectsService;
@@ -21,19 +22,19 @@ class DeleteHandler implements EventSubscriberInterface
      */
     private $objectsService;
 
+    public function __construct( DateTimeProvider $dateTimeProvider,
+                                 ObjectsService $objectsService )
+    {
+        $this->dateTimeProvider = $dateTimeProvider;
+        $this->objectsService = $objectsService;
+    }
+
     public static function getSubscribedEvents()
     {
         return array(
             InboxActivityEvent::NAME => 'handleDelete',
             OutboxActivityEvent::NAME => 'handleDelete',
         );
-    }
-
-    public function __construct( DateTimeProvider $dateTimeProvider,
-                                 ObjectsService $objectsService )
-    {
-        $this->dateTimeProvider = $dateTimeProvider;
-        $this->objectsService = $objectsService;
     }
 
     public function handleDelete( ActivityEvent $event )
@@ -43,14 +44,14 @@ class DeleteHandler implements EventSubscriberInterface
             return;
         }
         $objectId = $activity['object'];
-        if ( ! is_string( $objectId ) ) {
+        if ( !is_string( $objectId ) ) {
             if ( is_array( $objectId ) && array_key_exists( 'id', $objectId ) ) {
                 $objectId = $objectId['id'];
             } else {
                 throw new BadRequestHttpException( 'Object must have an "id" field' );
             }
         }
-        if ( ! $this->authorized( $event->getRequest(), $objectId ) ) {
+        if ( !$this->authorized( $event->getRequest(), $objectId ) ) {
             throw new UnauthorizedHttpException(
                 'Signature realm="ActivityPub",headers="(request-target) host date"'
             );
@@ -68,27 +69,27 @@ class DeleteHandler implements EventSubscriberInterface
         $this->objectsService->replace( $objectId, $tombstone );
     }
 
-    private function getNowTimestamp()
+    public function authorized( Request $request, $objectId )
     {
-        return $this->dateTimeProvider->getTime( 'activities.delete' )
-            ->format( DateTime::ISO8601 );
-    }
-
-    public function authorized( Request $request,  $objectId )
-    {
-        if ( ! $request->attributes->has( 'actor' ) ) {
+        if ( !$request->attributes->has( 'actor' ) ) {
             return false;
         }
         $requestActor = $request->attributes->get( 'actor' );
         $object = $this->objectsService->dereference( $objectId );
-        if ( ! $object || ! $object->hasField( 'attributedTo' ) ) {
+        if ( !$object || !$object->hasField( 'attributedTo' ) ) {
             return false;
         }
         $attributedActorId = $object['attributedTo'];
-        if ( ! is_string( $attributedActorId ) ) {
+        if ( !is_string( $attributedActorId ) ) {
             $attributedActorId = $attributedActorId['id'];
         }
         return $requestActor['id'] === $attributedActorId;
+    }
+
+    private function getNowTimestamp()
+    {
+        return $this->dateTimeProvider->getTime( 'activities.delete' )
+            ->format( DateTime::ISO8601 );
     }
 }
 

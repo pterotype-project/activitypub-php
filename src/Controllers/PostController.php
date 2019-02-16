@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Controllers;
 
 use ActivityPub\Activities\InboxActivityEvent;
@@ -54,15 +55,15 @@ class PostController
         $inboxField = $object->getReferencingField( 'inbox' );
         if ( $inboxField ) {
             $activity = json_decode( $request->getContent(), true );
-            if ( ! $activity || ! array_key_exists( 'actor', $activity ) ) {
+            if ( !$activity || !array_key_exists( 'actor', $activity ) ) {
                 throw new BadRequestHttpException();
             }
             $activityActor = $this->getActivityActor( $activity );
-            if ( ! $activityActor) {
+            if ( !$activityActor ) {
                 throw new BadRequestHttpException();
             }
-            if ( ! $request->attributes->has( 'signed' ) ||
-                 ! $this->authorized( $request, $activityActor ) ) {
+            if ( !$request->attributes->has( 'signed' ) ||
+                !$this->authorized( $request, $activityActor ) ) {
                 throw new UnauthorizedHttpException(
                     'Signature realm="ActivityPub",headers="(request-target) host date"'
                 );
@@ -75,20 +76,30 @@ class PostController
         $outboxField = $object->getReferencingField( 'outbox' );
         if ( $outboxField ) {
             $actorWithOutbox = $outboxField->getObject();
-            if ( ! $this->authorized( $request, $actorWithOutbox ) ) {
+            if ( !$this->authorized( $request, $actorWithOutbox ) ) {
                 throw new UnauthorizedHttpException(
                     'Signature realm="ActivityPub",headers="(request-target) host date"'
                 );
             }
             $activity = json_decode( $request->getContent(), true );
-            if ( ! $activity ) {
+            if ( !$activity ) {
                 throw new BadRequestHttpException();
             }
             $event = new OutboxActivityEvent( $activity, $actorWithOutbox, $request );
             $this->eventDispatcher->dispatch( OutboxActivityEvent::NAME, $event );
             return $event->getResponse();
-        } 
+        }
         throw new MethodNotAllowedHttpException( array( Request::METHOD_GET ) );
+    }
+
+    private function getUriWithoutQuery( Request $request )
+    {
+        $uri = $request->getUri();
+        $queryPos = strpos( $uri, '?' );
+        if ( $queryPos !== false ) {
+            $uri = substr( $uri, 0, $queryPos );
+        }
+        return $uri;
     }
 
     private function getActivityActor( array $activity )
@@ -104,7 +115,7 @@ class PostController
 
     private function authorized( Request $request, ActivityPubObject $activityActor )
     {
-        if ( ! $request->attributes->has( 'actor' ) ) {
+        if ( !$request->attributes->has( 'actor' ) ) {
             return false;
         }
         $requestActor = $request->attributes->get( 'actor' );
@@ -112,16 +123,6 @@ class PostController
             return false;
         }
         return true;
-    }
-
-    private function getUriWithoutQuery( Request $request )
-    {
-        $uri = $request->getUri();
-        $queryPos = strpos( $uri, '?' );
-        if ( $queryPos !== false ) {
-            $uri = substr( $uri, 0, $queryPos );
-        }
-        return $uri;
     }
 }
 

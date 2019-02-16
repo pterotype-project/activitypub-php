@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Test\Crypto;
 
 use ActivityPub\Crypto\RsaKeypair;

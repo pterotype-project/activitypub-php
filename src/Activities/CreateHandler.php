@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Objects\CollectionsService;
@@ -23,14 +24,6 @@ class CreateHandler implements EventSubscriberInterface
      */
     private $collectionsService;
 
-    public static function getSubscribedEvents()
-    {
-        return array(
-            InboxActivityEvent::NAME => 'handleInbox',
-            OutboxActivityEvent::NAME => 'handleOutbox',
-        );
-    }
-
     public function __construct( ObjectsService $objectsService,
                                  IdProvider $idProvider,
                                  CollectionsService $collectionsService )
@@ -39,6 +32,15 @@ class CreateHandler implements EventSubscriberInterface
         $this->idProvider = $idProvider;
         $this->collectionsService = $collectionsService;
     }
+
+    public static function getSubscribedEvents()
+    {
+        return array(
+            InboxActivityEvent::NAME => 'handleInbox',
+            OutboxActivityEvent::NAME => 'handleOutbox',
+        );
+    }
+
     public function handleInbox( InboxActivityEvent $event )
     {
         $activity = $event->getActivity();
@@ -61,7 +63,7 @@ class CreateHandler implements EventSubscriberInterface
             return;
         }
         $object = $activity['object'];
-        if ( ! array_key_exists( 'id', $object ) ) {
+        if ( !array_key_exists( 'id', $object ) ) {
             $object['id'] = $this->idProvider->getId(
                 $event->getRequest(),
                 strtolower( $object['type'] )
@@ -94,31 +96,31 @@ class CreateHandler implements EventSubscriberInterface
 
     private function copyFields( array $fields, array $sourceObj, array $targetObj )
     {
-        foreach( $fields as $field ) {
-            if ( ! array_key_exists( $field, $sourceObj ) ) {
+        foreach ( $fields as $field ) {
+            if ( !array_key_exists( $field, $sourceObj ) ) {
                 continue;
             }
             if ( array_key_exists( $field, $targetObj ) &&
-                 $sourceObj[$field] === $targetObj[$field] ) {
+                $sourceObj[$field] === $targetObj[$field] ) {
                 continue;
-            } else if ( ! array_key_exists( $field, $targetObj ) ) {
+            } else if ( !array_key_exists( $field, $targetObj ) ) {
                 $targetObj[$field] = $sourceObj[$field];
             } else if ( is_array( $sourceObj[$field] ) &&
-                        is_array( $targetObj[$field] ) ) {
+                is_array( $targetObj[$field] ) ) {
                 $targetObj[$field] = array_unique(
                     array_merge( $sourceObj[$field], $targetObj[$field] )
                 );
             } else if ( is_array( $sourceObj[$field] ) &&
-                        ! is_array( $targetObj[$field] ) ) {
+                !is_array( $targetObj[$field] ) ) {
                 $targetObj[$field] = array( $targetObj[$field] );
                 $targetObj[$field] = array_unique(
                     array_merge( $sourceObj[$field], $targetObj[$field] )
                 );
-            } else if ( ! is_array( $sourceObj[$field] ) &&
-                        is_array( $targetObj[$field] ) ) {
+            } else if ( !is_array( $sourceObj[$field] ) &&
+                is_array( $targetObj[$field] ) ) {
                 $targetObj[$field][] = $sourceObj[$field];
-            } else if ( ! is_array( $sourceObj[$field] ) &&
-                        ! is_array( $targetObj[$field] ) ) {
+            } else if ( !is_array( $sourceObj[$field] ) &&
+                !is_array( $targetObj[$field] ) ) {
                 $targetObj[$field] = array( $targetObj[$field] );
                 $targetObj[$field][] = $sourceObj[$field];
             }

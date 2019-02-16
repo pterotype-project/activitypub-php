@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Test\Http;
 
 use ActivityPub\Controllers\GetController;
@@ -29,7 +30,7 @@ class RouterTest extends APTestCase
         $this->router = new Router( $this->getController, $this->postController );
         $this->kernel = $this->getMock( HttpKernel::class );
     }
-    
+
     public function testRouter()
     {
         $testCases = array(
@@ -49,7 +50,7 @@ class RouterTest extends APTestCase
                 'expectedException' => MethodNotAllowedHttpException::class,
             ),
         );
-        foreach( $testCases as $testCase ) {
+        foreach ( $testCases as $testCase ) {
             $request = $testCase['request'];
             $event = new GetResponseEvent(
                 $this->kernel, $request, HttpKernelInterface::MASTER_REQUEST

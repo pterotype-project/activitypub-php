@@ -1,10 +1,11 @@
 <?php
+
 namespace ActivityPub\Test\Objects;
 
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
-use ActivityPub\Utils\RandomProvider;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Utils\RandomProvider;
 use Symfony\Component\HttpFoundation\Request;
 
 class IdProviderTest extends APTestCase
@@ -17,7 +18,7 @@ class IdProviderTest extends APTestCase
     {
         $this->objectsService = $this->getMock( ObjectsService::class );
         $this->objectsService->method( 'query' )
-            ->will( $this->returnCallback( function( $query) {
+            ->will( $this->returnCallback( function ( $query ) {
                 $existsId = sprintf(
                     'https://example.com/ap/objects/%s', self::EXISTING_ID_STR
                 );

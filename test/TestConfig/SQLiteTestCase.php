@@ -16,36 +16,6 @@ abstract class SQLiteTestCase extends APTestCase
     private $conn = null;
     private $dbPath = '';
 
-    protected function setUp()
-    {
-        parent::setUp();
-        $dbPath = $this->getDbPath();
-        if ( file_exists( $dbPath ) ) {
-            unlink( $dbPath );
-        }
-        $config = ActivityPubConfig::createBuilder()
-                ->setDbConnectionParams( array(
-                    'driver' => 'pdo_sqlite',
-                    'path' => $dbPath,
-                ) )
-                ->build();
-        $activityPub = new ActivityPub( $config );
-        $activityPub->updateSchema();
-    }
-
-    protected function tearDown()
-    {
-        parent::tearDown();
-        unlink( $this->getDbPath() );
-        unset( $this->conn );
-        unset( $this->pdo );
-    }
-
-    protected function getDbPath()
-    {
-        return dirname( __FILE__ ) . '/db.sqlite';
-    }
-
     final public function getConnection()
     {
         if ( $this->conn === null ) {
@@ -56,6 +26,36 @@ abstract class SQLiteTestCase extends APTestCase
             $this->conn = $this->createDefaultDBConnection( $this->pdo, $this->dbPath );
         }
         return $this->conn;
+    }
+
+    protected function getDbPath()
+    {
+        return dirname( __FILE__ ) . '/db.sqlite';
+    }
+
+    protected function setUp()
+    {
+        parent::setUp();
+        $dbPath = $this->getDbPath();
+        if ( file_exists( $dbPath ) ) {
+            unlink( $dbPath );
+        }
+        $config = ActivityPubConfig::createBuilder()
+            ->setDbConnectionParams( array(
+                'driver' => 'pdo_sqlite',
+                'path' => $dbPath,
+            ) )
+            ->build();
+        $activityPub = new ActivityPub( $config );
+        $activityPub->updateSchema();
+    }
+
+    protected function tearDown()
+    {
+        parent::tearDown();
+        unlink( $this->getDbPath() );
+        unset( $this->conn );
+        unset( $this->pdo );
     }
 }
 

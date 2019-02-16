@@ -1,36 +1,21 @@
 <?php
+
 namespace ActivityPub\Test\Activities;
 
 use ActivityPub\Activities\DeleteHandler;
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestUtils\TestDateTimeProvider;
 use DateTime;
-use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class DeleteHandlerTest extends APTestCase
 {
-    private static function getObjects()
-    {
-        return array(
-            'https://elsewhere.com/objects/1' => array(
-                'id' => 'https://elsewhere.com/objects/1',
-                'type' => 'Note',
-                'attributedTo' => 'https://elsewhere.com/actors/1',
-            ),
-            'https://example.com/objects/1' => array(
-                'id' => 'https://example.com/objects/1',
-                'type' => 'Note',
-                'attributedTo' => 'https://example.com/actors/1',
-            )
-        );
-    }
-
     public function testDeleteHandler()
     {
         $testCases = array(
@@ -139,12 +124,12 @@ class DeleteHandlerTest extends APTestCase
                 ),
             ) );
             $objectsService = $this->getMockBuilder( ObjectsService::class )
-                            ->disableOriginalConstructor()
-                            ->setMethods( array( 'dereference', 'replace' ) )
-                            ->getMock();
-            $objectsService->method( 'dereference' )->will( $this->returnCallback( 
-                function( $id ) {
-                    if ( array_key_exists( $id, self::getObjects()) ) {
+                ->disableOriginalConstructor()
+                ->setMethods( array( 'dereference', 'replace' ) )
+                ->getMock();
+            $objectsService->method( 'dereference' )->will( $this->returnCallback(
+                function ( $id ) {
+                    if ( array_key_exists( $id, self::getObjects() ) ) {
                         $objects = self::getObjects();
                         return TestActivityPubObject::fromArray( $objects[$id] );
                     }
@@ -172,6 +157,22 @@ class DeleteHandlerTest extends APTestCase
         $request = Request::create( $uri );
         $request->attributes->add( $attributes );
         return $request;
+    }
+
+    private static function getObjects()
+    {
+        return array(
+            'https://elsewhere.com/objects/1' => array(
+                'id' => 'https://elsewhere.com/objects/1',
+                'type' => 'Note',
+                'attributedTo' => 'https://elsewhere.com/actors/1',
+            ),
+            'https://example.com/objects/1' => array(
+                'id' => 'https://example.com/objects/1',
+                'type' => 'Note',
+                'attributedTo' => 'https://example.com/actors/1',
+            )
+        );
     }
 }
 

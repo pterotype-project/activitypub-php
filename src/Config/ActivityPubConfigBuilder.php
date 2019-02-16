@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Config;
 
 use ActivityPub\Objects\ContextProvider;
@@ -61,7 +62,7 @@ class ActivityPubConfigBuilder
     {
         $this->isDevMode = false;
         $this->dbPrefix = '';
-        $this->authFunction = function() {
+        $this->authFunction = function () {
             return false;
         };
         $this->jsonLdContext = ContextProvider::getDefaultContext();
@@ -85,9 +86,19 @@ class ActivityPubConfigBuilder
      */
     private function validate()
     {
-        if ( ! $this->dbConnectionParams ) {
+        if ( !$this->dbConnectionParams ) {
             throw new Exception( "Missing required option 'dbConnectionParams'" );
         }
+    }
+
+    /**
+     * @return array
+     *
+     *
+     */
+    public function getDbConnectionParams()
+    {
+        return $this->dbConnectionParams;
     }
 
     /**
@@ -106,13 +117,13 @@ class ActivityPubConfigBuilder
     }
 
     /**
-     * @return array
+     * @return bool
      *
      *
      */
-    public function getDbConnectionParams()
+    public function getIsDevMode()
     {
-        return $this->dbConnectionParams;
+        return $this->isDevMode;
     }
 
     /**
@@ -130,13 +141,11 @@ class ActivityPubConfigBuilder
     }
 
     /**
-     * @return bool
-     *
-     *
+     * @return string
      */
-    public function getIsDevMode()
+    public function getDbPrefix()
     {
-        return $this->isDevMode;
+        return $this->dbPrefix;
     }
 
     /**
@@ -156,11 +165,11 @@ class ActivityPubConfigBuilder
     }
 
     /**
-     * @return string
+     * @return Callable
      */
-    public function getDbPrefix()
+    public function getAuthFunction()
     {
-        return $this->dbPrefix;
+        return $this->authFunction;
     }
 
     /**
@@ -182,11 +191,11 @@ class ActivityPubConfigBuilder
     }
 
     /**
-     * @return Callable
+     * @return array
      */
-    public function getAuthFunction()
+    public function getJsonLdContext()
     {
-        return $this->authFunction;
+        return $this->jsonLdContext;
     }
 
     /**
@@ -205,11 +214,11 @@ class ActivityPubConfigBuilder
     }
 
     /**
-     * @return array
+     * @return string
      */
-    public function getJsonLdContext()
+    public function getIdPathPrefix()
     {
-        return $this->jsonLdContext;
+        return $this->idPathPrefix;
     }
 
     /**
@@ -225,14 +234,6 @@ class ActivityPubConfigBuilder
     {
         $this->idPathPrefix = $idPathPrefix;
         return $this;
-    }
-
-    /**
-     * @return string
-     */
-    public function getIdPathPrefix()
-    {
-        return $this->idPathPrefix;
     }
 }
 

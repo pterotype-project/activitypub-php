@@ -5,8 +5,8 @@
 namespace ActivityPub\Config;
 
 use ActivityPub\Activities\CreateHandler;
-use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Activities\DeleteHandler;
+use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Activities\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
@@ -17,8 +17,8 @@ use ActivityPub\Controllers\PostController;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\Router;
-use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
+use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\RandomProvider;
@@ -94,7 +94,7 @@ class ActivityPubModule
             ->addArgument( new Reference( AuthService::class ) )
             ->addArgument( new Reference( ContextProvider::class ) )
             ->addArgument( new Reference( Client::class ) )
-            ->addArgument( new Reference( SimpleDateTimeProvider::class ));
+            ->addArgument( new Reference( SimpleDateTimeProvider::class ) );
 
         $this->injector->register( RandomProvider::class, RandomProvider::class );
 

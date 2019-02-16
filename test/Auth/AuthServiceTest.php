@@ -1,9 +1,10 @@
 <?php
+
 namespace ActivityPub\Test\Auth;
 
 use ActivityPub\Auth\AuthService;
-use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\HttpFoundation\Request;
 
 class AuthServiceTest extends APTestCase

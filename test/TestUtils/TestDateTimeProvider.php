@@ -2,8 +2,8 @@
 
 namespace ActivityPub\Test\TestUtils;
 
-use DateTime;
 use ActivityPub\Utils\DateTimeProvider;
+use DateTime;
 
 /**
  * A DateTimeProvider that returns fixed values for create and update times
@@ -19,10 +19,10 @@ class TestDateTimeProvider implements DateTimeProvider
     {
         $this->context = $context;
     }
-    
+
     public function getTime( $context = '' )
     {
-        if ( array_key_exists( $context, $this->context )) {
+        if ( array_key_exists( $context, $this->context ) ) {
             return $this->context[$context];
         } else {
             return new DateTime( 'now' );

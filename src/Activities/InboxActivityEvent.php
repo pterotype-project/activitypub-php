@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 class InboxActivityEvent extends ActivityEvent

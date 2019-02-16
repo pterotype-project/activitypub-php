@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Objects\ContextProvider;
@@ -18,13 +19,6 @@ class FollowHandler implements EventSubscriberInterface
      */
     private $contextProvider;
 
-    public static function getSubscribedEvents()
-    {
-        return array(
-            InboxActivityEvent::NAME => 'handleInbox',
-        );
-    }
-
     public function __construct( $autoAccepts,
                                  ContextProvider $contextProvider )
     {
@@ -32,14 +26,20 @@ class FollowHandler implements EventSubscriberInterface
         $this->contextProvider = $contextProvider;
     }
 
+    public static function getSubscribedEvents()
+    {
+        return array(
+            InboxActivityEvent::NAME => 'handleInbox',
+        );
+    }
 
-    public function handleInbox(InboxActivityEvent $event,
-                                /** @noinspection PhpUnusedParameterInspection */
-                                $eventName,
-                                EventDispatcher $eventDispatcher )
+    public function handleInbox( InboxActivityEvent $event,
+        /** @noinspection PhpUnusedParameterInspection */
+                                 $eventName,
+                                 EventDispatcher $eventDispatcher )
     {
         $activity = $event->getActivity();
-        if ( ! $activity['type'] === 'Follow' ) {
+        if ( !$activity['type'] === 'Follow' ) {
             return;
         }
         if ( $this->autoAccepts ) {

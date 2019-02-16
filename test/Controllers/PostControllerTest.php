@@ -1,12 +1,13 @@
 <?php
+
 namespace ActivityPub\Test\Controllers;
 
 use ActivityPub\Activities\InboxActivityEvent;
 use ActivityPub\Activities\OutboxActivityEvent;
 use ActivityPub\Controllers\PostController;
 use ActivityPub\Objects\ObjectsService;
-use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
@@ -15,48 +16,10 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class PostControllerTest extends APTestCase
 {
-    private static function getObjects()
-    {
-        return array(
-            'https://example.com/actor/1/inbox' => array(
-                'id' => 'https://example.com/actor/1/inbox',
-            ),
-            'https://example.com/actor/1/outbox' => array(
-                'id' => 'https://example.com/actor/1/outbox',
-            ),
-            'https://example.com/actor/1' => array(
-                'id' => 'https://example.com/actor/1',
-                'inbox' => array(
-                    'id' => 'https://example.com/actor/1/inbox',
-                ),
-                'outbox' => array(
-                    'id' => 'https://example.com/actor/1/outbox',
-                ),
-            ),
-            'https://elsewhere.com/actor/1' => array(
-                'id' => 'https://elsewhere.com/actor/1',
-            ),
-        );
-    }
-    private static function getRefs()
-    {
-        return array(
-            'https://example.com/actor/1/inbox' => array(
-                'field' => 'inbox',
-                'referencingObject' => 'https://example.com/actor/1',
-            ),
-            'https://example.com/actor/1/outbox' => array(
-                'field' => 'outbox',
-                'referencingObject' => 'https://example.com/actor/1',
-            ),
-        );
-    }
-
     /**
      * @var array
      */
     private $objects;
-
     /**
      * @var array
      */
@@ -68,9 +31,9 @@ class PostControllerTest extends APTestCase
         $this->refs = self::getRefs();
         $objectsService = $this->getMock( ObjectsService::class );
         $objectsService->method( 'query' )->will(
-            $this->returnCallback( function( $query ) {
+            $this->returnCallback( function ( $query ) {
                 if ( array_key_exists( 'id', $query ) &&
-                     array_key_exists( $query['id'], $this->objects ) ) {
+                    array_key_exists( $query['id'], $this->objects ) ) {
                     $object = TestActivityPubObject::fromArray(
                         $this->objects[$query['id']]
                     );
@@ -89,7 +52,7 @@ class PostControllerTest extends APTestCase
             } )
         );
         $objectsService->method( 'dereference' )->will(
-            $this->returnCallback( function( $id ) {
+            $this->returnCallback( function ( $id ) {
                 if ( array_key_exists( $id, $this->objects ) ) {
                     return TestActivityPubObject::fromArray( $this->objects[$id] );
                 } else {
@@ -235,14 +198,14 @@ class PostControllerTest extends APTestCase
         );
         foreach ( $testCases as $testCase ) {
             $eventDispatcher = $this->getMockBuilder( EventDispatcher::class )
-                             ->setMethods( array( 'dispatch' ) )
-                             ->getMock();
+                ->setMethods( array( 'dispatch' ) )
+                ->getMock();
             if ( array_key_exists( 'expectedEvent', $testCase ) ) {
                 $eventDispatcher->expects( $this->once() )
                     ->method( 'dispatch' )
                     ->with(
-                        $this->equalTo($testCase['expectedEventName']),
-                        $this->equalTo($testCase['expectedEvent'])
+                        $this->equalTo( $testCase['expectedEventName'] ),
+                        $this->equalTo( $testCase['expectedEvent'] )
                     );
             }
             $postController = new PostController( $eventDispatcher, $objectsService );
@@ -252,6 +215,44 @@ class PostControllerTest extends APTestCase
             }
             $postController->handle( $request );
         }
+    }
+
+    private static function getObjects()
+    {
+        return array(
+            'https://example.com/actor/1/inbox' => array(
+                'id' => 'https://example.com/actor/1/inbox',
+            ),
+            'https://example.com/actor/1/outbox' => array(
+                'id' => 'https://example.com/actor/1/outbox',
+            ),
+            'https://example.com/actor/1' => array(
+                'id' => 'https://example.com/actor/1',
+                'inbox' => array(
+                    'id' => 'https://example.com/actor/1/inbox',
+                ),
+                'outbox' => array(
+                    'id' => 'https://example.com/actor/1/outbox',
+                ),
+            ),
+            'https://elsewhere.com/actor/1' => array(
+                'id' => 'https://elsewhere.com/actor/1',
+            ),
+        );
+    }
+
+    private static function getRefs()
+    {
+        return array(
+            'https://example.com/actor/1/inbox' => array(
+                'field' => 'inbox',
+                'referencingObject' => 'https://example.com/actor/1',
+            ),
+            'https://example.com/actor/1/outbox' => array(
+                'field' => 'outbox',
+                'referencingObject' => 'https://example.com/actor/1',
+            ),
+        );
     }
 
     private function makeRequest( $uri, $method, $body, $attributes )

@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Utils;
 
 class Util
@@ -11,8 +12,8 @@ class Util
      */
     public static function isAssoc( array $arr )
     {
-        if (array() === $arr) return false;
-        return array_keys($arr) !== range(0, count($arr) - 1);
+        if ( array() === $arr ) return false;
+        return array_keys( $arr ) !== range( 0, count( $arr ) - 1 );
     }
 
     /**
@@ -25,7 +26,7 @@ class Util
     public static function arrayKeysExist( array $arr, array $keys )
     {
         foreach ( $keys as $key ) {
-            if ( ! array_key_exists( $key, $arr ) ) {
+            if ( !array_key_exists( $key, $arr ) ) {
                 return false;
             }
         }

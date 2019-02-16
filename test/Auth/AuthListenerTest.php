@@ -3,13 +3,13 @@
 namespace ActivityPub\Test\Auth;
 
 use ActivityPub\Auth\AuthListener;
-use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
-use ActivityPub\Test\TestConfig\APTestCase;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 
 class AuthListenerTest extends APTestCase
 {
@@ -28,21 +28,12 @@ class AuthListenerTest extends APTestCase
         ) ) );
     }
 
-    public function getEvent()
-    {
-        $kernel = $this->getMock( HttpKernelInterface::class );
-        $request = Request::create( 'https://example.com/foo', Request::METHOD_GET );
-        return new GetResponseEvent(
-            $kernel, $request, HttpKernelInterface::MASTER_REQUEST
-        );
-    }
-    
     public function testAuthListener()
     {
         $testCases = array(
             array(
                 'id' => 'basicTest',
-                'authFunction' => function() {
+                'authFunction' => function () {
                     return 'https://example.com/actor/1';
                 },
                 'expectedAttributes' => array(
@@ -53,7 +44,7 @@ class AuthListenerTest extends APTestCase
             ),
             array(
                 'id' => 'existingActorTest',
-                'authFunction' => function() {
+                'authFunction' => function () {
                     return 'https://example.com/actor/1';
                 },
                 'requestAttributes' => array(
@@ -69,7 +60,7 @@ class AuthListenerTest extends APTestCase
             ),
             array(
                 'id' => 'defaultAuthTest',
-                'authFunction' => function() {
+                'authFunction' => function () {
                     return false;
                 },
                 'expectedAttributes' => array(),
@@ -107,6 +98,15 @@ class AuthListenerTest extends APTestCase
                 }
             }
         }
+    }
+
+    public function getEvent()
+    {
+        $kernel = $this->getMock( HttpKernelInterface::class );
+        $request = Request::create( 'https://example.com/foo', Request::METHOD_GET );
+        return new GetResponseEvent(
+            $kernel, $request, HttpKernelInterface::MASTER_REQUEST
+        );
     }
 }
 

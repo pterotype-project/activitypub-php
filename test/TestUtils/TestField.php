@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Test\TestUtils;
 
 use ActivityPub\Entities\ActivityPubObject;
@@ -14,7 +15,7 @@ class TestField extends Field
 
     protected function __construct( $time = null )
     {
-        if ( ! $time ) {
+        if ( !$time ) {
             $time = TestActivityPubObject::getDefaultTime();
         }
         parent::__construct( $time );

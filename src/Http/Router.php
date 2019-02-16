@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Http;
 
 use ActivityPub\Controllers\GetController;
@@ -21,6 +22,13 @@ class Router implements EventSubscriberInterface
      */
     private $postController;
 
+    public function __construct( GetController $getController,
+                                 PostController $postController )
+    {
+        $this->getController = $getController;
+        $this->postController = $postController;
+    }
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -28,12 +36,6 @@ class Router implements EventSubscriberInterface
         );
     }
 
-    public function __construct( GetController $getController,
-                                 PostController $postController )
-    {
-        $this->getController = $getController;
-        $this->postController = $postController;
-    }
     /**
      * Routes the request by setting the _controller attribute
      *

@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Activities;
 
 use ActivityPub\Objects\ObjectsService;
@@ -14,17 +15,17 @@ class UpdateHandler implements EventSubscriberInterface
      */
     private $objectsService;
 
+    public function __construct( ObjectsService $objectsService )
+    {
+        $this->objectsService = $objectsService;
+    }
+
     public static function getSubscribedEvents()
     {
         return array(
             InboxActivityEvent::NAME => 'handleInbox',
             OutboxActivityEvent::NAME => 'handleOutbox',
         );
-    }
-
-    public function __construct( ObjectsService $objectsService )
-    {
-        $this->objectsService = $objectsService;
     }
 
     public function handleInbox( InboxActivityEvent $event )
@@ -34,35 +35,15 @@ class UpdateHandler implements EventSubscriberInterface
             return;
         }
         $object = $activity['object'];
-        if ( ! array_key_exists( 'id', $object ) ) {
+        if ( !array_key_exists( 'id', $object ) ) {
             throw new BadRequestHttpException( 'Update object has no "id" field' );
         }
-        if ( ! $this->authorized( $event->getRequest(), $object ) ) {
+        if ( !$this->authorized( $event->getRequest(), $object ) ) {
             throw new UnauthorizedHttpException(
                 'Signature realm="ActivityPub",headers="(request-target) host date"'
             );
         }
         $this->objectsService->replace( $object['id'], $object );
-    }
-
-    public function handleOutbox( OutboxActivityEvent $event )
-    {
-        $activity = $event->getActivity();
-        if ( $activity['type'] !== 'Update' ) {
-            return;
-        }
-        $updateFields = $activity['object'];
-        if ( ! array_key_exists( 'id', $updateFields ) ) {
-            throw new BadRequestHttpException( 'Update object has no "id" field' );
-        }
-        if ( ! $this->authorized( $event->getRequest(), $updateFields ) ) {
-            throw new UnauthorizedHttpException(
-                'Signature realm="ActivityPub",headers="(request-target) host date"'
-            );
-        }
-        $updated = $this->objectsService->update( $updateFields['id'], $updateFields );
-        $activity['object'] = $updated->asArray();
-        $event->setActivity( $activity );
     }
 
     /**
@@ -74,25 +55,45 @@ class UpdateHandler implements EventSubscriberInterface
      */
     private function authorized( Request $request, array $object )
     {
-        if ( ! $request->attributes->has( 'actor' ) ) {
+        if ( !$request->attributes->has( 'actor' ) ) {
             return false;
         }
-        if ( ! array_key_exists( 'id', $object ) ) {
+        if ( !array_key_exists( 'id', $object ) ) {
             return false;
         }
         $object = $this->objectsService->dereference( $object['id'] );
-        if ( ! $object->hasField( 'attributedTo' ) ) {
+        if ( !$object->hasField( 'attributedTo' ) ) {
             return false;
         }
         $attributedActorId = $object['attributedTo'];
         if ( is_array( $attributedActorId ) &&
-             array_key_exists( 'id', $attributedActorId ) ) {
+            array_key_exists( 'id', $attributedActorId ) ) {
             $attributedActorId = $attributedActorId['id'];
         }
-        if ( ! is_string( $attributedActorId ) ) {
+        if ( !is_string( $attributedActorId ) ) {
             return false;
         }
         $requestActor = $request->attributes->get( 'actor' );
         return $requestActor['id'] === $attributedActorId;
+    }
+
+    public function handleOutbox( OutboxActivityEvent $event )
+    {
+        $activity = $event->getActivity();
+        if ( $activity['type'] !== 'Update' ) {
+            return;
+        }
+        $updateFields = $activity['object'];
+        if ( !array_key_exists( 'id', $updateFields ) ) {
+            throw new BadRequestHttpException( 'Update object has no "id" field' );
+        }
+        if ( !$this->authorized( $event->getRequest(), $updateFields ) ) {
+            throw new UnauthorizedHttpException(
+                'Signature realm="ActivityPub",headers="(request-target) host date"'
+            );
+        }
+        $updated = $this->objectsService->update( $updateFields['id'], $updateFields );
+        $activity['object'] = $updated->asArray();
+        $event->setActivity( $activity );
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Test\Activities;
 
 use ActivityPub\Test\TestConfig\APTestCase;

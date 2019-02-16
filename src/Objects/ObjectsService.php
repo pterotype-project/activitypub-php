@@ -14,26 +14,205 @@ use GuzzleHttp\Psr7\Request;
 
 class ObjectsService
 {
-    /** 
-     * @var EntityManager 
+    /**
+     * @var EntityManager
      */
     protected $entityManager;
-    /** 
-     * @var DateTimeProvider 
+    /**
+     * @var DateTimeProvider
      */
     protected $dateTimeProvider;
-    /** 
-     * @var Client 
+    /**
+     * @var Client
      */
     protected $httpClient;
 
     public function __construct( EntityManager $entityManager,
                                  DateTimeProvider $dateTimeProvider,
-                                 Client $client)
+                                 Client $client )
     {
         $this->entityManager = $entityManager;
         $this->dateTimeProvider = $dateTimeProvider;
         $this->httpClient = $client;
+    }
+
+    /**
+     * Fully replaces the object referenced by $id by the new $fields
+     *
+     * @param string $id The id of the object to replace
+     * @param array $replacement The new fields to replace the object with
+     * @return ActivityPubObject|null The replaced object, or null
+     *   if no object with $id exists
+     */
+    public function replace( $id, $replacement )
+    {
+        $existing = $this->getObject( $id );
+        if ( !$existing ) {
+            return null;
+        }
+        foreach ( $existing->getFields() as $field ) {
+            if ( !array_key_exists( $field->getName(), $replacement ) ) {
+                $replacement[$field->getName()] = null;
+            }
+        }
+        return $this->update( $id, $replacement );
+    }/** @noinspection PhpDocMissingThrowsInspection */
+
+    /**
+     * Gets an object from the DB by its ActivityPub id
+     *
+     * For internal use only - external callers should use dereference()
+     *
+     * @param string $id The object's id
+     * @return ActivityPubObject|null The object or null
+     *   if no object exists with that id
+     */
+    protected function getObject( $id )
+    {
+        $results = $this->query( array( 'id' => $id ) );
+        if ( !empty( $results ) ) {
+            return $results[0];
+        }
+        return null;
+    }
+
+    /**
+     * Queries for an object with certain field values
+     *
+     * @param array $queryTerms An associative array where the keys are field
+     *   names and the values are the values to query for. The value for a key
+     *   can also be another associative array, which represents a field
+     *   containing a target object that matches the given nested query.
+     *   Finally, the value could be a sequential array, which represents a field
+     *   containing all of the specified values (the field could also contain more
+     *   values).
+     *
+     * @return ActivityPubObject[] The objects that match the query, if any,
+     *   ordered by created timestamp from newest to oldest
+     */
+    public function query( $queryTerms )
+    {
+        $qb = $this->getObjectQuery( $queryTerms );
+        $query = $qb->getQuery();
+        return $query->getResult();
+    }
+
+    /**
+     * Generates the Doctrine QueryBuilder that represents the query
+     *
+     * This function is recursive; it traverses the query tree to build up the
+     *   final expression
+     *
+     * @param array $queryTerms The query terms from which to generate the expressions
+     * @param int $nonce A nonce value to differentiate field names
+     * @return QueryBuilder The expression
+     */
+    protected function getObjectQuery( $queryTerms, $nonce = 0 )
+    {
+        $qb = $this->entityManager->createQueryBuilder();
+        $exprs = array();
+        foreach ( $queryTerms as $fieldName => $fieldValue ) {
+            if ( is_array( $fieldValue ) ) {
+                $subQuery = $this->getObjectQuery( $fieldValue, $nonce + 1 );
+                $exprs[] = $qb->expr()->andX(
+                    $qb->expr()->like(
+                        "field$nonce.name",
+                        $qb->expr()->literal( (string)$fieldName )
+                    ),
+                    $qb->expr()->in( "field$nonce.targetObject", $subQuery->getDql() )
+                );
+            } else {
+                $exprs[] = $qb->expr()->andX(
+                    $qb->expr()->like(
+                        "field$nonce.name",
+                        $qb->expr()->literal( (string)$fieldName )
+                    ),
+                    $qb->expr()->like(
+                        "field$nonce.value",
+                        $qb->expr()->literal( $fieldValue )
+                    )
+                );
+            }
+        }
+        return $qb->select( "object$nonce" )
+            ->from( 'ActivityPub\Entities\ActivityPubObject', "object$nonce" )
+            ->join( "object{$nonce}.fields", "field$nonce" )
+            ->where( call_user_func_array(
+                array( $qb->expr(), 'orX' ),
+                $exprs
+            ) )
+            ->groupBy( "object$nonce" )
+            ->having( $qb->expr()->eq(
+                $qb->expr()->count( "field$nonce" ),
+                count( $queryTerms )
+            ) );
+    }
+
+    /**
+     * Updates $object
+     *
+     * @param string $id The ActivityPub id of the object to update
+     * @param array $updatedFields An array where the key is a field name
+     *   to update and the value is the field's new value. If the value is
+     *   null, the field will be deleted.
+     *
+     * If the update results in an orphaned anonymous node (an ActivityPubObject
+     *   with no 'id' field that no longer has any references to it), then the
+     *   orphaned node will be deleted.
+     *
+     * @return ActivityPubObject|null The updated object,
+     *   or null if an object with that id isn't in the DB
+     */
+    public function update( $id, $updatedFields )
+    {
+        $object = $this->getObject( $id );
+        if ( !$object ) {
+            return null;
+        }
+        foreach ( $updatedFields as $fieldName => $newValue ) {
+            if ( $newValue === null && $object->hasField( $fieldName ) ) {
+                $field = $object->getField( $fieldName );
+                if ( $field->hasTargetObject() && !$field->getTargetObject()->hasField( 'id' ) ) {
+                    $targetObject = $field->getTargetObject();
+                    // Clear the target object by setting a dummy value
+                    $field->setValue( '' );
+                    $this->entityManager->remove( $targetObject );
+                }
+                $object->removeField( $field );
+                $this->entityManager->persist( $object );
+                $this->entityManager->remove( $field );
+            } else if ( $object->hasField( $fieldName ) ) {
+                $field = $object->getField( $fieldName );
+                $oldTargetObject = $field->getTargetObject();
+                if ( is_array( $newValue ) ) {
+                    $newTargetObject = $this->persist( $newValue, 'objects-service.update' );
+                    $field->setTargetObject(
+                        $newTargetObject,
+                        $this->dateTimeProvider->getTime( 'objects-service.update' )
+                    );
+                } else {
+                    $field->setValue(
+                        $newValue, $this->dateTimeProvider->getTime( 'objects-service.update' )
+                    );
+                }
+                if ( $oldTargetObject && !$oldTargetObject->hasField( 'id' ) ) {
+                    $this->entityManager->remove( $oldTargetObject );
+                }
+                $this->entityManager->persist( $field );
+            } else {
+                if ( is_array( $newValue ) ) {
+                    $newTargetObject = $this->persist( $newValue );
+                    $field = Field::withObject( $object, $fieldName, $newTargetObject );
+                } else {
+                    $field = Field::withValue( $object, $fieldName, $newValue );
+                }
+                $this->entityManager->persist( $field );
+            }
+        }
+        $object->setLastUpdated( $this->dateTimeProvider->getTime( 'objects-service.update' ) );
+        $this->entityManager->persist( $object );
+        $this->entityManager->flush();
+        return $object;
     }
 
     /**
@@ -44,7 +223,7 @@ class ObjectsService
      *   The existing object will not have its fields modified.
      *
      * @param array $fields The fields that define the new object
-     * @param string $context The context to retrieve the current time in. 
+     * @param string $context The context to retrieve the current time in.
      *   Used for fixing the time in tests.
      *
      * @return ActivityPubObject The created object
@@ -67,7 +246,7 @@ class ObjectsService
         /** @noinspection PhpUnhandledExceptionInspection */
         $this->entityManager->flush();
         return $object;
-    }/** @noinspection PhpDocMissingThrowsInspection */
+    }
 
     /**
      * Persists a field.
@@ -89,7 +268,7 @@ class ObjectsService
             $this->entityManager->persist( $fieldEntity );
         } else {
             if ( $fieldName !== 'id' &&
-                 filter_var( $fieldValue, FILTER_VALIDATE_URL ) !== false ) {
+                filter_var( $fieldValue, FILTER_VALIDATE_URL ) !== false ) {
                 $dereferenced = $this->dereference( $fieldValue );
                 if ( $dereferenced ) {
                     $fieldEntity = Field::withObject(
@@ -102,7 +281,7 @@ class ObjectsService
             $fieldEntity = Field::withValue(
                 $object, $fieldName, $fieldValue, $this->dateTimeProvider->getTime( $context )
             );
-            $this->entityManager->persist( $fieldEntity);
+            $this->entityManager->persist( $fieldEntity );
         }
     }
 
@@ -135,189 +314,10 @@ class ObjectsService
             return null;
         }
         $object = json_decode( $response->getBody(), true );
-        if ( ! $object ) {
+        if ( !$object ) {
             return null;
         }
         return $this->persist( $object );
-    }
-
-    /**
-     * Queries for an object with certain field values
-     *
-     * @param array $queryTerms An associative array where the keys are field 
-     *   names and the values are the values to query for. The value for a key
-     *   can also be another associative array, which represents a field
-     *   containing a target object that matches the given nested query.
-     *   Finally, the value could be a sequential array, which represents a field
-     *   containing all of the specified values (the field could also contain more
-     *   values).
-     *
-     * @return ActivityPubObject[] The objects that match the query, if any,
-     *   ordered by created timestamp from newest to oldest
-     */
-    public function query( $queryTerms )
-    {
-        $qb = $this->getObjectQuery( $queryTerms );
-        $query = $qb->getQuery();
-        return $query->getResult();
-    }
-
-    /**
-     * Generates the Doctrine QueryBuilder that represents the query
-     *
-     * This function is recursive; it traverses the query tree to build up the 
-     *   final expression
-     *
-     * @param array $queryTerms The query terms from which to generate the expressions
-     * @param int $nonce A nonce value to differentiate field names
-     * @return QueryBuilder The expression
-     */
-    protected function getObjectQuery( $queryTerms, $nonce = 0 )
-    {
-        $qb = $this->entityManager->createQueryBuilder();
-        $exprs = array();
-        foreach( $queryTerms as $fieldName => $fieldValue ) {
-            if ( is_array( $fieldValue ) ) {
-                $subQuery = $this->getObjectQuery( $fieldValue, $nonce + 1 );
-                $exprs[] = $qb->expr()->andX(
-                    $qb->expr()->like(
-                        "field$nonce.name",
-                        $qb->expr()->literal( (string) $fieldName )
-                    ),
-                    $qb->expr()->in( "field$nonce.targetObject", $subQuery->getDql())
-                );
-            } else {
-                $exprs[] = $qb->expr()->andX(
-                    $qb->expr()->like(
-                        "field$nonce.name",
-                        $qb->expr()->literal( (string) $fieldName )
-                    ),
-                    $qb->expr()->like(
-                        "field$nonce.value",
-                        $qb->expr()->literal( $fieldValue )
-                    )
-                );
-            }
-        }
-        return $qb->select( "object$nonce" )
-            ->from( 'ActivityPub\Entities\ActivityPubObject', "object$nonce" )
-            ->join( "object{$nonce}.fields", "field$nonce" )
-            ->where( call_user_func_array(
-                array( $qb->expr(), 'orX' ),
-                $exprs
-            ) )
-            ->groupBy( "object$nonce" )
-            ->having( $qb->expr()->eq(
-                $qb->expr()->count( "field$nonce" ),
-                count( $queryTerms )
-            ) );
-    }
-
-    /**
-     * Gets an object from the DB by its ActivityPub id
-     *
-     * For internal use only - external callers should use dereference()
-     *
-     * @param string $id The object's id
-     * @return ActivityPubObject|null The object or null
-     *   if no object exists with that id
-     */
-    protected function getObject( $id )
-    {
-        $results = $this->query( array( 'id' => $id ) );
-        if ( ! empty( $results ) ) {
-            return $results[0];
-        }
-        return null;
-    }
-
-    /**
-     * Updates $object
-     *
-     * @param string $id The ActivityPub id of the object to update
-     * @param array $updatedFields An array where the key is a field name
-     *   to update and the value is the field's new value. If the value is
-     *   null, the field will be deleted.
-     *
-     * If the update results in an orphaned anonymous node (an ActivityPubObject
-     *   with no 'id' field that no longer has any references to it), then the
-     *   orphaned node will be deleted.
-     *
-     * @return ActivityPubObject|null The updated object,
-     *   or null if an object with that id isn't in the DB
-     */
-    public function update( $id, $updatedFields )
-    {
-        $object = $this->getObject( $id );
-        if ( ! $object ) {
-            return null;
-        }
-        foreach( $updatedFields as $fieldName => $newValue ) {
-            if ( $newValue === null && $object->hasField( $fieldName ) ) {
-                $field = $object->getField( $fieldName );
-                if ( $field->hasTargetObject() && ! $field->getTargetObject()->hasField( 'id' ) ) {
-                    $targetObject = $field->getTargetObject();
-                    // Clear the target object by setting a dummy value
-                    $field->setValue( '' );
-                    $this->entityManager->remove( $targetObject );
-                }
-                $object->removeField( $field );
-                $this->entityManager->persist( $object );
-                $this->entityManager->remove( $field );
-            } else if ( $object->hasField( $fieldName ) ) {
-                $field = $object->getField( $fieldName );
-                $oldTargetObject = $field->getTargetObject();
-                if ( is_array( $newValue ) ) {
-                    $newTargetObject = $this->persist( $newValue, 'objects-service.update' );
-                    $field->setTargetObject(
-                        $newTargetObject,
-                        $this->dateTimeProvider->getTime( 'objects-service.update' )
-                    );
-                } else {
-                    $field->setValue(
-                        $newValue, $this->dateTimeProvider->getTime( 'objects-service.update' )
-                    );
-                }
-                if ( $oldTargetObject && ! $oldTargetObject->hasField( 'id' ) ) {
-                    $this->entityManager->remove( $oldTargetObject );
-                }
-                $this->entityManager->persist( $field );
-            } else {
-                if ( is_array( $newValue ) ) {
-                    $newTargetObject = $this->persist( $newValue );
-                    $field = Field::withObject( $object, $fieldName, $newTargetObject );
-                } else {
-                    $field = Field::withValue( $object, $fieldName, $newValue );
-                }
-                $this->entityManager->persist( $field );
-            }
-        }
-        $object->setLastUpdated( $this->dateTimeProvider->getTime( 'objects-service.update' ) );
-        $this->entityManager->persist( $object );
-        $this->entityManager->flush();
-        return $object;
-    }
-
-    /**
-     * Fully replaces the object referenced by $id by the new $fields
-     *
-     * @param string $id The id of the object to replace
-     * @param array $replacement The new fields to replace the object with
-     * @return ActivityPubObject|null The replaced object, or null 
-     *   if no object with $id exists
-     */
-    public function replace( $id, $replacement )
-    {
-        $existing = $this->getObject( $id );
-        if ( ! $existing ) {
-            return null;
-        }
-        foreach ( $existing->getFields() as $field ) {
-            if ( ! array_key_exists( $field->getName(), $replacement ) ) {
-                $replacement[$field->getName()] = null;
-            }
-        }
-        return $this->update( $id, $replacement );
     }
 }
 

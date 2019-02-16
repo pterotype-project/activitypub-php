@@ -58,8 +58,9 @@ class ActivityPubObject implements ArrayAccess
      */
     protected $privateKey;
 
-    public function __construct( DateTime $time = null ) {
-        if ( ! $time ) {
+    public function __construct( DateTime $time = null )
+    {
+        if ( !$time ) {
             $time = new DateTime( "now" );
         }
         $this->fields = new ArrayCollection();
@@ -75,7 +76,8 @@ class ActivityPubObject implements ArrayAccess
      *
      * @return array|string Either the object or its id if $depth is < 0
      */
-    public function asArray( $depth = 1 ) {
+    public function asArray( $depth = 1 )
+    {
         if ( $depth < 0 && $this->hasField( 'id' ) ) {
             return $this->getFieldValue( 'id' );
         }
@@ -91,9 +93,20 @@ class ActivityPubObject implements ArrayAccess
         return $arr;
     }
 
-    public function getId()
+    /**
+     * Returns true if the object contains a field with key $name
+     *
+     * @param mixed $name
+     * @return boolean
+     */
+    public function hasField( $name )
     {
-        return $this->id;
+        foreach ( $this->getFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -107,13 +120,28 @@ class ActivityPubObject implements ArrayAccess
     }
 
     /**
-     * Returns the fields which reference this object
+     * Returns the value of the field with key $name
      *
-     * @return Field[]
+     * The value is either a string, another ActivityPubObject, or null
+     *   if no such key exists.
+     *
+     * @param mixed $name
+     * @return string|ActivityPubObject|null The field's value, or null if
+     *   the field is not found
      */
-    public function getReferencingFields()
+    public function getFieldValue( $name )
     {
-        return $this->referencingFields;
+        foreach ( $this->getFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return $field->getValueOrTargetObject();
+            }
+        }
+        return null;
+    }
+
+    public function getId()
+    {
+        return $this->id;
     }
 
     /**
@@ -137,55 +165,14 @@ class ActivityPubObject implements ArrayAccess
     }
 
     /**
-     * Returns true if the object contains a field with key $name
+     * Sets the last updated timestamp
      *
-     * @param mixed $name
-     * @return boolean
+     * @param DateTime $lastUpdated The new last updated timestamp
+     *
      */
-    public function hasField( $name )
+    public function setLastUpdated( $lastUpdated )
     {
-        foreach( $this->getFields() as $field ) {
-            if ( $field->getName() === $name ) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns the fields named $field, if it exists
-     *
-     * @param string $name The name of the field to get
-     * @return Field|null
-     */
-    public function getField( $name )
-    {
-        foreach( $this->getFields() as $field ) {
-            if ( $field->getName() === $name ) {
-                return $field;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Returns the value of the field with key $name
-     *
-     * The value is either a string, another ActivityPubObject, or null
-     *   if no such key exists.
-     *
-     * @param mixed $name
-     * @return string|ActivityPubObject|null The field's value, or null if
-     *   the field is not found
-     */
-    public function getFieldValue( $name )
-    {
-        foreach( $this->getFields() as $field ) {
-            if ( $field->getName() === $name ) {
-                return $field->getValueOrTargetObject();
-            }
-        }
-        return null;
+        $this->lastUpdated = $lastUpdated;
     }
 
     /**
@@ -200,7 +187,7 @@ class ActivityPubObject implements ArrayAccess
      */
     public function addField( Field $field, DateTime $time = null )
     {
-        if ( ! $time ) {
+        if ( !$time ) {
             $time = new DateTime( "now" );
         }
         $this->fields[] = $field;
@@ -215,12 +202,22 @@ class ActivityPubObject implements ArrayAccess
      */
     public function hasReferencingField( $name )
     {
-        foreach( $this->getReferencingFields() as $field ) {
+        foreach ( $this->getReferencingFields() as $field ) {
             if ( $field->getName() === $name ) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Returns the fields which reference this object
+     *
+     * @return Field[]
+     */
+    public function getReferencingFields()
+    {
+        return $this->referencingFields;
     }
 
     /**
@@ -231,7 +228,7 @@ class ActivityPubObject implements ArrayAccess
      */
     public function getReferencingField( $name )
     {
-        foreach( $this->getReferencingFields() as $field ) {
+        foreach ( $this->getReferencingFields() as $field ) {
             if ( $field->getName() === $name ) {
                 return $field;
             }
@@ -274,32 +271,11 @@ class ActivityPubObject implements ArrayAccess
      */
     public function removeField( Field $field, DateTime $time = null )
     {
-        if ( ! $time ) {
+        if ( !$time ) {
             $time = new DateTime( "now" );
         }
         $this->fields->removeElement( $field );
         $this->lastUpdated = $time;
-    }
-
-    /**
-     * Sets the last updated timestamp
-     *
-     * @param DateTime $lastUpdated The new last updated timestamp
-     *
-     */
-    public function setLastUpdated( $lastUpdated )
-    {
-        $this->lastUpdated = $lastUpdated;
-    }
-
-    /**
-     * Returns true if this object has an associated private key, false if otherwise
-     *
-     * @return bool
-     */
-    public function hasPrivateKey()
-    {
-        return $this->privateKey !== null;
     }
 
     /**
@@ -314,6 +290,16 @@ class ActivityPubObject implements ArrayAccess
         } else {
             $this->privateKey = new PrivateKey( $key, $this );
         }
+    }
+
+    /**
+     * Returns true if this object has an associated private key, false if otherwise
+     *
+     * @return bool
+     */
+    public function hasPrivateKey()
+    {
+        return $this->privateKey !== null;
     }
 
     public function offsetExists( $offset )
@@ -344,21 +330,37 @@ class ActivityPubObject implements ArrayAccess
      * Returns true if $other has all the same fields as $this
      *
      * @param ActivityPubObject $other The other object to compare to
-     * @return bool Whether or not this object has the same fields and values as 
+     * @return bool Whether or not this object has the same fields and values as
      *   the other
      */
     public function equals( ActivityPubObject $other )
     {
-        foreach( $other->getFields() as $otherField ) {
+        foreach ( $other->getFields() as $otherField ) {
             $thisField = $this->getField( $otherField->getName() );
-            if ( ! $thisField ) {
+            if ( !$thisField ) {
                 return false;
             }
-            if ( ! $thisField->equals( $otherField ) ) {
+            if ( !$thisField->equals( $otherField ) ) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Returns the fields named $field, if it exists
+     *
+     * @param string $name The name of the field to get
+     * @return Field|null
+     */
+    public function getField( $name )
+    {
+        foreach ( $this->getFields() as $field ) {
+            if ( $field->getName() === $name ) {
+                return $field;
+            }
+        }
+        return null;
     }
 }
 

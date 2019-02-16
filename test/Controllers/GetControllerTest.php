@@ -1,21 +1,54 @@
 <?php
+
 namespace ActivityPub\Test\Controllers;
 
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Controllers\GetController;
-use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
+use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use ActivityPub\Test\TestConfig\APTestCase;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class GetControllerTest extends APTestCase
 {
+    /**
+     * @var GetController
+     */
+    private $getController;
+    /**
+     * @var array
+     */
+    private $objects;
+
+    public function setUp()
+    {
+        $this->objects = self::getObjects();
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference' )->will(
+            $this->returnCallback( function ( $uri ) {
+                if ( array_key_exists( $uri, $this->objects ) ) {
+                    return TestActivityPubObject::fromArray( $this->objects[$uri] );
+                }
+                return null;
+            } )
+        );
+        $authService = new AuthService();
+        $contextProvider = new ContextProvider();
+        $httpClient = $this->getMock( Client::class );
+        $collectionsService = new CollectionsService(
+            4, $authService, $contextProvider, $httpClient, new SimpleDateTimeProvider()
+        );
+        $this->getController = new GetController(
+            $objectsService, $collectionsService, $authService
+        );
+    }
+
     private static function getObjects()
     {
         return array(
@@ -55,39 +88,6 @@ class GetControllerTest extends APTestCase
                 'id' => 'https://example.com/objects/4',
                 'type' => 'Tombstone',
             ),
-        );
-    }
-
-    /**
-     * @var GetController
-     */
-    private $getController;
-
-    /**
-     * @var array
-     */
-    private $objects;
-
-    public function setUp()
-    {
-        $this->objects = self::getObjects();
-        $objectsService = $this->getMock( ObjectsService::class );
-        $objectsService->method( 'dereference' )->will(
-            $this->returnCallback( function( $uri ) {
-                if ( array_key_exists( $uri, $this->objects) ) {
-                    return TestActivityPubObject::fromArray( $this->objects[$uri] );
-                }
-                return null;
-            })
-        );
-        $authService = new AuthService();
-        $contextProvider = new ContextProvider();
-        $httpClient = $this->getMock( Client::class );
-        $collectionsService = new CollectionsService(
-            4, $authService, $contextProvider, $httpClient, new SimpleDateTimeProvider()
-        );
-        $this->getController = new GetController(
-            $objectsService, $collectionsService, $authService
         );
     }
 

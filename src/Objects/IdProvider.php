@@ -1,4 +1,5 @@
 <?php
+
 namespace ActivityPub\Objects;
 
 use ActivityPub\Utils\RandomProvider;
@@ -51,7 +52,7 @@ class IdProvider
     public function getId( Request $request, $path = "objects" )
     {
         $baseUri = $request->getSchemeAndHttpHost();
-        if ( ! empty( $path ) ) {
+        if ( !empty( $path ) ) {
             $baseUri = $baseUri . "/{$this->pathPrefix}/$path";
         }
         $rnd = $this->randomProvider->randomString( self::ID_LENGTH );

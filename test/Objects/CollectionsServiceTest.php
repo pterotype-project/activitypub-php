@@ -1,14 +1,15 @@
 <?php
+
 namespace ActivityPub\Test\Objects;
 
-use ActivityPub\Utils\SimpleDateTimeProvider;
 use ActivityPub\Auth\AuthService;
-use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\CollectionsService;
+use ActivityPub\Objects\ContextProvider;
+use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
+use ActivityPub\Utils\SimpleDateTimeProvider;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response as Psr7Response;
-use ActivityPub\Test\TestConfig\APTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 

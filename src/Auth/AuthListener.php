@@ -2,14 +2,14 @@
 
 namespace ActivityPub\Auth;
 
-use Exception;
 use ActivityPub\Objects\ObjectsService;
+use Exception;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\HttpKernel\Event\GetResponseEvent;
+use Symfony\Component\HttpKernel\KernelEvents;
 
 /**
- * The AuthListener class answers the question, "is this request authorized 
+ * The AuthListener class answers the question, "is this request authorized
  * to act on behalf of this Actor?"
  *
  * It delegates most of the work to a passed-in Callable to allow library clients to
@@ -30,13 +30,6 @@ class AuthListener implements EventSubscriberInterface
      */
     private $objectsService;
 
-    public static function getSubscribedEvents()
-    {
-        return array(
-            KernelEvents::REQUEST => 'checkAuth'
-        );
-    }
-
     /**
      * Constructs a new AuthenticationService
      *
@@ -49,6 +42,13 @@ class AuthListener implements EventSubscriberInterface
         $this->objectsService = $objectsService;
     }
 
+    public static function getSubscribedEvents()
+    {
+        return array(
+            KernelEvents::REQUEST => 'checkAuth'
+        );
+    }
+
     public function checkAuth( GetResponseEvent $event )
     {
         $request = $event->getRequest();
@@ -56,9 +56,9 @@ class AuthListener implements EventSubscriberInterface
             return;
         }
         $actorId = call_user_func( $this->authFunction );
-        if ( $actorId && ! empty( $actorId ) ) {
+        if ( $actorId && !empty( $actorId ) ) {
             $actor = $this->objectsService->dereference( $actorId );
-            if ( ! $actor ) {
+            if ( !$actor ) {
                 throw new Exception( "Actor $actorId does not exist" );
             }
             $request->attributes->set( 'actor', $actor );

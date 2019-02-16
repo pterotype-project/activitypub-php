@@ -1,11 +1,12 @@
 <?php
+
 namespace ActivityPub\Test\Crypto;
 
-use DateTime;
 use ActivityPub\Crypto\HttpSignatureService;
-use ActivityPub\Test\TestUtils\TestDateTimeProvider;
-use GuzzleHttp\Psr7\Request as PsrRequest;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Test\TestUtils\TestDateTimeProvider;
+use DateTime;
+use GuzzleHttp\Psr7\Request as PsrRequest;
 use Symfony\Component\HttpFoundation\Request;
 
 class HttpSignatureServiceTest extends APTestCase
@@ -46,42 +47,6 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
             ),
         ) );
         $this->httpSignatureService = new HttpSignatureService( $dateTimeProvider );
-    }
-
-    private static function getSymfonyRequest()
-    {
-        $request = Request::create(
-            'https://example.com/foo?param=value&pet=dog',
-            Request::METHOD_POST,
-            array(),
-            array(),
-            array(),
-            array(),
-            '{"hello": "world"}'
-        );
-        $request->headers->set( 'host', 'example.com' );
-        $request->headers->set( 'content-type', 'application/json' );
-        $request->headers->set(
-            'digest', 'SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE='
-        );
-        $request->headers->set( 'content-length', 18 );
-        $request->headers->set( 'date', 'Sun, 05 Jan 2014 21:31:40 GMT' );
-        return $request;
-    }
-
-    private static function getPsrRequest()
-    {
-        $headers = array(
-            'Host' => 'example.com',
-            'Content-Type' => 'application/json',
-            'Digest' => 'SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=',
-            'Content-Length' => 18,
-            'Date' => 'Sun, 05 Jan 2014 21:31:40 GMT'
-        );
-        $body = '{"hello": "world"}';
-        return new PsrRequest(
-            'POST', 'https://example.com/foo?param=value&pet=dog', $headers, $body
-        );
     }
 
     public function testItVerifies()
@@ -138,7 +103,7 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                 'id' => 'headerMissing',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date content-type digest content-length x-foo-header",signature="vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE="',
-                ), 
+                ),
                 'expectedResult' => false,
             ),
             array(
@@ -194,6 +159,27 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
         }
     }
 
+    private static function getSymfonyRequest()
+    {
+        $request = Request::create(
+            'https://example.com/foo?param=value&pet=dog',
+            Request::METHOD_POST,
+            array(),
+            array(),
+            array(),
+            array(),
+            '{"hello": "world"}'
+        );
+        $request->headers->set( 'host', 'example.com' );
+        $request->headers->set( 'content-type', 'application/json' );
+        $request->headers->set(
+            'digest', 'SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE='
+        );
+        $request->headers->set( 'content-length', 18 );
+        $request->headers->set( 'date', 'Sun, 05 Jan 2014 21:31:40 GMT' );
+        return $request;
+    }
+
     public function testItSigns()
     {
         $testCases = array(
@@ -223,7 +209,7 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                     $request, self::PRIVATE_KEY, $testCase['keyId'], $testCase['headers']
                 );
             } else {
-                $actual= $this->httpSignatureService->sign(
+                $actual = $this->httpSignatureService->sign(
                     $request, self::PRIVATE_KEY, $testCase['keyId']
                 );
             }
@@ -231,6 +217,21 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                 $testCase['expected'], $actual, "Error on test $testCase[id]"
             );
         }
+    }
+
+    private static function getPsrRequest()
+    {
+        $headers = array(
+            'Host' => 'example.com',
+            'Content-Type' => 'application/json',
+            'Digest' => 'SHA-256=X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=',
+            'Content-Length' => 18,
+            'Date' => 'Sun, 05 Jan 2014 21:31:40 GMT'
+        );
+        $body = '{"hello": "world"}';
+        return new PsrRequest(
+            'POST', 'https://example.com/foo?param=value&pet=dog', $headers, $body
+        );
     }
 }
 
