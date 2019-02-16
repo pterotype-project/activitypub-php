@@ -13,6 +13,7 @@ use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Utils\SimpleDateTimeProvider;
+use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
@@ -35,7 +36,9 @@ class CreateHandlerTest extends APTestCase
             $this->getMock( AuthService::class ),
             new ContextProvider(),
             $this->getMock( Client::class ),
-            new SimpleDateTimeProvider()
+            new SimpleDateTimeProvider(),
+            $this->getMock( EntityManager::class ),
+            $objectsService
         );
         $createHandler = new CreateHandler(
             $objectsService, $idProvider, $collectionsService

@@ -5,9 +5,11 @@ namespace ActivityPub\Test\Objects;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
+use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Utils\SimpleDateTimeProvider;
+use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Response as Psr7Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -34,8 +36,16 @@ class CollectionsServiceTest extends APTestCase
                 ),
             ) ) )
         );
+        $entityManager = $this->getMock( EntityManager::class );
+        $objectsService = $this->getMock( ObjectsService::class );
         $this->collectionsService = new CollectionsService(
-            4, $authService, $contextProvider, $httpClient, new SimpleDateTimeProvider()
+            4,
+            $authService,
+            $contextProvider,
+            $httpClient,
+            new SimpleDateTimeProvider(),
+            $entityManager,
+            $objectsService
         );
     }
 

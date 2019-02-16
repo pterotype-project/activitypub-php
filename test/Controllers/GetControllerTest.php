@@ -10,6 +10,7 @@ use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Utils\SimpleDateTimeProvider;
+use Doctrine\ORM\EntityManager;
 use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -42,7 +43,13 @@ class GetControllerTest extends APTestCase
         $contextProvider = new ContextProvider();
         $httpClient = $this->getMock( Client::class );
         $collectionsService = new CollectionsService(
-            4, $authService, $contextProvider, $httpClient, new SimpleDateTimeProvider()
+            4,
+            $authService,
+            $contextProvider,
+            $httpClient,
+            new SimpleDateTimeProvider(),
+            $this->getMock( EntityManager::class ),
+            $objectsService
         );
         $this->getController = new GetController(
             $objectsService, $collectionsService, $authService

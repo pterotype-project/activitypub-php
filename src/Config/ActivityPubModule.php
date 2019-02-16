@@ -94,7 +94,9 @@ class ActivityPubModule
             ->addArgument( new Reference( AuthService::class ) )
             ->addArgument( new Reference( ContextProvider::class ) )
             ->addArgument( new Reference( Client::class ) )
-            ->addArgument( new Reference( SimpleDateTimeProvider::class ) );
+            ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
+            ->addArgument( new Reference( EntityManager::class ) )
+            ->addArgument( new Reference( ObjectsService::class ) );
 
         $this->injector->register( RandomProvider::class, RandomProvider::class );
 
