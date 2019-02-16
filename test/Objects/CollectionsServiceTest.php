@@ -501,5 +501,11 @@ class CollectionsServiceTest extends APTestCase
             );
         }
     }
+
+    public function testAddItem()
+    {
+        // TODO implement me
+        $this->assertTrue( false );
+    }
 }
 

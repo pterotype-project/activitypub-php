@@ -8,6 +8,8 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Utils\DateTimeProvider;
+use Doctrine\ORM\EntityManager;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request as Psr7Request;
 use InvalidArgumentException;
@@ -21,7 +23,7 @@ class CollectionsService
      * @var int
      */
     private $pageSize;
-    
+
     /**
      * @var AuthService
      */
@@ -42,17 +44,31 @@ class CollectionsService
      */
     private $dateTimeProvider;
 
+    /**
+     * @var EntityManager
+     */
+    private $entityManager;
+
+    /**
+     * @var ObjectsService
+     */
+    private $objectsService;
+
     public function __construct( $pageSize,
                                  AuthService $authService,
                                  ContextProvider $contextProvider,
                                  Client $httpClient,
-                                 DateTimeProvider $dateTimeProvider )
+                                 DateTimeProvider $dateTimeProvider,
+                                 EntityManager $entityManager,
+                                 ObjectsService $objectsService )
     {
         $this->pageSize = $pageSize;
         $this->authService = $authService;
         $this->contextProvider = $contextProvider;
         $this->httpClient = $httpClient;
         $this->dateTimeProvider = $dateTimeProvider;
+        $this->entityManager = $entityManager;
+        $this->objectsService = $objectsService;
     }
 
     /**
@@ -73,7 +89,7 @@ class CollectionsService
         }
         $colArr = array();
         foreach ( $collection->getFields() as $field ) {
-            if ( ! in_array( $field->getName(), array( 'items', 'orderedItems' ) ) ) {
+            if ( !in_array( $field->getName(), array( 'items', 'orderedItems' ) ) ) {
                 if ( $field->hasValue() ) {
                     $colArr[$field->getName()] = $field->getValue();
                 } else {
@@ -98,16 +114,16 @@ class CollectionsService
     public function normalizeCollection( array $collection )
     {
         if ( $collection['type'] !== 'Collection' &&
-             $collection['type'] !== 'OrderedCollection' ) {
+            $collection['type'] !== 'OrderedCollection' ) {
             return $collection;
         }
-        if ( ! array_key_exists( 'first', $collection ) ) {
+        if ( !array_key_exists( 'first', $collection ) ) {
             return $collection;
         }
         $first = $collection['first'];
         if ( is_string( $first ) ) {
             $first = $this->fetchPage( $first );
-            if ( ! $first ) {
+            if ( !$first ) {
                 throw new BadRequestHttpException(
                     "Unable to retrieve collection page '$first'"
                 );
@@ -127,19 +143,57 @@ class CollectionsService
      * Adds $item to $collection
      *
      * @param ActivityPubObject $collection
-     * @param array $item
+     * @param array|string $item
      */
-    public function addItem( ActivityPubObject $collection, array $item )
+    public function addItem( ActivityPubObject $collection, $item )
     {
-        // TODO implement me
-        if ( ! $collection->hasField( 'items' ) ) {
-            $items = new ActivityPubObject(
-                $this->dateTimeProvider->getTime( 'collections-service.create' )
-            );
-            $itemsField = Field::withObject( $collection, 'items', $items );
-        } else {
-            $items = $collection['items'];
+        if ( $collection['type'] === 'Collection' ) {
+            $itemsFieldName = 'items';
+        } else if ( $collection['type'] === 'OrderedCollection' ) {
+            $itemsFieldName = 'orderedItems';
         }
+        if ( !$collection->hasField( $itemsFieldName ) ) {
+            $items = new ActivityPubObject(
+                $this->dateTimeProvider->getTime( 'collections-service.add' )
+            );
+            $itemsField = Field::withObject( $collection, $itemsFieldName, $items );
+            $this->entityManager->persist( $itemsField );
+            $this->entityManager->persist( $items );
+            $this->entityManager->persist( $collection );
+        } else {
+            $items = $collection[$itemsFieldName];
+        }
+        if ( !$items instanceof ActivityPubObject ) {
+            throw new Exception( 'Attempted to add an item to a collection with a non-object items field' );
+        }
+        // This is making the assumption that $items *only* contains numeric fields (i.e., it is an array)
+        // Also, it's O(n) on the size of the collection
+        $itemCount = count( $items->getFields() );
+        if ( is_array( $item ) ) {
+            $item = $this->objectsService->persist( $item, 'collections-service.add' );
+            $newItemField = Field::withObject( $items, $itemCount, $item );
+        } else if ( is_string( $item ) ) {
+            $newItemField = Field::withValue( $items, $itemCount, $item );
+        }
+        $this->entityManager->persist( $newItemField );
+        $this->entityManager->persist( $items );
+        $this->entityManager->persist( $collection );
+        if ( $collection->hasField( 'totalItems' ) && is_numeric( $collection['totalItems'] ) ) {
+            $totalItemsField = $collection->getField( 'totalItems' );
+        } else {
+            $totalItemsField = $collection->getField( 'totalItems' );
+            if ( !$totalItemsField ) {
+                $totalItemsField = Field::withValue( $collection, 'totalItems', strval( $itemCount ) );
+            }
+
+        }
+        $currentCount = intval( $totalItemsField->getValue() );
+        $totalItemsField->setValue(
+            strval( $currentCount + 1 ), $this->dateTimeProvider->getTime( 'collections-service.add' )
+        );
+        $this->entityManager->persist( $totalItemsField );
+        $this->entityManager->persist( $collection );
+        $this->entityManager->flush();
     }
 
     private function getPageItems( array $collectionPage )
@@ -186,7 +240,7 @@ class CollectionsService
             $itemsKey = 'orderedItems';
             $pageType = 'OrderedCollectionPage';
         }
-        if ( ! $collection->hasField( $itemsKey ) ) {
+        if ( !$collection->hasField( $itemsKey ) ) {
             throw new InvalidArgumentException(
                 "Collection does not have an \"$itemsKey\" key"
             );
@@ -197,7 +251,7 @@ class CollectionsService
         $count = 0;
         while ( $count < $pageSize ) {
             $item = $collectionItems->getFieldValue( $idx );
-            if ( ! $item ) {
+            if ( !$item ) {
                 break;
             }
             if ( is_string( $item ) ) {
@@ -235,7 +289,7 @@ class CollectionsService
         $next = $collectionItems->getFieldValue( $idx );
         while ( $next ) {
             if ( is_string( $next ) ||
-                 $this->authService->isAuthorized( $request, $next ) ) {
+                $this->authService->isAuthorized( $request, $next ) ) {
                 return $idx;
             }
             $idx++;
@@ -247,10 +301,10 @@ class CollectionsService
     private function isOrdered( ActivityPubObject $collection )
     {
         if ( $collection->hasField( 'type' ) &&
-             $collection['type'] === 'OrderedCollection' ) {
+            $collection['type'] === 'OrderedCollection' ) {
             return true;
         } else if ( $collection->hasField( 'type' ) &&
-        $collection['type'] === 'Collection' ) {
+            $collection['type'] === 'Collection' ) {
             return false;
         } else {
             throw new InvalidArgumentException( 'Not a collection' );
