@@ -271,7 +271,9 @@ class CollectionsService
             $items = new ActivityPubObject(
                 $this->dateTimeProvider->getTime( 'collections-service.add' )
             );
-            $itemsField = Field::withObject( $collection, $itemsFieldName, $items );
+            $itemsField = Field::withObject(
+                $collection, $itemsFieldName, $items, $this->dateTimeProvider->getTime( 'collections-service.add' )
+            );
             $this->entityManager->persist( $itemsField );
             $this->entityManager->persist( $items );
             $this->entityManager->persist( $collection );
@@ -286,9 +288,13 @@ class CollectionsService
         $itemCount = count( $items->getFields() );
         if ( is_array( $item ) ) {
             $item = $this->objectsService->persist( $item, 'collections-service.add' );
-            $newItemField = Field::withObject( $items, $itemCount, $item );
+            $newItemField = Field::withObject(
+                $items, $itemCount, $item, $this->dateTimeProvider->getTime( 'collections-service.add' )
+            );
         } else if ( is_string( $item ) ) {
-            $newItemField = Field::withValue( $items, $itemCount, $item );
+            $newItemField = Field::withValue(
+                $items, $itemCount, $item, $this->dateTimeProvider->getTime( 'collections-service.add' )
+            );
         }
         $this->entityManager->persist( $newItemField );
         $this->entityManager->persist( $items );
@@ -298,7 +304,9 @@ class CollectionsService
         } else {
             $totalItemsField = $collection->getField( 'totalItems' );
             if ( !$totalItemsField ) {
-                $totalItemsField = Field::withValue( $collection, 'totalItems', strval( $itemCount ) );
+                $totalItemsField = Field::withValue(
+                    $collection, 'totalItems', strval( $itemCount ), $this->dateTimeProvider->getTime( 'collections-service.add' )
+                );
             }
 
         }

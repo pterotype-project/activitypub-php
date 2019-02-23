@@ -53,7 +53,9 @@ abstract class SQLiteTestCase extends APTestCase
     protected function tearDown()
     {
         parent::tearDown();
-        unlink( $this->getDbPath() );
+        if ( file_exists( $this->getDbPath() ) ) {
+            unlink( $this->getDbPath() );
+        }
         unset( $this->conn );
         unset( $this->pdo );
     }
