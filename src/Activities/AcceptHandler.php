@@ -3,8 +3,10 @@
 namespace ActivityPub\Activities;
 
 use ActivityPub\Objects\CollectionsService;
+use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class AcceptHandler implements EventSubscriberInterface
 {
@@ -18,11 +20,18 @@ class AcceptHandler implements EventSubscriberInterface
      */
     private $collectionsService;
 
+    /**
+     * @var ContextProvider
+     */
+    private $contextProvider;
+
     public function __construct( ObjectsService $objectsService,
-                                 CollectionsService $collectionsService )
+                                 CollectionsService $collectionsService,
+                                 ContextProvider $contextProvider )
     {
         $this->objectsService = $objectsService;
         $this->collectionsService = $collectionsService;
+        $this->contextProvider = $contextProvider;
     }
 
     public static function getSubscribedEvents()
@@ -39,7 +48,35 @@ class AcceptHandler implements EventSubscriberInterface
         if ( $activity['type'] !== 'Accept' ) {
             return;
         }
-        // add to following collection
+        $localActor = $event->getActor();
+        $followId = $activity['object'];
+        if ( is_array( $followId ) && array_key_exists( 'id', $followId ) ) {
+            $followId = $followId['id'];
+        }
+        if ( ! is_string( $followId ) ) {
+            return;
+        }
+        $follow = $this->objectsService->dereference( $followId );
+        if ( ! $follow ) {
+            return;
+        }
+        if ( ! $follow->hasField( 'object') || ! $follow['object'] == $localActor ) {
+            return;
+        }
+        if ( $localActor->hasField( 'following' ) ) {
+            $following = $localActor['following'];
+        } else {
+            $updatedLocalActor = $localActor->asArray();
+            $updatedLocalActor['following'] = array(
+                '@context' => $this->contextProvider->getContext(),
+                'id' => rtrim( $updatedLocalActor['id'], '/' ) . '/following',
+                'type' => 'OrderedCollection',
+                'orderedItems' => array(),
+            );
+            $localActor = $this->objectsService->update( $localActor['id'], $updatedLocalActor );
+            $following = $localActor['following'];
+        }
+        $this->collectionsService->addItem( $following, $activity['actor'] );
     }
 
     public function handleOutbox( OutboxActivityEvent $event )
@@ -63,7 +100,11 @@ class AcceptHandler implements EventSubscriberInterface
             if ( !is_string( $followId ) ) {
                 return;
             }
-            $follow = $this->objectsService->dereference( $followId )->asArray( -1 );
+            $follow = $this->objectsService->dereference( $followId );
+            if ( ! $follow ) {
+                return;
+            }
+            $follow = $follow->asArray( 0 );
         }
         if ( !$follow || !array_key_exists( 'object', $follow ) ) {
             return;
