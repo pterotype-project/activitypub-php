@@ -52,6 +52,9 @@ class PostController
             throw new NotFoundHttpException;
         }
         $object = $results[0];
+        // TODO this assumes that every actor has a unique inbox URL
+        // and will break if multiple actors have the same inbox
+        // TODO also handle sharedInbox here
         $inboxField = $object->getReferencingField( 'inbox' );
         if ( $inboxField ) {
             $activity = json_decode( $request->getContent(), true );
@@ -73,6 +76,8 @@ class PostController
             $this->eventDispatcher->dispatch( InboxActivityEvent::NAME, $event );
             return $event->getResponse();
         }
+        // TODO this assumes that every actor has a unique outbox URL
+        // and will break if multiple actors have the same outbox
         $outboxField = $object->getReferencingField( 'outbox' );
         if ( $outboxField ) {
             $actorWithOutbox = $outboxField->getObject();
