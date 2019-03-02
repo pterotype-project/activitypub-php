@@ -283,9 +283,14 @@ class CollectionsService
         if ( !$items instanceof ActivityPubObject ) {
             throw new Exception( 'Attempted to add an item to a collection with a non-object items field' );
         }
-        // This is making the assumption that $items *only* contains numeric fields (i.e., it is an array)
-        // Also, it's O(n) on the size of the collection
-        $itemCount = count( $items->getFields() );
+        if ( $collection->hasField( 'totalItems' ) && is_numeric( $collection['totalItems'] ) ) {
+            // This will break if some other server puts in an incorrect value for totalItems
+            $itemCount = intval( $collection['totalItems'] );
+        } else {
+            // This is making the assumption that $items *only* contains numeric fields (i.e., it is an array)
+            // Also, it's O(n) on the size of the collection
+            $itemCount = count( $items->getFields() );
+        }
         if ( is_array( $item ) ) {
             $item = $this->objectsService->persist( $item, 'collections-service.add' );
             $newItemField = Field::withObject(
