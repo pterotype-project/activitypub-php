@@ -38,6 +38,11 @@ class ActivityPubConfig
     private $idPathPrefix;
 
     /**
+     * @var bool
+     */
+    private $autoAcceptsFollows;
+
+    /**
      * Don't call this directly - instead, use
      * ActivityPubConfig->createBuilder()->build()
      *
@@ -51,6 +56,7 @@ class ActivityPubConfig
         $this->authFunction = $builder->getAuthFunction();
         $this->jsonLdContext = $builder->getJsonLdContext();
         $this->idPathPrefix = $builder->getIdPathPrefix();
+        $this->autoAcceptsFollows = $builder->getAutoAcceptsFollows();
     }
 
     public static function createBuilder()
@@ -105,6 +111,14 @@ class ActivityPubConfig
     public function getIdPathPrefix()
     {
         return $this->idPathPrefix;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getAutoAcceptsFollows()
+    {
+        return $this->autoAcceptsFollows;
     }
 }
 

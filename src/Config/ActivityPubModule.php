@@ -7,6 +7,7 @@ namespace ActivityPub\Config;
 use ActivityPub\Activities\AcceptHandler;
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\DeleteHandler;
+use ActivityPub\Activities\FollowHandler;
 use ActivityPub\Activities\NonActivityHandler;
 use ActivityPub\Activities\UpdateHandler;
 use ActivityPub\Activities\ValidationHandler;
@@ -134,6 +135,10 @@ class ActivityPubModule
         $this->injector->register( DeleteHandler::class, DeleteHandler::class )
             ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
             ->addArgument( new Reference( ObjectsService::class ) );
+
+        $this->injector->register( FollowHandler::class, FollowHandler::class )
+            ->addArgument( $config->getAutoAcceptsFollows() )
+            ->addArgument( new Reference( ContextProvider::class ) );
 
         $this->injector->register( AcceptHandler::class, AcceptHandler::class )
             ->addArgument( new Reference( ObjectsService::class ) )
