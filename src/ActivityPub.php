@@ -4,6 +4,7 @@
 
 namespace ActivityPub;
 
+use ActivityPub\Activities\AcceptHandler;
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\DeleteHandler;
 use ActivityPub\Activities\NonActivityHandler;
@@ -86,6 +87,7 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( CreateHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( UpdateHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( DeleteHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( AcceptHandler::class ) );
     }
 
     /**
@@ -97,7 +99,7 @@ class ActivityPub
      */
     public function updateSchema()
     {
-        $entityManager = $this->module->get( EntityManager::class );
+        $entityManager = @$this->module->get( EntityManager::class );
         $schemaTool = new SchemaTool( $entityManager );
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool->updateSchema( $classes );

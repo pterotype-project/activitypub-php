@@ -18,8 +18,8 @@ abstract class SQLiteTestCase extends APTestCase
 
     final public function getConnection()
     {
-        if ( $this->conn === null ) {
-            if ( $this->pdo === null ) {
+        if ( ! isset( $this->conn ) ) {
+            if ( ! isset( $this->pdo ) ) {
                 $this->dbPath = $this->getDbPath();
                 $this->pdo = new \PDO( "sqlite:{$this->dbPath}" );
             }

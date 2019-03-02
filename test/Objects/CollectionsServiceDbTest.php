@@ -46,7 +46,7 @@ class CollectionsServiceDbTest extends SQLiteTestCase
      */
     private $collectionsService;
 
-    public function setUp()
+    protected function setUp()
     {
         parent::setUp();
         $dbConfig = Setup::createAnnotationMetadataConfiguration(
@@ -401,7 +401,7 @@ class CollectionsServiceDbTest extends SQLiteTestCase
         );
         foreach ( $testCases as $testCase )
         {
-            self::setUp();
+            $this->setUp();
             $collection = $this->objectsService->persist( $testCase['collection'] );
             $this->collectionsService->addItem( $collection, $testCase['item'] );
             $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
@@ -415,7 +415,7 @@ class CollectionsServiceDbTest extends SQLiteTestCase
             );
             $this->assertTablesEqual( $expectedObjects, $actualObjects, "Error on test $testCase[id]");
             $this->assertTablesEqual( $expectedFields, $actualFields, "Error on test $testCase[id]");
-            self::tearDown();
+            $this->tearDown();
         }
     }
 

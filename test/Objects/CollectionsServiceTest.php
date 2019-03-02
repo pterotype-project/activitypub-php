@@ -6,7 +6,7 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;
-use ActivityPub\Test\TestConfig\SQLiteTestCase;
+use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
@@ -15,7 +15,7 @@ use GuzzleHttp\Psr7\Response as Psr7Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
-class CollectionsServiceTest extends SQLiteTestCase
+class CollectionsServiceTest extends APTestCase
 {
     /**
      * @var CollectionsService
@@ -24,7 +24,6 @@ class CollectionsServiceTest extends SQLiteTestCase
 
     public function setUp()
     {
-        parent::setUp();
         $authService = new AuthService();
         $contextProvider = new ContextProvider();
         $httpClient = $this->getMock( Client::class );
@@ -48,11 +47,6 @@ class CollectionsServiceTest extends SQLiteTestCase
             $entityManager,
             $objectsService
         );
-    }
-
-    protected function getDataSet()
-    {
-        return new ArrayDataSet( array( 'objects' => array(), 'fields' => array() ) );
     }
 
     public function testCollectionPaging()

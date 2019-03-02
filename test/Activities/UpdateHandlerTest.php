@@ -225,12 +225,5 @@ class UpdateHandlerTest extends APTestCase
             }
         }
     }
-
-    public static function requestWithAttributes( $uri, $attributes )
-    {
-        $request = Request::create( $uri );
-        $request->attributes->add( $attributes );
-        return $request;
-    }
 }
 

@@ -4,6 +4,7 @@
 
 namespace ActivityPub\Config;
 
+use ActivityPub\Activities\AcceptHandler;
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\DeleteHandler;
 use ActivityPub\Activities\NonActivityHandler;
@@ -133,6 +134,11 @@ class ActivityPubModule
         $this->injector->register( DeleteHandler::class, DeleteHandler::class )
             ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
             ->addArgument( new Reference( ObjectsService::class ) );
+
+        $this->injector->register( AcceptHandler::class, AcceptHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) )
+            ->addArgument( new Reference( ContextProvider::class ) );
     }
 
     /**

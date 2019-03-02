@@ -60,7 +60,11 @@ class AcceptHandler implements EventSubscriberInterface
         if ( ! $follow ) {
             return;
         }
-        if ( ! $follow->hasField( 'object') || ! $follow['object'] == $localActor ) {
+        if ( ! ( $follow->hasField( 'actor') && $localActor->equals( $follow['actor'] ) ) ) {
+            return;
+        }
+        $remoteActor = $event->getRequest()->attributes->get('actor');
+        if ( ! $remoteActor->equals( $follow['object'] ) ) {
             return;
         }
         if ( $localActor->hasField( 'following' ) ) {
@@ -76,7 +80,8 @@ class AcceptHandler implements EventSubscriberInterface
             $localActor = $this->objectsService->update( $localActor['id'], $updatedLocalActor );
             $following = $localActor['following'];
         }
-        $this->collectionsService->addItem( $following, $activity['actor'] );
+        $newFollowing = $follow['object'];
+        $this->collectionsService->addItem( $following, $newFollowing->asArray() );
     }
 
     public function handleOutbox( OutboxActivityEvent $event )
@@ -97,14 +102,14 @@ class AcceptHandler implements EventSubscriberInterface
             if ( is_array( $followId ) && array_key_exists( 'id', $followId ) ) {
                 $followId = $followId['id'];
             }
-            if ( !is_string( $followId ) ) {
+            if ( ! is_string( $followId ) ) {
                 return;
             }
             $follow = $this->objectsService->dereference( $followId );
             if ( ! $follow ) {
                 return;
             }
-            $follow = $follow->asArray( 0 );
+            $follow = $follow->asArray();
         }
         if ( !$follow || !array_key_exists( 'object', $follow ) ) {
             return;
@@ -113,11 +118,22 @@ class AcceptHandler implements EventSubscriberInterface
         if ( is_array( $followObjectId ) && array_key_exists( 'id', $followObjectId ) ) {
             $followObjectId = $followObjectId['id'];
         }
-        $actor = $event->getActor();
-        if ( $followObjectId !== $actor['id'] ) {
+        $localActor = $event->getActor();
+        if ( $followObjectId !== $localActor['id'] ) {
             return;
         }
-        $this->collectionsService->addItem( $actor['followers'], $activity['actor'] );
+        $followers = $localActor['followers'];
+        if ( ! $followers ) {
+            $updatedLocalActor = $localActor->asArray();
+            $updatedLocalActor['followers'] = array(
+                '@context' => $this->contextProvider->getContext(),
+                'id' => rtrim( $updatedLocalActor['id'], '/' ) . '/followers',
+                'type' => 'OrderedCollection',
+                'orderedItems' => array(),
+            );
+            $localActor = $this->objectsService->update( $localActor['id'], $updatedLocalActor );
+            $followers = $localActor['followers'];
+        }
+        $this->collectionsService->addItem( $followers, $follow['actor'] );
     }
 }
-
