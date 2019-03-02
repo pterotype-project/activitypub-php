@@ -5,6 +5,7 @@
 namespace ActivityPub\Config;
 
 use ActivityPub\Activities\AcceptHandler;
+use ActivityPub\Activities\AddHandler;
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\DeleteHandler;
 use ActivityPub\Activities\FollowHandler;
@@ -144,6 +145,10 @@ class ActivityPubModule
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( CollectionsService::class ) )
             ->addArgument( new Reference( ContextProvider::class ) );
+
+        $this->injector->register( AddHandler::class, AddHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) );
     }
 
     /**

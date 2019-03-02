@@ -5,6 +5,7 @@
 namespace ActivityPub;
 
 use ActivityPub\Activities\AcceptHandler;
+use ActivityPub\Activities\AddHandler;
 use ActivityPub\Activities\CreateHandler;
 use ActivityPub\Activities\DeleteHandler;
 use ActivityPub\Activities\FollowHandler;
@@ -90,6 +91,7 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( DeleteHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( FollowHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( AcceptHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( AddHandler::class ) );
     }
 
     /**
