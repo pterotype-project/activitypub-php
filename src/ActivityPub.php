@@ -104,7 +104,7 @@ class ActivityPub
         $entityManager = @$this->module->get( EntityManager::class );
         $schemaTool = new SchemaTool( $entityManager );
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();
-        $schemaTool->updateSchema( $classes );
+        $schemaTool->updateSchema( $classes, true );
     }
 }
 
