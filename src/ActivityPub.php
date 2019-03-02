@@ -102,6 +102,12 @@ class ActivityPub
     public function updateSchema()
     {
         $entityManager = @$this->module->get( EntityManager::class );
+        $driverName = $entityManager->getConnection()->getDriver()->getName();
+        if ( $driverName === 'pdo_mysql' )
+        {
+            $entityManager->getConnection()->getDatabasePlatform()
+                ->registerDoctrineTypeMapping('enum', 'string');
+        }
         $schemaTool = new SchemaTool( $entityManager );
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool->updateSchema( $classes, true );
