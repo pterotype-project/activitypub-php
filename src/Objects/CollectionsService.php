@@ -262,6 +262,9 @@ class CollectionsService
      */
     public function addItem( ActivityPubObject $collection, $item )
     {
+        if ( ! in_array( $collection['type'], array( 'Collection', 'OrderedCollection') ) ) {
+            return;
+        }
         if ( $collection['type'] === 'Collection' ) {
             $itemsFieldName = 'items';
         } else if ( $collection['type'] === 'OrderedCollection' ) {
@@ -320,6 +323,57 @@ class CollectionsService
             strval( $currentCount + 1 ), $this->dateTimeProvider->getTime( 'collections-service.add' )
         );
         $this->entityManager->persist( $totalItemsField );
+        $this->entityManager->persist( $collection );
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Remove the item with id $itemId from $collection, if such an item is present in the collection
+     *
+     * This is O(n) with the size of the collection.
+     *
+     * @param ActivityPubObject $collection
+     * @param string $itemId
+     */
+    public function removeItem( ActivityPubObject $collection, $itemId )
+    {
+        if ( ! in_array( $collection['type'], array( 'Collection', 'OrderedCollection' ) ) ) {
+            return;
+        }
+        if ( $collection['type'] === 'Collection' ) {
+            $itemsFieldName = 'items';
+        } else if ( $collection['type'] === 'OrderedCollection' ) {
+            $itemsFieldName = 'orderedItems';
+        }
+        if ( ! $collection->hasField( $itemsFieldName ) ) {
+            return;
+        }
+        $itemsObj = $collection[$itemsFieldName];
+        foreach ( $itemsObj->getFields() as $arrayField ) {
+            if ( $arrayField->hasTargetObject() &&
+                $arrayField->getTargetObject()->getFieldValue( 'id' ) === $itemId ) {
+                $foundItemField = $arrayField;
+                $foundItemIndex = intval( $arrayField->getName() );
+                break;
+            }
+        }
+        if ( ! isset( $foundItemField ) ) {
+            return;
+        }
+        $itemsObj->removeField(
+            $foundItemField, $this->dateTimeProvider->getTime( 'collections-service.remove' )
+        );
+        $this->entityManager->persist( $itemsObj );
+        $this->entityManager->remove( $foundItemField );
+        while ( $itemsObj->hasField( $foundItemIndex + 1) ) {
+            $nextItemField = $itemsObj->getField( $foundItemIndex + 1 );
+            $nextItemField->setName(
+                $foundItemIndex, $this->dateTimeProvider->getTime( 'collections-service.remove' )
+            );
+            $this->entityManager->persist( $nextItemField );
+            $foundItemIndex = $foundItemIndex + 1;
+        }
+        $collection->setLastUpdated( $this->dateTimeProvider->getTime( 'collections-service.remove' ) );
         $this->entityManager->persist( $collection );
         $this->entityManager->flush();
     }

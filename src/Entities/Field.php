@@ -96,7 +96,7 @@ class Field
         }
         $field = new Field( $time );
         $field->setObject( $object, $time );
-        $field->setName( $name );
+        $field->setName( $name, $time );
         $field->setValue( $value, $time );
         return $field;
     }
@@ -121,7 +121,7 @@ class Field
         }
         $field = new Field( $time );
         $field->setObject( $object, $time );
-        $field->setName( $name );
+        $field->setName( $name, $time );
         $field->setTargetObject( $targetObject, $time );
         return $field;
     }
@@ -218,9 +218,13 @@ class Field
         return $this->name;
     }
 
-    protected function setName( $name )
+    public function setName( $name, DateTime $time = null )
     {
+        if ( ! $time ) {
+            $time = new DateTime( "now" );
+        }
         $this->name = $name;
+        $this->setLastUpdated( $time );
     }
 
     /**

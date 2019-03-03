@@ -63,6 +63,7 @@ class CollectionsServiceDbTest extends SQLiteTestCase
             'objects-service.create' => new DateTime( "12:00" ),
             'objects-service.update' => new DateTime( "12:01" ),
             'collections-service.add' => new DateTime( "12:03" ),
+            'collections-service.remove' => new DateTime( "12:04" ),
         ) );
         $this->httpClient = $this->getMock( Client::class );
         $this->httpClient->method( 'send' )
@@ -404,6 +405,146 @@ class CollectionsServiceDbTest extends SQLiteTestCase
             $this->setUp();
             $collection = $this->objectsService->persist( $testCase['collection'] );
             $this->collectionsService->addItem( $collection, $testCase['item'] );
+            $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
+            $expectedObjects = $expectedDataSet->getTable( 'objects' );
+            $expectedFields = $expectedDataSet->getTable( 'fields' );
+            $actualObjects = $this->getConnection()->createQueryTable(
+                'objects', 'SELECT * FROM objects'
+            );
+            $actualFields = $this->getConnection()->createQueryTable(
+                'fields', 'SELECT * FROM fields'
+            );
+            $this->assertTablesEqual( $expectedObjects, $actualObjects, "Error on test $testCase[id]");
+            $this->assertTablesEqual( $expectedFields, $actualFields, "Error on test $testCase[id]");
+            $this->tearDown();
+        }
+    }
+
+    public function testRemoveItem()
+    {
+        $testCases = array(
+            array(
+                'id' => 'basicRemoveTest',
+                'collection' => array(
+                    'id' => 'https://example.com/collections/1',
+                    'type' => 'Collection',
+                    'items' => array(
+                        array( 'id' => 'https://example.com/items/1' ),
+                        array( 'id' => 'https://example.com/items/2' ),
+                        array( 'id' => 'https://example.com/items/3' ),
+                    ),
+                ),
+                'itemIdToRemove' => 'https://example.com/items/2',
+                'expectedDataSet' => array(
+                    'objects' => array(
+                        array(
+                            'id' => 1,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'collections-service.remove' ),
+                        ),
+                        array(
+                            'id' => 2,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'collections-service.remove' ),
+                        ),
+                        array(
+                            'id' => 3,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                        ),
+                        array(
+                            'id' => 4,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                        ),
+                        array(
+                            'id' => 5,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                        ),
+                    ),
+                    'fields' => array(
+                        array(
+                            'id' => 1,
+                            'object_id' => 1,
+                            'name' => 'id',
+                            'value' => 'https://example.com/collections/1',
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => null,
+                        ),
+                        array(
+                            'id' => 2,
+                            'object_id' => 1,
+                            'name' => 'type',
+                            'value' => 'Collection',
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => null,
+                        ),
+                        array(
+                            'id' => 3,
+                            'object_id' => 3,
+                            'name' => 'id',
+                            'value' => 'https://example.com/items/1',
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => null,
+                        ),
+                        array(
+                            'id' => 4,
+                            'object_id' => 2,
+                            'name' => 0,
+                            'value' => null,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => 3,
+                        ),
+                        array(
+                            'id' => 5,
+                            'object_id' => 4,
+                            'name' => 'id',
+                            'value' => 'https://example.com/items/2',
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => null,
+                        ),
+                        array(
+                            'id' => 7,
+                            'object_id' => 5,
+                            'name' => 'id',
+                            'value' => 'https://example.com/items/3',
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => null,
+                        ),
+                        array(
+                            'id' => 8,
+                            'object_id' => 2,
+                            'name' => 1,
+                            'value' => null,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'collections-service.remove' ),
+                            'targetObject_id' => 5,
+                        ),
+                        array(
+                            'id' => 9,
+                            'object_id' => 1,
+                            'name' => 'items',
+                            'value' => null,
+                            'created' => $this->getTime( 'objects-service.create' ),
+                            'lastUpdated' => $this->getTime( 'objects-service.create' ),
+                            'targetObject_id' => 2,
+                        ),
+                    ),
+                ),
+            ),
+        );
+        foreach ( $testCases as $testCase )
+        {
+            $this->setUp();
+            $collection = $this->objectsService->persist( $testCase['collection'] );
+            $this->collectionsService->removeItem( $collection, $testCase['itemIdToRemove'] );
             $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
             $expectedObjects = $expectedDataSet->getTable( 'objects' );
             $expectedFields = $expectedDataSet->getTable( 'fields' );
