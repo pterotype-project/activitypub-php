@@ -74,8 +74,8 @@ class AcceptHandler implements EventSubscriberInterface
             $updatedLocalActor['following'] = array(
                 '@context' => $this->contextProvider->getContext(),
                 'id' => rtrim( $updatedLocalActor['id'], '/' ) . '/following',
-                'type' => 'OrderedCollection',
-                'orderedItems' => array(),
+                'type' => 'Collection',
+                'items' => array(),
             );
             $localActor = $this->objectsService->update( $localActor['id'], $updatedLocalActor );
             $following = $localActor['following'];
@@ -128,8 +128,8 @@ class AcceptHandler implements EventSubscriberInterface
             $updatedLocalActor['followers'] = array(
                 '@context' => $this->contextProvider->getContext(),
                 'id' => rtrim( $updatedLocalActor['id'], '/' ) . '/followers',
-                'type' => 'OrderedCollection',
-                'orderedItems' => array(),
+                'type' => 'Collection',
+                'items' => array(),
             );
             $localActor = $this->objectsService->update( $localActor['id'], $updatedLocalActor );
             $followers = $localActor['followers'];
