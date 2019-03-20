@@ -2,9 +2,9 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
-use ActivityPub\Activities\UpdateHandler;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\UpdateHandler;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;

@@ -2,8 +2,8 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\AnnounceHandler;
-use ActivityPub\Activities\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\AnnounceHandler;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;

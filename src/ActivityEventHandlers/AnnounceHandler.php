@@ -1,6 +1,6 @@
 <?php
 
-namespace ActivityPub\Activities;
+namespace ActivityPub\ActivityEventHandlers;
 
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\CollectionsService;
@@ -9,7 +9,7 @@ use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class LikeHandler implements EventSubscriberInterface
+class AnnounceHandler implements EventSubscriberInterface
 {
     /**
      * @var ObjectsService
@@ -30,7 +30,6 @@ class LikeHandler implements EventSubscriberInterface
     {
         return array(
             InboxActivityEvent::NAME => 'handleInbox',
-            OutboxActivityEvent::NAME => 'handleOutbox',
         );
     }
 
@@ -46,7 +45,7 @@ class LikeHandler implements EventSubscriberInterface
     public function handleInbox( InboxActivityEvent $event )
     {
         $activity = $event->getActivity();
-        if ( $activity['type'] !== 'Like' ) {
+        if ( $activity['type'] !== 'Announce' ) {
             return;
         }
         $objectId = $activity['object'];
@@ -54,29 +53,15 @@ class LikeHandler implements EventSubscriberInterface
             $objectId = $objectId['id'];
         }
         if ( ! is_string( $objectId ) ) {
-            throw new BadRequestHttpException('Invalid object');
+            throw new BadRequestHttpException( 'Invalid object' );
         }
         $object = $this->objectsService->dereference( $objectId );
-        if ( ! $object->hasField( 'likes' ) ) {
-            $object = $this->addCollectionToObject( $object, 'likes' );
-        }
-        $likes = $object['likes'];
-        $this->collectionsService->addItem( $likes, $activity );
-    }
+        if ( ! $object->hasField( 'shares' ) ) {
+            $object = $this->addCollectionToObject( $object, 'shares' );
 
-    public function handleOutbox( OutboxActivityEvent $event )
-    {
-        $activity = $event->getActivity();
-        if ( $activity['type'] !== 'Like' ) {
-            return;
         }
-        $object = $activity['object'];
-        $actor = $event->getActor();
-        if ( ! $actor->hasField( 'liked' ) ) {
-            $actor = $this->addCollectionToObject( $actor, 'liked' );
-        }
-        $liked = $actor['liked'];
-        $this->collectionsService->addItem( $liked, $object );
+        $shares = $object['shares'];
+        $this->collectionsService->addItem( $shares, $activity );
     }
 
     private function addCollectionToObject( ActivityPubObject $object, $collectionName )

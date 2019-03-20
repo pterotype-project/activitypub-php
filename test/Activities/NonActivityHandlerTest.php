@@ -2,8 +2,8 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\NonActivityHandler;
-use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\NonActivityHandler;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;

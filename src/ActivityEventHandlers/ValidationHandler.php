@@ -1,6 +1,6 @@
 <?php
 
-namespace ActivityPub\Activities;
+namespace ActivityPub\ActivityEventHandlers;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;

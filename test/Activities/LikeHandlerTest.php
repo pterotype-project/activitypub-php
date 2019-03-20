@@ -2,9 +2,9 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\LikeHandler;
-use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\LikeHandler;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;

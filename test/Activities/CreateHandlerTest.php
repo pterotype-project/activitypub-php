@@ -2,9 +2,9 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\CreateHandler;
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\CreateHandler;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;

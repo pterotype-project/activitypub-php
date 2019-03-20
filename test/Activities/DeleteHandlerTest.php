@@ -2,9 +2,9 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\DeleteHandler;
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\DeleteHandler;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;

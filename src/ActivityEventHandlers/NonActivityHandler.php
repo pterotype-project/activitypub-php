@@ -1,6 +1,6 @@
 <?php
 
-namespace ActivityPub\Activities;
+namespace ActivityPub\ActivityEventHandlers;
 
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ContextProvider;

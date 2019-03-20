@@ -2,9 +2,9 @@
 
 namespace ActivityPub\Test\Activities;
 
-use ActivityPub\Activities\FollowHandler;
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\FollowHandler;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;

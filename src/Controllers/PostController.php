@@ -2,8 +2,8 @@
 
 namespace ActivityPub\Controllers;
 
-use ActivityPub\Activities\InboxActivityEvent;
-use ActivityPub\Activities\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventDispatcher;

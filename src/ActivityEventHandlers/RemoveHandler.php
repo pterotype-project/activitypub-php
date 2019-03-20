@@ -1,13 +1,13 @@
 <?php
 
-namespace ActivityPub\Activities;
+namespace ActivityPub\ActivityEventHandlers;
 
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-class AddHandler implements EventSubscriberInterface
+class RemoveHandler implements EventSubscriberInterface
 {
     /**
      * @var ObjectsService
@@ -22,8 +22,8 @@ class AddHandler implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return array(
-            InboxActivityEvent::NAME => 'handleAdd',
-            OutboxActivityEvent::NAME => 'handleAdd',
+            InboxActivityEvent::NAME => 'handleRemove',
+            OutboxActivityEvent::NAME => 'handleRemove',
         );
     }
 
@@ -34,10 +34,10 @@ class AddHandler implements EventSubscriberInterface
         $this->collectionsService = $collectionsService;
     }
 
-    public function handleAdd( ActivityEvent $event )
+    public function handleRemove( ActivityEvent $event )
     {
         $activity = $event->getActivity();
-        if ( $activity['type'] !== 'Add' ) {
+        if ( $activity['type'] !== 'Remove' ) {
             return;
         }
         $collectionId = $activity['target'];
@@ -51,7 +51,13 @@ class AddHandler implements EventSubscriberInterface
         if ( $requestActorHost !== $collectionHost ) {
             throw new AccessDeniedHttpException();
         }
-        $object = $activity['object'];
-        $this->collectionsService->addItem( $collection, $object );
+        $objectId = $activity['object'];
+        if ( is_array( $objectId ) && array_key_exists( 'id', $objectId ) ) {
+            $objectId = $objectId['id'];
+        }
+        if ( ! is_string( $objectId ) ) {
+            return;
+        }
+        $this->collectionsService->removeItem( $collection, $objectId );
     }
 }

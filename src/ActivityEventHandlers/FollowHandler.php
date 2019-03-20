@@ -1,6 +1,6 @@
 <?php
 
-namespace ActivityPub\Activities;
+namespace ActivityPub\ActivityEventHandlers;
 
 use ActivityPub\Objects\ContextProvider;
 use Symfony\Component\EventDispatcher\EventDispatcher;

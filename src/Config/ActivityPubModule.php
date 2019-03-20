@@ -4,14 +4,14 @@
 
 namespace ActivityPub\Config;
 
-use ActivityPub\Activities\AcceptHandler;
-use ActivityPub\Activities\AddHandler;
-use ActivityPub\Activities\CreateHandler;
-use ActivityPub\Activities\DeleteHandler;
-use ActivityPub\Activities\FollowHandler;
-use ActivityPub\Activities\NonActivityHandler;
-use ActivityPub\Activities\UpdateHandler;
-use ActivityPub\Activities\ValidationHandler;
+use ActivityPub\ActivityEventHandlers\AcceptHandler;
+use ActivityPub\ActivityEventHandlers\AddHandler;
+use ActivityPub\ActivityEventHandlers\CreateHandler;
+use ActivityPub\ActivityEventHandlers\DeleteHandler;
+use ActivityPub\ActivityEventHandlers\FollowHandler;
+use ActivityPub\ActivityEventHandlers\NonActivityHandler;
+use ActivityPub\ActivityEventHandlers\UpdateHandler;
+use ActivityPub\ActivityEventHandlers\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Auth\SignatureListener;
