@@ -1,6 +1,6 @@
 <?php
 
-namespace ActivityPub\Test\Activities;
+namespace ActivityPub\Test\ActivityEventHandlers;
 
 use ActivityPub\ActivityEventHandlers\AnnounceHandler;
 use ActivityPub\ActivityEventHandlers\InboxActivityEvent;

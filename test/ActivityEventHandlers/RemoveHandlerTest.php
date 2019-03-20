@@ -1,10 +1,10 @@
 <?php
 
-namespace ActivityPub\Test\Activities;
+namespace ActivityPub\Test\ActivityEventHandlers;
 
-use ActivityPub\ActivityEventHandlers\AddHandler;
 use ActivityPub\ActivityEventHandlers\InboxActivityEvent;
 use ActivityPub\ActivityEventHandlers\OutboxActivityEvent;
+use ActivityPub\ActivityEventHandlers\RemoveHandler;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Test\TestConfig\APTestCase;
@@ -12,7 +12,7 @@ use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
-class AddHandlerTest extends APTestCase
+class RemoveHandlerTest extends APTestCase
 {
     private static function getObjects()
     {
@@ -26,7 +26,7 @@ class AddHandlerTest extends APTestCase
         );
     }
 
-    public function testHandleAdd()
+    public function testHandleRemove()
     {
         $testCases = array(
             array(
@@ -34,8 +34,8 @@ class AddHandlerTest extends APTestCase
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
                     array(
-                        'id' => 'https://elsewhere.com/adds/1',
-                        'type' => 'Add',
+                        'id' => 'https://elsewhere.com/removes/1',
+                        'type' => 'Remove',
                         'object' => array(
                             'id' => 'https://elsewhere.com/notes/1',
                         ),
@@ -55,17 +55,15 @@ class AddHandlerTest extends APTestCase
                         )
                     )
                 ),
-                'expectedNewItem' => array(
-                    'id' => 'https://elsewhere.com/notes/1',
-                )
+                'expectedRemovedItemId' => 'https://elsewhere.com/notes/1',
             ),
             array(
                 'id' => 'outboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
                     array(
-                        'id' => 'https://example.com/adds/1',
-                        'type' => 'Add',
+                        'id' => 'https://example.com/removes/1',
+                        'type' => 'Remove',
                         'object' => array(
                             'id' => 'https://example.com/notes/1',
                         ),
@@ -85,17 +83,15 @@ class AddHandlerTest extends APTestCase
                         )
                     )
                 ),
-                'expectedNewItem' => array(
-                    'id' => 'https://example.com/notes/1',
-                )
+                'expectedRemovedItemId' => 'https://example.com/notes/1',
             ),
             array(
                 'id' => 'notAuthorizedTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
                     array(
-                        'id' => 'https://example.com/adds/1',
-                        'type' => 'Add',
+                        'id' => 'https://example.com/removes/1',
+                        'type' => 'Remove',
                         'object' => array(
                             'id' => 'https://example.com/notes/1',
                         ),
@@ -130,22 +126,22 @@ class AddHandlerTest extends APTestCase
             });
             $collectionsService = $this->getMockBuilder( CollectionsService::class )
                 ->disableOriginalConstructor()
-                ->setMethods( array( 'addItem' ) )
+                ->setMethods( array( 'removeItem' ) )
                 ->getMock();
-            if ( array_key_exists( 'expectedNewItem', $testCase ) ) {
+            if ( array_key_exists( 'expectedRemovedItemId', $testCase ) ) {
                 $collectionsService->expects( $this->once() )
-                    ->method( 'addItem' )
+                    ->method( 'removeItem' )
                     ->with(
                         $this->anything(),
-                        $this->equalTo( $testCase['expectedNewItem'] )
+                        $this->equalTo( $testCase['expectedRemovedItemId'] )
                     );
             } else {
                 $collectionsService->expects( $this->never() )
-                    ->method( 'addItem' );
+                    ->method( 'removeItem' );
             }
-            $addHandler = new AddHandler( $objectsService, $collectionsService );
+            $removeHandler = new RemoveHandler( $objectsService, $collectionsService );
             $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $addHandler );
+            $eventDispatcher->addSubscriber( $removeHandler );
             if ( array_key_exists( 'expectedException', $testCase ) ) {
                 $this->setExpectedException( $testCase['expectedException'] );
             }
