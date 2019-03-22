@@ -3,6 +3,8 @@
 namespace ActivityPub\Controllers;
 
 use ActivityPub\Auth\AuthService;
+use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Objects\BlockService;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -32,13 +34,20 @@ class GetController
      */
     private $authService;
 
+    /**
+     * @var BlockService
+     */
+    private $blockService;
+
     public function __construct( ObjectsService $objectsService,
                                  CollectionsService $collectionsService,
-                                 AuthService $authService )
+                                 AuthService $authService,
+                                 BlockService $blockService )
     {
         $this->objectsService = $objectsService;
         $this->collectionsService = $collectionsService;
         $this->authService = $authService;
+        $this->blockService = $blockService;
     }
 
     /**
@@ -66,7 +75,37 @@ class GetController
         if ( $object->hasField( 'type' ) &&
             ( $object['type'] === 'Collection' ||
                 $object['type'] === 'OrderedCollection' ) ) {
-            $pagedCollection = $this->collectionsService->pageAndFilterCollection( $request, $object );
+            if ( $object->hasReferencingField( 'inbox' ) ) {
+                // TODO figure out what to pass in here
+                $blockedActorIds = $this->blockService->getBlockedActorIds();
+                $filterFunc = function ( ActivityPubObject $item ) use ( $request, $blockedActorIds ) {
+                    $authorized = $this->authService->isAuthorized( $request, $item );
+                    foreach ( array( 'actor', 'attributedTo' ) as $actorField ) {
+                        if ( $item->hasField( $actorField ) ) {
+                            $actorFieldValue = $item->getFieldValue( $actorField );
+                            if ( ! $actorFieldValue ) {
+                                continue;
+                            }
+                            if ( is_string( $actorFieldValue &&
+                                in_array( $actorFieldValue, $blockedActorIds ) ) ) {
+                                $authorized = false;
+                                break;
+                            } else if ( $actorFieldValue instanceof ActivityPubObject &&
+                            in_array( $actorFieldValue['id'], $blockedActorIds ) ) {
+                                $authorized = false;
+                                break;
+                            }
+                        }
+                    }
+                    return $authorized;
+                }
+            } else {
+                $filterFunc = function ( ActivityPubObject $item ) use ( $request ) {
+                    return $this->authService->isAuthorized( $request, $item );
+                };
+            }
+            $pagedCollection = $this->collectionsService->pageAndFilterCollection( $request, $object, $filterFunc );
+
             return new JsonResponse( $pagedCollection );
         }
         $response = new JsonResponse( $object->asArray() );

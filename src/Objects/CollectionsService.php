@@ -8,6 +8,7 @@ use ActivityPub\Auth\AuthService;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Utils\DateTimeProvider;
+use Closure;
 use Doctrine\ORM\EntityManager;
 use Exception;
 use GuzzleHttp\Client;
@@ -77,14 +78,18 @@ class CollectionsService
      * Returns the collection paged and filtered by the request's authorization status
      * @param Request $request
      * @param ActivityPubObject $collection
+     * @param Closure $filterFunc The function to filter by. Should be a closure that
+     *                            takes an ActivityPubObject and returns a boolean, where
+     *                            true means keep the item and false means filter it out
      * @return array
      */
     public function pageAndFilterCollection( Request $request,
-                                             ActivityPubObject $collection )
+                                             ActivityPubObject $collection,
+                                             Closure $filterFunc )
     {
         if ( $request->query->has( 'offset' ) ) {
             return $this->getCollectionPage(
-                $collection, $request, intval( $request->query->get( 'offset' ) ), $this->pageSize
+                $collection, $request, intval( $request->query->get( 'offset' ) ), $this->pageSize, $filterFunc
             );
         }
         $colArr = array();
@@ -98,7 +103,7 @@ class CollectionsService
             }
         }
         $firstPage = $this->getCollectionPage(
-            $collection, $request, 0, $this->pageSize
+            $collection, $request, 0, $this->pageSize, $filterFunc
         );
         $colArr['first'] = $firstPage;
         return $colArr;
@@ -107,7 +112,8 @@ class CollectionsService
     private function getCollectionPage( ActivityPubObject $collection,
                                         Request $request,
                                         $offset,
-                                        $pageSize )
+                                        $pageSize,
+                                        Closure $filterFunc )
     {
         $itemsKey = 'items';
         $pageType = 'CollectionPage';
@@ -133,7 +139,7 @@ class CollectionsService
             if ( is_string( $item ) ) {
                 $pageItems[] = $item;
                 $count++;
-            } else if ( $this->authService->isAuthorized( $request, $item ) ) {
+            } else if ( call_user_func( $filterFunc, $item ) ) {
                 $pageItems[] = $item->asArray( 1 );
                 $count++;
             }

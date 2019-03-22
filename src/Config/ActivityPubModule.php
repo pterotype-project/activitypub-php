@@ -20,6 +20,7 @@ use ActivityPub\Controllers\PostController;
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Database\PrefixNamingStrategy;
 use ActivityPub\Http\Router;
+use ActivityPub\Objects\BlockService;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
@@ -108,10 +109,14 @@ class ActivityPubModule
             ->addArgument( new Reference( RandomProvider::class ) )
             ->addArgument( $config->getIdPathPrefix() );
 
+        $this->injector->register( BlockService::class, BlockService::class )
+            ->addArgument( new Reference( ObjectsService::class ) );
+
         $this->injector->register( GetController::class, GetController::class )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( CollectionsService::class ) )
-            ->addArgument( new Reference( AuthService::class ) );
+            ->addArgument( new Reference( AuthService::class ) )
+            ->addArgument( new Reference( BlockService::class ) );
 
         $this->injector->register( PostController::class, PostController::class )
             ->addArgument( new Reference( EventDispatcher::class ) )
