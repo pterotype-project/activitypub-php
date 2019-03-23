@@ -86,8 +86,8 @@ class GetController
                             if ( ! $actorFieldValue ) {
                                 continue;
                             }
-                            if ( is_string( $actorFieldValue &&
-                                in_array( $actorFieldValue, $blockedActorIds ) ) ) {
+                            if ( is_string( $actorFieldValue ) &&
+                                in_array( $actorFieldValue, $blockedActorIds ) ) {
                                 $shouldShow = false;
                                 break;
                             } else if ( $actorFieldValue instanceof ActivityPubObject &&

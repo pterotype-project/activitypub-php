@@ -12,6 +12,7 @@ use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestActivityPubObject;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
+use Exception;
 use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -23,6 +24,7 @@ class GetControllerTest extends APTestCase
      * @var GetController
      */
     private $getController;
+
     /**
      * @var array
      */
@@ -35,7 +37,7 @@ class GetControllerTest extends APTestCase
         $objectsService->method( 'dereference' )->will(
             $this->returnCallback( function ( $uri ) {
                 if ( array_key_exists( $uri, $this->objects ) ) {
-                    return TestActivityPubObject::fromArray( $this->objects[$uri] );
+                    return $this->objects[$uri];
                 }
                 return null;
             } )
@@ -53,6 +55,9 @@ class GetControllerTest extends APTestCase
             $objectsService
         );
         $blockService = $this->getMock( BlockService::class );
+        $blockService->method( 'getBlockedActorIds' )->will(
+            $this->returnValue( array( 'https://elsewhere.com/actors/blocked' ) )
+        );
         $this->getController = new GetController(
             $objectsService, $collectionsService, $authService, $blockService
         );
@@ -60,8 +65,26 @@ class GetControllerTest extends APTestCase
 
     private static function getObjects()
     {
+        $actorObject = TestActivityPubObject::fromArray( array(
+            'id' => 'https://example.com/actors/1',
+            'inbox' => array(
+                'id' => 'https://example.com/actors/1/inbox',
+                'type' => 'OrderedCollection',
+                'orderedItems' => array(
+                    array(
+                        'id' => 'https://elsewhere.com/objects/1',
+                        'actor' => 'https://elsewhere.com/actors/blocked',
+                    ),
+                    array(
+                        'id' => 'https://elsewhere.com/objects/2',
+                        'actor' => 'https://elsewhere.com/actors/notblocked',
+                    )
+                ),
+            ),
+        ) );
+        $inboxObject = $actorObject['inbox'];
         return array(
-            'https://example.com/objects/1' => array(
+            'https://example.com/objects/1' => TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/objects/1',
                 'object' => array(
                     'id' => 'https://example.com/objects/2',
@@ -69,8 +92,8 @@ class GetControllerTest extends APTestCase
                 ),
                 'audience' => array( 'https://www.w3.org/ns/activitystreams#Public' ),
                 'type' => 'Create',
-            ),
-            'https://example.com/objects/2' => array(
+            ) ),
+            'https://example.com/objects/2' => TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/objects/2',
                 'object' => array(
                     'id' => 'https://example.com/objects/3',
@@ -81,8 +104,8 @@ class GetControllerTest extends APTestCase
                 'actor' => array(
                     'id' => 'https://example.com/actor/2',
                 ),
-            ),
-            'https://example.com/objects/3' => array(
+            ) ),
+            'https://example.com/objects/3' => TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/objects/3',
                 'object' => array(
                     'id' => 'https://example.com/objects/2',
@@ -92,12 +115,20 @@ class GetControllerTest extends APTestCase
                 'actor' => array(
                     'id' => 'https://example.com/actor/2',
                 ),
-            ),
-            'https://example.com/objects/4' => array(
+            ) ),
+            'https://example.com/objects/4' => TestActivityPubObject::fromArray( array(
                 'id' => 'https://example.com/objects/4',
                 'type' => 'Tombstone',
-            ),
+            ) ),
+            'https://example.com/actors/1' => $actorObject,
+            'https://example.com/actors/1/inbox' => $inboxObject,
         );
+    }
+
+    private function getObjectArray( $id )
+    {
+        $obj = $this->objects[$id];
+        return $obj->asArray();
     }
 
     public function testItRendersPersistedObject()
@@ -106,7 +137,7 @@ class GetControllerTest extends APTestCase
         $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
-            json_encode( $this->objects['https://example.com/objects/1'] ),
+            json_encode( $this->getObjectArray('https://example.com/objects/1' ) ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
@@ -133,7 +164,7 @@ class GetControllerTest extends APTestCase
         $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
-            json_encode( $this->objects['https://example.com/objects/2'] ),
+            json_encode( $this->getObjectArray( 'https://example.com/objects/2' ) ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
@@ -146,7 +177,7 @@ class GetControllerTest extends APTestCase
         $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
-            json_encode( $this->objects['https://example.com/objects/2'] ),
+            json_encode( $this->getObjectArray( 'https://example.com/objects/2' ) ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
@@ -158,7 +189,7 @@ class GetControllerTest extends APTestCase
         $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
-            json_encode( $this->objects['https://example.com/objects/3'] ),
+            json_encode( $this->getObjectArray( 'https://example.com/objects/3' ) ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
@@ -170,7 +201,7 @@ class GetControllerTest extends APTestCase
         $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
-            json_encode( $this->objects['https://example.com/objects/1'] ),
+            json_encode( $this->getObjectArray( 'https://example.com/objects/1' ) ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
@@ -182,7 +213,7 @@ class GetControllerTest extends APTestCase
         $response = $this->getController->handle( $request );
         $this->assertNotNull( $response );
         $this->assertEquals(
-            json_encode( $this->objects['https://example.com/objects/4'] ),
+            json_encode( $this->getObjectArray( 'https://example.com/objects/4' ) ),
             $response->getContent()
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
@@ -191,8 +222,35 @@ class GetControllerTest extends APTestCase
 
     public function testItFiltersInboxForBlockedActors()
     {
-        // TODO implement me
-        $this->assertTrue( false );
+        $request = Request::create( 'https://example.com/actors/1/inbox' );
+        $response = $this->getController->handle( $request );
+        $this->assertNotNull( $response );
+        $this->assertEquals(
+            json_encode(
+                array(
+                    'id' => 'https://example.com/actors/1/inbox',
+                    'type' => 'OrderedCollection',
+                    'first' => array(
+                        '@context' => array(
+                            'https://www.w3.org/ns/activitystreams',
+                            'https://w3id.org/security/v1',
+                        ),
+                        'id' => 'https://example.com/actors/1/inbox?offset=0',
+                        'type' => 'OrderedCollectionPage',
+                        'orderedItems' => array(
+                            array(
+                                'id' => 'https://elsewhere.com/objects/2',
+                                'actor' => 'https://elsewhere.com/actors/notblocked',
+                            ),
+                        ),
+                        'partOf' => 'https://example.com/actors/1/inbox',
+                        'startIndex' => 0,
+                    ),
+                )
+            ),
+            $response->getContent()
+        );
+        $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
     }
 }
 
