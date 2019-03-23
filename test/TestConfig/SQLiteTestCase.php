@@ -28,7 +28,7 @@ abstract class SQLiteTestCase extends APTestCase
         return $this->conn;
     }
 
-    protected function getDbPath()
+    protected static function getDbPath()
     {
         return dirname( __FILE__ ) . '/db.sqlite';
     }
