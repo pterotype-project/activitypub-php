@@ -3,6 +3,7 @@
 namespace ActivityPub\Test\Objects;
 
 use ActivityPub\Auth\AuthService;
+use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;
@@ -22,9 +23,14 @@ class CollectionsServiceTest extends APTestCase
      */
     private $collectionsService;
 
+    /**
+     * @var AuthService
+     */
+    private $authService;
+
     public function setUp()
     {
-        $authService = new AuthService();
+        $this->authService = new AuthService();
         $contextProvider = new ContextProvider();
         $httpClient = $this->getMock( Client::class );
         $httpClient->method( 'send' )->willReturn(
@@ -40,7 +46,7 @@ class CollectionsServiceTest extends APTestCase
         $objectsService = $this->getMock( ObjectsService::class );
         $this->collectionsService = new CollectionsService(
             4,
-            $authService,
+            $this->authService,
             $contextProvider,
             $httpClient,
             new SimpleDateTimeProvider(),
@@ -397,7 +403,10 @@ class CollectionsServiceTest extends APTestCase
             }
             $actual = $this->collectionsService->pageAndFilterCollection(
                 $testCase['request'],
-                TestActivityPubObject::fromArray( $testCase['collection'] )
+                TestActivityPubObject::fromArray( $testCase['collection'] ),
+                function( ActivityPubObject $item ) use ( $testCase ) {
+                    return $this->authService->isAuthorized( $testCase['request'], $item );
+                }
             );
             $this->assertEquals(
                 $testCase['expectedResult'], $actual, "Error on test $testCase[id]"

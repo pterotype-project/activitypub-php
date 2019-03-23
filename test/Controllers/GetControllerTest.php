@@ -4,6 +4,7 @@ namespace ActivityPub\Test\Controllers;
 
 use ActivityPub\Auth\AuthService;
 use ActivityPub\Controllers\GetController;
+use ActivityPub\Objects\BlockService;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\ObjectsService;
@@ -51,8 +52,9 @@ class GetControllerTest extends APTestCase
             $this->getMock( EntityManager::class ),
             $objectsService
         );
+        $blockService = $this->getMock( BlockService::class );
         $this->getController = new GetController(
-            $objectsService, $collectionsService, $authService
+            $objectsService, $collectionsService, $authService, $blockService
         );
     }
 
@@ -185,6 +187,12 @@ class GetControllerTest extends APTestCase
         );
         $this->assertEquals( 'application/json', $response->headers->get( 'Content-Type' ) );
         $this->assertEquals( 410, $response->getStatusCode() );
+    }
+
+    public function testItFiltersInboxForBlockedActors()
+    {
+        // TODO implement me
+        $this->assertTrue( false );
     }
 }
 

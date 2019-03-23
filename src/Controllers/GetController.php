@@ -76,10 +76,10 @@ class GetController
             ( $object['type'] === 'Collection' ||
                 $object['type'] === 'OrderedCollection' ) ) {
             if ( $object->hasReferencingField( 'inbox' ) ) {
-                // TODO figure out what to pass in here
-                $blockedActorIds = $this->blockService->getBlockedActorIds();
+                $inboxActor = $object->getReferencingField( 'inbox' )->getObject();
+                $blockedActorIds = $this->blockService->getBlockedActorIds( $inboxActor['id'] );
                 $filterFunc = function ( ActivityPubObject $item ) use ( $request, $blockedActorIds ) {
-                    $authorized = $this->authService->isAuthorized( $request, $item );
+                    $shouldShow = $this->authService->isAuthorized( $request, $item );
                     foreach ( array( 'actor', 'attributedTo' ) as $actorField ) {
                         if ( $item->hasField( $actorField ) ) {
                             $actorFieldValue = $item->getFieldValue( $actorField );
@@ -88,17 +88,17 @@ class GetController
                             }
                             if ( is_string( $actorFieldValue &&
                                 in_array( $actorFieldValue, $blockedActorIds ) ) ) {
-                                $authorized = false;
+                                $shouldShow = false;
                                 break;
                             } else if ( $actorFieldValue instanceof ActivityPubObject &&
                             in_array( $actorFieldValue['id'], $blockedActorIds ) ) {
-                                $authorized = false;
+                                $shouldShow = false;
                                 break;
                             }
                         }
                     }
-                    return $authorized;
-                }
+                    return $shouldShow;
+                };
             } else {
                 $filterFunc = function ( ActivityPubObject $item ) use ( $request ) {
                     return $this->authService->isAuthorized( $request, $item );
