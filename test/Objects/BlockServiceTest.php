@@ -156,6 +156,94 @@ class BlockServiceTest extends SQLiteTestCase
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/2' ),
             ),
+            array(
+                'id' => 'undoneBlocks',
+                'initialData' => array(
+                    array(
+                        'id' => 'https://example.com/blocks/1',
+                        'type' => 'Block',
+                        'actor' => array(
+                            'id' => 'https://example.com/actors/1',
+                        ),
+                        'object' => array(
+                            'id' => 'https://elsewhere.com/actors/1',
+                        )
+                    ),
+                    array(
+                        'id' => 'https://example.com/blocks/2',
+                        'type' => 'Block',
+                        'actor' => array(
+                            'id' => 'https://example.com/actors/1',
+                        ),
+                        'object' => array(
+                            'id' => 'https://elsewhere.com/actors/2',
+                        )
+                    ),
+                    array(
+                        'id' => 'https://example.com/undos/1',
+                        'type' => 'Undo',
+                        'actor' => array(
+                            'id' => 'https://example.com/actors/1',
+                        ),
+                        'object' => array(
+                            'id' => 'https://example.com/blocks/1',
+                            'type' => 'Block',
+                            'actor' => array(
+                                'id' => 'https://example.com/actors/1',
+                            ),
+                            'object' => array(
+                                'id' => 'https://elsewhere.com/actors/1',
+                            )
+                        )
+                    ),
+                ),
+                'blockingActorId' => 'https://example.com/actors/1',
+                'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/2' ),
+            ),
+            array(
+                'id' => 'irrelevantUndonBlocks',
+                'initialData' => array(
+                    array(
+                        'id' => 'https://example.com/blocks/1',
+                        'type' => 'Block',
+                        'actor' => array(
+                            'id' => 'https://example.com/actors/1',
+                        ),
+                        'object' => array(
+                            'id' => 'https://elsewhere.com/actors/1',
+                        )
+                    ),
+                    array(
+                        'id' => 'https://example.com/blocks/2',
+                        'type' => 'Block',
+                        'actor' => array(
+                            'id' => 'https://example.com/actors/1',
+                        ),
+                        'object' => array(
+                            'id' => 'https://elsewhere.com/actors/2',
+                        )
+                    ),
+                    array(
+                        'id' => 'https://example.com/undos/1',
+                        'type' => 'Undo',
+                        'actor' => array(
+                            'id' => 'https://example.com/actors/1',
+                        ),
+                        'object' => array(
+                            'id' => 'https://example.com/blocks/3',
+                            'type' => 'Block',
+                            'actor' => array(
+                                'id' => 'https://example.com/actors/1',
+                            ),
+                            'object' => array(
+                                'id' => 'https://elsewhere.com/actors/3',
+                            )
+                        )
+                    ),
+                ),
+                'blockingActorId' => 'https://example.com/actors/1',
+                'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/1', 'https://elsewhere.com/actors/2' ),
+            )
         );
         foreach ( $testCases as $testCase ) {
             self::setUp();

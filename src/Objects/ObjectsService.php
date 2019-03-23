@@ -27,6 +27,11 @@ class ObjectsService
      */
     protected $httpClient;
 
+    /**
+     * @var int
+     */
+    protected $nonce;
+
     public function __construct( EntityManager $entityManager,
                                  DateTimeProvider $dateTimeProvider,
                                  Client $client )
@@ -34,6 +39,7 @@ class ObjectsService
         $this->entityManager = $entityManager;
         $this->dateTimeProvider = $dateTimeProvider;
         $this->httpClient = $client;
+        $this->nonce = 0;
     }
 
     /**
@@ -97,6 +103,12 @@ class ObjectsService
         return $query->getResult();
     }
 
+    protected function getNextNonce()
+    {
+        $this->nonce = $this->nonce + 1;
+        return $this->nonce;
+    }
+
     /**
      * Generates the Doctrine QueryBuilder that represents the query
      *
@@ -104,16 +116,16 @@ class ObjectsService
      *   final expression
      *
      * @param array $queryTerms The query terms from which to generate the expressions
-     * @param int $nonce A nonce value to differentiate field names
      * @return QueryBuilder The expression
      */
-    protected function getObjectQuery( $queryTerms, $nonce = 0 )
+    protected function getObjectQuery( $queryTerms )
     {
+        $nonce = $this->getNextNonce();
         $qb = $this->entityManager->createQueryBuilder();
         $exprs = array();
         foreach ( $queryTerms as $fieldName => $fieldValue ) {
             if ( is_array( $fieldValue ) ) {
-                $subQuery = $this->getObjectQuery( $fieldValue, $nonce + 1 );
+                $subQuery = $this->getObjectQuery( $fieldValue );
                 $exprs[] = $qb->expr()->andX(
                     $qb->expr()->like(
                         "field$nonce.name",
