@@ -6,10 +6,14 @@ namespace ActivityPub;
 
 use ActivityPub\ActivityEventHandlers\AcceptHandler;
 use ActivityPub\ActivityEventHandlers\AddHandler;
+use ActivityPub\ActivityEventHandlers\AnnounceHandler;
 use ActivityPub\ActivityEventHandlers\CreateHandler;
 use ActivityPub\ActivityEventHandlers\DeleteHandler;
 use ActivityPub\ActivityEventHandlers\FollowHandler;
+use ActivityPub\ActivityEventHandlers\LikeHandler;
 use ActivityPub\ActivityEventHandlers\NonActivityHandler;
+use ActivityPub\ActivityEventHandlers\RemoveHandler;
+use ActivityPub\ActivityEventHandlers\UndoHandler;
 use ActivityPub\ActivityEventHandlers\UpdateHandler;
 use ActivityPub\ActivityEventHandlers\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
@@ -92,6 +96,10 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( FollowHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( AcceptHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( AddHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( RemoveHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( LikeHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( AnnounceHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( UndoHandler::class ) );
     }
 
     /**

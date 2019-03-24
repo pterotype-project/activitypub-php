@@ -6,10 +6,14 @@ namespace ActivityPub\Config;
 
 use ActivityPub\ActivityEventHandlers\AcceptHandler;
 use ActivityPub\ActivityEventHandlers\AddHandler;
+use ActivityPub\ActivityEventHandlers\AnnounceHandler;
 use ActivityPub\ActivityEventHandlers\CreateHandler;
 use ActivityPub\ActivityEventHandlers\DeleteHandler;
 use ActivityPub\ActivityEventHandlers\FollowHandler;
+use ActivityPub\ActivityEventHandlers\LikeHandler;
 use ActivityPub\ActivityEventHandlers\NonActivityHandler;
+use ActivityPub\ActivityEventHandlers\RemoveHandler;
+use ActivityPub\ActivityEventHandlers\UndoHandler;
 use ActivityPub\ActivityEventHandlers\UpdateHandler;
 use ActivityPub\ActivityEventHandlers\ValidationHandler;
 use ActivityPub\Auth\AuthListener;
@@ -152,6 +156,24 @@ class ActivityPubModule
             ->addArgument( new Reference( ContextProvider::class ) );
 
         $this->injector->register( AddHandler::class, AddHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) );
+
+        $this->injector->register( RemoveHandler::class, RemoveHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) );
+
+        $this->injector->register( LikeHandler::class, LikeHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) )
+            ->addArgument( new Reference( ContextProvider::class ) );
+
+        $this->injector->register( AnnounceHandler::class, AnnounceHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( CollectionsService::class ) )
+            ->addArgument( new Reference( ContextProvider::class ) );
+
+        $this->injector->register( UndoHandler::class, UndoHandler::class )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( CollectionsService::class ) );
     }
