@@ -105,14 +105,20 @@ class GetController
                 };
             }
             $pagedCollection = $this->collectionsService->pageAndFilterCollection( $request, $object, $filterFunc );
-
-            return new JsonResponse( $pagedCollection );
+            return $this->makeJsonResponse( $pagedCollection );
         }
-        $response = new JsonResponse( $object->asArray() );
+        $response = $this->makeJsonResponse( $object->asArray() );
         if ( $object->hasField( 'type' ) &&
             $object['type'] === 'Tombstone' ) {
             $response->setStatusCode( 410 );
         }
+        return $response;
+    }
+
+    private function makeJsonResponse( $obj )
+    {
+        $response = new Response( json_encode( $obj, JSON_UNESCAPED_UNICODE ) );
+        $response->headers->set( 'Content-Type', 'application/json' );
         return $response;
     }
 }
