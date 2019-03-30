@@ -3,6 +3,7 @@
 namespace ActivityPub\ActivityEventHandlers;
 
 use ActivityPub\Objects\CollectionsService;
+use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -18,6 +19,11 @@ class ActivityPersister implements EventSubscriberInterface
      */
     private $objectsService;
 
+    /**
+     * @var IdProvider
+     */
+    private $idProvider;
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -27,10 +33,12 @@ class ActivityPersister implements EventSubscriberInterface
     }
 
     public function __construct( CollectionsService $collectionsService,
-                                 ObjectsService $objectsService )
+                                 ObjectsService $objectsService,
+                                 IdProvider $idProvider )
     {
         $this->collectionsService = $collectionsService;
         $this->objectsService = $objectsService;
+        $this->idProvider = $idProvider;
     }
 
     public function persistActivityToInbox( InboxActivityEvent $event )
@@ -47,6 +55,9 @@ class ActivityPersister implements EventSubscriberInterface
     public function persistActivityToOutbox( OutboxActivityEvent $event )
     {
         $activity = $event->getActivity();
+        if ( ! array_key_exists( 'id', $activity ) ) {
+            $activity['id'] = $this->idProvider->getId( $event->getRequest(), "activities" );
+        }
         $receivingActor = $event->getReceivingActor();
         if ( $receivingActor->hasField( 'outbox' ) ) {
             $this->collectionsService->addItem( $receivingActor['outbox'], $activity );

@@ -180,7 +180,8 @@ class ActivityPubModule
 
         $this->injector->register( ActivityPersister::class, ActivityPersister::class )
             ->addArgument( new Reference( CollectionsService::class ) )
-            ->addArgument( new Reference( ObjectsService::class ) );
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( IdProvider::class ) );
     }
 
     /**
