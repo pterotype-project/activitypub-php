@@ -5,6 +5,7 @@
 namespace ActivityPub;
 
 use ActivityPub\ActivityEventHandlers\AcceptHandler;
+use ActivityPub\ActivityEventHandlers\ActivityPersister;
 use ActivityPub\ActivityEventHandlers\AddHandler;
 use ActivityPub\ActivityEventHandlers\AnnounceHandler;
 use ActivityPub\ActivityEventHandlers\CreateHandler;
@@ -100,6 +101,7 @@ class ActivityPub
         $dispatcher->addSubscriber( $this->module->get( LikeHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( AnnounceHandler::class ) );
         $dispatcher->addSubscriber( $this->module->get( UndoHandler::class ) );
+        $dispatcher->addSubscriber( $this->module->get( ActivityPersister::class ) );
     }
 
     /**

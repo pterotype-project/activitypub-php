@@ -5,6 +5,7 @@
 namespace ActivityPub\Config;
 
 use ActivityPub\ActivityEventHandlers\AcceptHandler;
+use ActivityPub\ActivityEventHandlers\ActivityPersister;
 use ActivityPub\ActivityEventHandlers\AddHandler;
 use ActivityPub\ActivityEventHandlers\AnnounceHandler;
 use ActivityPub\ActivityEventHandlers\CreateHandler;
@@ -176,6 +177,10 @@ class ActivityPubModule
         $this->injector->register( UndoHandler::class, UndoHandler::class )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( CollectionsService::class ) );
+
+        $this->injector->register( ActivityPersister::class, ActivityPersister::class )
+            ->addArgument( new Reference( CollectionsService::class ) )
+            ->addArgument( new Reference( ObjectsService::class ) );
     }
 
     /**
