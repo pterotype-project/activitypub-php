@@ -6,6 +6,7 @@ use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class UndoHandler implements EventSubscriberInterface
 {
@@ -34,10 +35,6 @@ class UndoHandler implements EventSubscriberInterface
         $this->collectionsService = $collectionsService;
     }
 
-    // make sure actors match for undo activity and its object
-    // Undoing likes: remove from likes/liked collection
-    // Undoing follow: remove from following/followers collection
-
     public function handleInbox( InboxActivityEvent $event )
     {
         $activity = $event->getActivity();
@@ -48,15 +45,13 @@ class UndoHandler implements EventSubscriberInterface
         if ( ! ( $object && $object->hasField( 'type' ) ) ) {
             return;
         }
-        if ( ! $this->undoIsValid( $activity, $object ) ) {
-            return;
-        }
+        $this->assertUndoIsValid( $activity, $object );
         switch ( $object['type'] ) {
             case 'Follow':
                 $this->removeFromCollection( $object['object'], 'followers', $object['actor'] );
                 break;
             case 'Like':
-                $this->removeFromCollection( $object['object'], 'likes', $object['actor'] );
+                $this->removeFromCollection( $object['object'], 'likes', $object['id'] );
                 break;
             default:
                 return;
@@ -73,9 +68,7 @@ class UndoHandler implements EventSubscriberInterface
         if ( ! ( $object && $object->hasField( 'type' ) ) ) {
             return;
         }
-        if ( ! $this->undoIsValid( $activity, $object ) ) {
-            return;
-        }
+        $this->assertUndoIsValid( $activity, $object );
         switch ( $object['type'] ) {
             case 'Follow':
                 $this->removeFromCollection( $object['actor'], 'following', $object['object'] );
@@ -88,23 +81,25 @@ class UndoHandler implements EventSubscriberInterface
         }
     }
 
-    private function undoIsValid( $activity, ActivityPubObject $undoObject )
+    private function assertUndoIsValid( $activity, ActivityPubObject $undoObject )
     {
         if ( ! array_key_exists( 'actor', $activity ) ) {
-            return false;
+            throw new AccessDeniedHttpException("You can't undo an activity you don't own");
         }
         $actorId = $activity['actor'];
         if ( is_array( $actorId ) && array_key_exists( 'id', $actorId ) ) {
             $actorId = $actorId['id'];
         }
         if ( ! is_string( $actorId ) ) {
-            return false;
+            throw new AccessDeniedHttpException("You can't undo an activity you don't own");
         }
         $objectActor = $undoObject['actor'];
         if ( ! $objectActor ) {
-            return false;
+            throw new AccessDeniedHttpException("You can't undo an activity you don't own");
         }
-        return $actorId == $objectActor['id'];
+        if ( $actorId != $objectActor['id'] ) {
+            throw new AccessDeniedHttpException("You can't undo an activity you don't own");
+        }
     }
 
     private function removeFromCollection( $object, $collectionField, $itemId )
@@ -147,10 +142,6 @@ class UndoHandler implements EventSubscriberInterface
             }
             $objectId = $objectId['id'];
         }
-        $object = $this->objectsService->dereference( $objectId );
-        if ( ! $object ) {
-            return null;
-        }
-        return $object;
+        return $this->objectsService->dereference( $objectId );
     }
 }
