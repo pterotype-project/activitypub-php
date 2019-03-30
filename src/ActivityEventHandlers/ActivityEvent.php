@@ -17,11 +17,11 @@ class ActivityEvent extends Event
     protected $activity;
 
     /**
-     * The actor posting or receiving the activity
+     * The actor whose inbox or outbox is receiving the activity
      *
      * @var ActivityPubObject
      */
-    protected $actor;
+    protected $receivingActor;
 
     /**
      * The current request
@@ -37,11 +37,11 @@ class ActivityEvent extends Event
      */
     protected $response;
 
-    public function __construct( array $activity, ActivityPubObject $actor,
+    public function __construct( array $activity, ActivityPubObject $receivingActor,
                                  Request $request )
     {
         $this->activity = $activity;
-        $this->actor = $actor;
+        $this->receivingActor = $receivingActor;
         $this->request = $request;
     }
 
@@ -59,11 +59,11 @@ class ActivityEvent extends Event
     }
 
     /**
-     * @return ActivityPubObject The actor
+     * @return ActivityPubObject The actor whose inbox or outbox is receiving the activity
      */
-    public function getActor()
+    public function getReceivingActor()
     {
-        return $this->actor;
+        return $this->receivingActor;
     }
 
     /**

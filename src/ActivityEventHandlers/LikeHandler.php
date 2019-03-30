@@ -71,7 +71,7 @@ class LikeHandler implements EventSubscriberInterface
             return;
         }
         $object = $activity['object'];
-        $actor = $event->getActor();
+        $actor = $event->getReceivingActor();
         if ( ! $actor->hasField( 'liked' ) ) {
             $actor = $this->addCollectionToObject( $actor, 'liked' );
         }

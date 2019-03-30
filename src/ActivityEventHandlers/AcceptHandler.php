@@ -48,7 +48,7 @@ class AcceptHandler implements EventSubscriberInterface
         if ( $activity['type'] !== 'Accept' ) {
             return;
         }
-        $localActor = $event->getActor();
+        $localActor = $event->getReceivingActor();
         $followId = $activity['object'];
         if ( is_array( $followId ) && array_key_exists( 'id', $followId ) ) {
             $followId = $followId['id'];
@@ -118,7 +118,7 @@ class AcceptHandler implements EventSubscriberInterface
         if ( is_array( $followObjectId ) && array_key_exists( 'id', $followObjectId ) ) {
             $followObjectId = $followObjectId['id'];
         }
-        $localActor = $event->getActor();
+        $localActor = $event->getReceivingActor();
         if ( $followObjectId !== $localActor['id'] ) {
             return;
         }

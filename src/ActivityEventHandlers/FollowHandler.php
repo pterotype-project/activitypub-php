@@ -43,7 +43,7 @@ class FollowHandler implements EventSubscriberInterface
             return;
         }
         if ( $this->autoAccepts ) {
-            $localActor = $event->getActor();
+            $localActor = $event->getReceivingActor();
             $objectId = $activity['object'];
             if ( is_array( $objectId ) && array_key_exists( 'id', $objectId ) ) {
                 $objectId = $objectId['id'];
