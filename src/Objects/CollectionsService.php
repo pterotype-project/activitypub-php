@@ -87,9 +87,18 @@ class CollectionsService
                                              ActivityPubObject $collection,
                                              Closure $filterFunc )
     {
+        $sort = 'desc';
+        if ( $request->query->has( 'sort' ) && $request->query->get( 'sort' ) == 'asc' ) {
+            $sort = 'asc';
+        }
         if ( $request->query->has( 'offset' ) ) {
             return $this->getCollectionPage(
-                $collection, $request, intval( $request->query->get( 'offset' ) ), $this->pageSize, $filterFunc
+                $collection,
+                $request,
+                intval( $request->query->get( 'offset' ) ),
+                $this->pageSize,
+                $filterFunc,
+                $sort
             );
         }
         $colArr = array();
@@ -103,7 +112,7 @@ class CollectionsService
             }
         }
         $firstPage = $this->getCollectionPage(
-            $collection, $request, 0, $this->pageSize, $filterFunc
+            $collection, $request, 0, $this->pageSize, $filterFunc, $sort
         );
         $colArr['first'] = $firstPage;
         return $colArr;
@@ -113,8 +122,10 @@ class CollectionsService
                                         Request $request,
                                         $offset,
                                         $pageSize,
-                                        Closure $filterFunc )
+                                        Closure $filterFunc,
+                                        $sort )
     {
+        $asc = $sort == 'asc';
         $itemsKey = 'items';
         $pageType = 'CollectionPage';
         $isOrdered = $this->isOrdered( $collection );
@@ -129,7 +140,11 @@ class CollectionsService
         }
         $collectionItems = $collection->getFieldValue( $itemsKey );
         $pageItems = array();
-        $idx = $offset;
+        if ( $asc ) {
+            $idx = $offset;
+        } else {
+            $idx = $this->getCollectionSize( $collection ) - $offset - 1;
+        }
         $count = 0;
         while ( $count < $pageSize ) {
             $item = $collectionItems->getFieldValue( $idx );
@@ -143,22 +158,29 @@ class CollectionsService
                 $pageItems[] = $item->asArray( 1 );
                 $count++;
             }
-            $idx++;
+            if ( $asc ) {
+                $idx++;
+            } else {
+                $idx--;
+            }
         }
         if ( $count === 0 ) {
             throw new NotFoundHttpException();
         }
         $page = array(
             '@context' => $this->contextProvider->getContext(),
-            'id' => $collection['id'] . "?offset=$offset",
+            'id' => $collection['id'] . "?offset=$offset&sort=$sort",
             'type' => $pageType,
             $itemsKey => $pageItems,
             'partOf' => $collection['id'],
         );
         // TODO set 'first' and 'last' on the page
-        $nextIdx = $this->hasNextItem( $request, $collectionItems, $idx );
-        if ( $nextIdx ) {
-            $page['next'] = $collection['id'] . "?offset=$nextIdx";
+        $nextIdx = $this->hasNextItem( $request, $collectionItems, $idx, $sort );
+        if ( is_numeric( $nextIdx ) ) {
+            if ( ! $asc ) {
+                $nextIdx = $this->getCollectionSize( $collection ) - $nextIdx - 1;
+            }
+            $page['next'] = $collection['id'] . "?offset=$nextIdx&sort=$sort";
         }
         if ( $isOrdered ) {
             $page['startIndex'] = $offset;
@@ -179,15 +201,20 @@ class CollectionsService
         }
     }
 
-    private function hasNextItem( Request $request, ActivityPubObject $collectionItems, $idx )
+    private function hasNextItem( Request $request, ActivityPubObject $collectionItems, $idx, $sort )
     {
+        $asc = $sort == 'asc';
         $next = $collectionItems->getFieldValue( $idx );
         while ( $next ) {
             if ( is_string( $next ) ||
                 $this->authService->isAuthorized( $request, $next ) ) {
                 return $idx;
             }
-            $idx++;
+            if ( $asc ) {
+                $idx++;
+            } else {
+                $idx--;
+            }
             $next = $collectionItems->getFieldValue( $idx );
         }
         return false;
@@ -382,6 +409,32 @@ class CollectionsService
         $collection->setLastUpdated( $this->dateTimeProvider->getTime( 'collections-service.remove' ) );
         $this->entityManager->persist( $collection );
         $this->entityManager->flush();
+    }
+
+    public function getCollectionSize( ActivityPubObject &$collection )
+    {
+        if ( $collection->hasField( 'totalItems' ) && is_numeric( $collection['totalItems'] ) ) {
+            return intval( $collection['totalItems'] );
+        } else {
+            $itemsField = 'items';
+            if ( $collection->hasField( 'type' ) && $collection['type'] == 'OrderedCollection' ) {
+                $itemsField = 'orderedItems';
+            }
+            if ( ! ( $collection->hasField( $itemsField ) && $collection[$itemsField] instanceof ActivityPubObject ) ) {
+                return 0;
+            }
+            $items = $collection[$itemsField];
+            $count = 0;
+            $idx = 0;
+            $currentItem = $items[$idx];
+            while ( $currentItem ) {
+                $count++;
+                $idx++;
+                $currentItem = $items[$idx];
+            }
+            $collection = $this->objectsService->update( $collection['id'], array( 'totalItems' => strval( $count ) ) );
+            return $count;
+        }
     }
 }
 

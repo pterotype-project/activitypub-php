@@ -42,6 +42,14 @@ class GetControllerTest extends APTestCase
                 return null;
             } )
         );
+        $objectsService->method( 'update' )->will(
+            $this->returnCallback( function ( $uri ) {
+                if ( array_key_exists( $uri, $this->objects ) ) {
+                    return $this->objects[$uri];
+                }
+                return null;
+            } )
+        );
         $authService = new AuthService();
         $contextProvider = new ContextProvider();
         $httpClient = $this->getMock( Client::class );
@@ -235,7 +243,7 @@ class GetControllerTest extends APTestCase
                             'https://www.w3.org/ns/activitystreams',
                             'https://w3id.org/security/v1',
                         ),
-                        'id' => 'https://example.com/actors/1/inbox?offset=0',
+                        'id' => 'https://example.com/actors/1/inbox?offset=0&sort=desc',
                         'type' => 'OrderedCollectionPage',
                         'orderedItems' => array(
                             array(
