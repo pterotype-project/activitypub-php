@@ -2,6 +2,8 @@
 
 namespace ActivityPub\Utils;
 
+use Symfony\Component\HttpFoundation\Request;
+
 class Util
 {
     /**
@@ -31,6 +33,12 @@ class Util
             }
         }
         return true;
+    }
+
+    public static function isLocalUri( $uri )
+    {
+        $request = Request::createFromGlobals();
+        return parse_url( $uri, PHP_URL_HOST ) === $request->getHost();
     }
 }
 

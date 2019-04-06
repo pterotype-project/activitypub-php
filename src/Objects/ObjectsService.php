@@ -7,6 +7,7 @@ namespace ActivityPub\Objects;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Entities\Field;
 use ActivityPub\Utils\DateTimeProvider;
+use ActivityPub\Utils\Util;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use GuzzleHttp\Client;
@@ -311,13 +312,14 @@ class ObjectsService
      */
     public function dereference( $id )
     {
-        // TOOD pass a $request into here, so that I can sign the request below and so that
-        // I can check for local objects that should not result in network calls
         $object = $this->getObject( $id );
         if ( $object ) {
             return $object;
         }
-        // TODO sign this request?
+        if ( Util::isLocalUri( $id ) ) {
+            return null;
+        }
+        // TODO sign this request? Would have to pass in the request object to get the actor to sign with
         $request = new Request( 'GET', $id, array(
             'Accept' => 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
         ) );
