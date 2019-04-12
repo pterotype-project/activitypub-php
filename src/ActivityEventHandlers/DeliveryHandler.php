@@ -3,6 +3,7 @@
 namespace ActivityPub\ActivityEventHandlers;
 
 use ActivityPub\Entities\ActivityPubObject;
+use ActivityPub\Objects\CollectionIterator;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -36,7 +37,6 @@ class DeliveryHandler implements EventSubscriberInterface
         $activity = $event->getActivity();
         $recipientFields = array( 'to', 'bto', 'cc', 'bcc', 'audience' );
         $inboxes = array();
-        // TODO handle Links and Collections
         foreach ( $recipientFields as $field ) {
             if ( array_key_exists( $field, $activity ) ) {
                 $recipients = $activity[$field];
@@ -49,15 +49,7 @@ class DeliveryHandler implements EventSubscriberInterface
                     }
                     if ( is_string( $recipient ) ) {
                         $recipientObj = $this->objectsService->dereference( $recipient );
-                        if ( $recipientObj && $recipientObj->hasField( 'inbox' ) ) {
-                            $inbox = $recipientObj['inbox'];
-                            if ( $inbox instanceof ActivityPubObject && $inbox->hasField( 'id' ) ) {
-                                $inbox = $inbox['id'];
-                            }
-                            if ( is_string( $inbox ) ) {
-                                $inboxes[] = $inbox;
-                            }
-                        }
+                        $inboxes = array_merge( $inboxes, $this->resolveRecipient( $recipientObj ) );
                     }
                 }
             }
@@ -76,5 +68,36 @@ class DeliveryHandler implements EventSubscriberInterface
             }
         }
         // deliver activity to all inboxes, signing the request and not blocking
+    }
+
+    /**
+     * Given an ActivityPubObject to deliver to, returns an array of inbox URLs
+     * @param ActivityPubObject $recipient
+     * @return array
+     */
+    private function resolveRecipient( ActivityPubObject $recipient )
+    {
+        if ( $recipient && $recipient->hasField( 'inbox' ) ) {
+            $inbox = $recipient['inbox'];
+            if ( $inbox instanceof ActivityPubObject && $inbox->hasField( 'id' ) ) {
+                $inbox = $inbox['id'];
+            }
+            if ( is_string( $inbox ) ) {
+                return array( $inbox );
+            }
+        } else if (
+            $recipient &&
+            $recipient->hasField( 'type' ) &&
+            in_array( $recipient['type'], array( 'Collection', 'OrderedCollection' ) )
+        ) {
+            $inboxes = array();
+            foreach ( CollectionIterator::iterateCollection( $recipient ) as $item ) {
+                if ( $item instanceof ActivityPubObject ) {
+                    $inboxes = array_unique( array_merge( $inboxes, $this->resolveRecipient( $item ) ) );
+                }
+            }
+            return $inboxes;
+        }
+        return array();
     }
 }
