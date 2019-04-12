@@ -58,13 +58,13 @@ class CollectionsServiceDbTest extends SQLiteTestCase
             'driver' => 'pdo_sqlite',
             'path' => $this->getDbPath(),
         );
-        $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
         $this->dateTimeProvider = new TestDateTimeProvider( array(
             'objects-service.create' => new DateTime( "12:00" ),
             'objects-service.update' => new DateTime( "12:01" ),
             'collections-service.add' => new DateTime( "12:03" ),
             'collections-service.remove' => new DateTime( "12:04" ),
         ) );
+        $this->entityManager = EntityManager::create( $dbParams, $dbConfig );
         $this->httpClient = $this->getMock( Client::class );
         $this->httpClient->method( 'send' )
             ->willReturn( new Response( 404 ) );
@@ -77,15 +77,23 @@ class CollectionsServiceDbTest extends SQLiteTestCase
 
     private function getTime( $context )
     {
+        if ( ! $this->dateTimeProvider ) {
+            $this->dateTimeProvider = new TestDateTimeProvider( array(
+                'objects-service.create' => new DateTime( "12:00" ),
+                'objects-service.update' => new DateTime( "12:01" ),
+                'collections-service.add' => new DateTime( "12:03" ),
+                'collections-service.remove' => new DateTime( "12:04" ),
+            ) );
+        }
         return $this->dateTimeProvider
             ->getTime( $context )
             ->format( "Y-m-d H:i:s" );
     }
 
-    public function testAddItem()
+    public function provideTestAddItem()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'collection' => array(
                     'id' => 'https://example.com/collections/1',
@@ -180,8 +188,8 @@ class CollectionsServiceDbTest extends SQLiteTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'createItemsField',
                 'collection' => array(
                     'id' => 'https://example.com/collections/1',
@@ -275,8 +283,8 @@ class CollectionsServiceDbTest extends SQLiteTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'existingItems',
                 'collection' => array(
                     'id' => 'https://example.com/collections/1',
@@ -398,32 +406,34 @@ class CollectionsServiceDbTest extends SQLiteTestCase
                         ),
                     ),
                 ),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase )
-        {
-            $this->setUp();
-            $collection = $this->objectsService->persist( $testCase['collection'] );
-            $this->collectionsService->addItem( $collection, $testCase['item'] );
-            $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
-            $expectedObjects = $expectedDataSet->getTable( 'objects' );
-            $expectedFields = $expectedDataSet->getTable( 'fields' );
-            $actualObjects = $this->getConnection()->createQueryTable(
-                'objects', 'SELECT * FROM objects'
-            );
-            $actualFields = $this->getConnection()->createQueryTable(
-                'fields', 'SELECT * FROM fields'
-            );
-            $this->assertTablesEqual( $expectedObjects, $actualObjects, "Error on test $testCase[id]");
-            $this->assertTablesEqual( $expectedFields, $actualFields, "Error on test $testCase[id]");
-            $this->tearDown();
-        }
     }
 
-    public function testRemoveItem()
+    /**
+     * @dataProvider provideTestAddItem
+     */
+    public function testAddItem( $testCase )
     {
-        $testCases = array(
-            array(
+        $collection = $this->objectsService->persist( $testCase['collection'] );
+        $this->collectionsService->addItem( $collection, $testCase['item'] );
+        $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
+        $expectedObjects = $expectedDataSet->getTable( 'objects' );
+        $expectedFields = $expectedDataSet->getTable( 'fields' );
+        $actualObjects = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $actualFields = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjects, $actualObjects, "Error on test $testCase[id]");
+        $this->assertTablesEqual( $expectedFields, $actualFields, "Error on test $testCase[id]");
+    }
+
+    public function provideTestRemoveItem()
+    {
+        return array(
+            array( array(
                 'id' => 'basicRemoveTest',
                 'collection' => array(
                     'id' => 'https://example.com/collections/1',
@@ -538,26 +548,29 @@ class CollectionsServiceDbTest extends SQLiteTestCase
                         ),
                     ),
                 ),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase )
-        {
-            $this->setUp();
-            $collection = $this->objectsService->persist( $testCase['collection'] );
-            $this->collectionsService->removeItem( $collection, $testCase['itemIdToRemove'] );
-            $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
-            $expectedObjects = $expectedDataSet->getTable( 'objects' );
-            $expectedFields = $expectedDataSet->getTable( 'fields' );
-            $actualObjects = $this->getConnection()->createQueryTable(
-                'objects', 'SELECT * FROM objects'
-            );
-            $actualFields = $this->getConnection()->createQueryTable(
-                'fields', 'SELECT * FROM fields'
-            );
-            $this->assertTablesEqual( $expectedObjects, $actualObjects, "Error on test $testCase[id]");
-            $this->assertTablesEqual( $expectedFields, $actualFields, "Error on test $testCase[id]");
-            $this->tearDown();
-        }
+    }
+
+    /**
+     * @dataProvider provideTestRemoveItem
+     */
+    public function testRemoveItem( $testCase )
+    {
+        $collection = $this->objectsService->persist( $testCase['collection'] );
+        $this->collectionsService->removeItem( $collection, $testCase['itemIdToRemove'] );
+        $expectedDataSet = new ArrayDataSet( $testCase['expectedDataSet'] );
+        $expectedObjects = $expectedDataSet->getTable( 'objects' );
+        $expectedFields = $expectedDataSet->getTable( 'fields' );
+        $actualObjects = $this->getConnection()->createQueryTable(
+            'objects', 'SELECT * FROM objects'
+        );
+        $actualFields = $this->getConnection()->createQueryTable(
+            'fields', 'SELECT * FROM fields'
+        );
+        $this->assertTablesEqual( $expectedObjects, $actualObjects, "Error on test $testCase[id]");
+        $this->assertTablesEqual( $expectedFields, $actualFields, "Error on test $testCase[id]");
+        $this->tearDown();
     }
 
     /**

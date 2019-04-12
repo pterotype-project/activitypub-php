@@ -1176,10 +1176,10 @@ class ObjectsServiceTest extends SQLiteTestCase
         $this->assertEquals( $expected, $object->asArray( 3 ) );
     }
 
-    public function testReplace()
+    public function provideTestReplace()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'object' => array(
                     'id' => 'https://example.com/objects/1',
@@ -1197,8 +1197,8 @@ class ObjectsServiceTest extends SQLiteTestCase
                     'type' => 'Note',
                     'contents' => 'This is a note',
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'itDeletesOrphanedNodes',
                 'object' => array(
                     'id' => 'https://example.com/objects/2',
@@ -1233,30 +1233,34 @@ class ObjectsServiceTest extends SQLiteTestCase
                         'expectedResult' => array(),
                     ),
                 ),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $this->setUp();
-            $this->objectsService->persist( $testCase['object'] );
-            $replacement = $this->objectsService->replace(
-                $testCase['replacementId'],
-                $testCase['replacement']
-            );
-            $this->assertEquals(
-                $testCase['expectedObject'],
-                $replacement->asArray(),
-                "Error on test $testCase[id]"
-            );
-            if ( array_key_exists( 'expectedQueryResults', $testCase ) ) {
-                foreach ( $testCase['expectedQueryResults'] as $expectedQueryResult ) {
-                    $result = array_map(
-                        function ( ActivityPubObject $obj ) {
-                            return $obj->asArray();
-                        },
-                        $this->objectsService->query( $expectedQueryResult['query'] )
-                    );
-                    $this->assertEquals( $expectedQueryResult['expectedResult'], $result );
-                }
+    }
+
+    /**
+     * @dataProvider provideTestReplace
+     */
+    public function testReplace( $testCase )
+    {
+        $this->objectsService->persist( $testCase['object'] );
+        $replacement = $this->objectsService->replace(
+            $testCase['replacementId'],
+            $testCase['replacement']
+        );
+        $this->assertEquals(
+            $testCase['expectedObject'],
+            $replacement->asArray(),
+            "Error on test $testCase[id]"
+        );
+        if ( array_key_exists( 'expectedQueryResults', $testCase ) ) {
+            foreach ( $testCase['expectedQueryResults'] as $expectedQueryResult ) {
+                $result = array_map(
+                    function ( ActivityPubObject $obj ) {
+                        return $obj->asArray();
+                    },
+                    $this->objectsService->query( $expectedQueryResult['query'] )
+                );
+                $this->assertEquals( $expectedQueryResult['expectedResult'], $result );
             }
         }
     }

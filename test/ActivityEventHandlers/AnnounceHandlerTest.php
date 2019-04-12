@@ -29,10 +29,10 @@ class AnnounceHandlerTest extends APTestCase
         );
     }
 
-    public function testAnnounceHandler()
+    public function provideTestAnnounceHandler()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -58,8 +58,8 @@ class AnnounceHandlerTest extends APTestCase
                     'type' => 'Announce',
                     'object' => 'https://example.com/notes/withshares',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'generatesSharesCollectionTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -85,9 +85,15 @@ class AnnounceHandlerTest extends APTestCase
                     'type' => 'Announce',
                     'object' => 'https://example.com/notes/withoutshares',
                 )
-            ),
+            ) ),
         );
-        foreach( $testCases as $testCase ) {
+    }
+
+    /**
+     * @dataProvider provideTestAnnounceHandler
+     */
+    public function testAnnounceHandler( $testCase )
+    {
             $objectsService = $this->getMock( ObjectsService::class );
             $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
                 $objects = self::getObjects();
@@ -120,6 +126,5 @@ class AnnounceHandlerTest extends APTestCase
             $eventDispatcher = new EventDispatcher();
             $eventDispatcher->addSubscriber( $announceHandler );
             $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
-        }
     }
 }

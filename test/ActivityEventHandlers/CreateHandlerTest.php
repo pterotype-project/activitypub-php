@@ -46,10 +46,10 @@ class CreateHandlerTest extends APTestCase
         $this->eventDispatcher->addSubscriber( $createHandler );
     }
 
-    public function testCreateHandler()
+    public function provideTestCreateHandler()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -84,8 +84,8 @@ class CreateHandlerTest extends APTestCase
                     ) ),
                     Request::create( 'https://example.com/inbox', Request::METHOD_POST )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'basicOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -125,8 +125,8 @@ class CreateHandlerTest extends APTestCase
                     ) ),
                     Request::create( 'https://example.com/outbox', Request::METHOD_POST )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'copiesAudienceOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -198,8 +198,8 @@ class CreateHandlerTest extends APTestCase
                     ) ),
                     Request::create( 'https://example.com/outbox', Request::METHOD_POST )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'moreCopiesAudienceOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -257,15 +257,20 @@ class CreateHandlerTest extends APTestCase
                     ) ),
                     Request::create( 'https://example.com/outbox', Request::METHOD_POST )
                 ),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $event = $testCase['event'];
-            $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
-            $this->assertEquals(
-                $testCase['expectedEvent'], $event, "Error on test $testCase[id]"
-            );
-        }
+    }
+
+    /**
+     * @dataProvider provideTestCreateHandler
+     */
+    public function testCreateHandler( $testCase )
+    {
+        $event = $testCase['event'];
+        $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
+        $this->assertEquals(
+            $testCase['expectedEvent'], $event, "Error on test $testCase[id]"
+        );
     }
 }
 

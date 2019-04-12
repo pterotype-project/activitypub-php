@@ -26,10 +26,10 @@ class AddHandlerTest extends APTestCase
         );
     }
 
-    public function testHandleAdd()
+    public function provideTestHandleAdd()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -58,8 +58,8 @@ class AddHandlerTest extends APTestCase
                 'expectedNewItem' => array(
                     'id' => 'https://elsewhere.com/notes/1',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -88,8 +88,8 @@ class AddHandlerTest extends APTestCase
                 'expectedNewItem' => array(
                     'id' => 'https://example.com/notes/1',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'notAuthorizedTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -116,40 +116,45 @@ class AddHandlerTest extends APTestCase
                     )
                 ),
                 'expectedException' => AccessDeniedHttpException::class,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
-                $objects = self::getObjects();
-                if ( array_key_exists( $id, $objects ) ) {
-                    return TestActivityPubObject::fromArray( $objects[$id] );
-                } else {
-                    return null;
-                }
-            });
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'addItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'expectedNewItem', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'addItem' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedNewItem'] )
-                    );
+    }
+
+    /**
+     * @dataProvider provideTestHandleAdd
+     */
+    public function testHandleAdd( $testCase )
+    {
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
+            $objects = self::getObjects();
+            if ( array_key_exists( $id, $objects ) ) {
+                return TestActivityPubObject::fromArray( $objects[$id] );
             } else {
-                $collectionsService->expects( $this->never() )
-                    ->method( 'addItem' );
+                return null;
             }
-            $addHandler = new AddHandler( $objectsService, $collectionsService );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $addHandler );
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        });
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'addItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'expectedNewItem', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'addItem' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedNewItem'] )
+                );
+        } else {
+            $collectionsService->expects( $this->never() )
+                ->method( 'addItem' );
         }
+        $addHandler = new AddHandler( $objectsService, $collectionsService );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $addHandler );
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
+        }
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
     }
 }

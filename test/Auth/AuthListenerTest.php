@@ -28,10 +28,10 @@ class AuthListenerTest extends APTestCase
         ) ) );
     }
 
-    public function testAuthListener()
+    public function provideTestAuthListener()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'authFunction' => function () {
                     return 'https://example.com/actor/1';
@@ -41,8 +41,8 @@ class AuthListenerTest extends APTestCase
                         'id' => 'https://example.com/actor/1',
                     ) ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'existingActorTest',
                 'authFunction' => function () {
                     return 'https://example.com/actor/1';
@@ -57,45 +57,50 @@ class AuthListenerTest extends APTestCase
                         'id' => 'https://example.com/actor/2',
                     ) ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'defaultAuthTest',
                 'authFunction' => function () {
                     return false;
                 },
                 'expectedAttributes' => array(),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $event = $this->getEvent();
-            if ( array_key_exists( 'requestAttributes', $testCase ) ) {
-                foreach ( $testCase['requestAttributes'] as $attribute => $value ) {
-                    $event->getRequest()->attributes->set( $attribute, $value );
-                }
+    }
+
+    /**
+     * @dataProvider provideTestAuthListener
+     */
+    public function testAuthListener( $testCase )
+    {
+        $event = $this->getEvent();
+        if ( array_key_exists( 'requestAttributes', $testCase ) ) {
+            foreach ( $testCase['requestAttributes'] as $attribute => $value ) {
+                $event->getRequest()->attributes->set( $attribute, $value );
             }
-            $authListener = new AuthListener(
-                $testCase['authFunction'], $this->objectsService
+        }
+        $authListener = new AuthListener(
+            $testCase['authFunction'], $this->objectsService
+        );
+        $authListener->checkAuth( $event );
+        foreach ( $testCase['expectedAttributes'] as $expectedKey => $expectedValue ) {
+            $this->assertTrue(
+                $event->getRequest()->attributes->has( $expectedKey ),
+                "Error on test $testCase[id]"
             );
-            $authListener->checkAuth( $event );
-            foreach ( $testCase['expectedAttributes'] as $expectedKey => $expectedValue ) {
+            if ( $expectedValue instanceof ActivityPubObject ) {
                 $this->assertTrue(
-                    $event->getRequest()->attributes->has( $expectedKey ),
+                    $expectedValue->equals(
+                        $event->getRequest()->attributes->get( $expectedKey )
+                    ),
                     "Error on test $testCase[id]"
                 );
-                if ( $expectedValue instanceof ActivityPubObject ) {
-                    $this->assertTrue(
-                        $expectedValue->equals(
-                            $event->getRequest()->attributes->get( $expectedKey )
-                        ),
-                        "Error on test $testCase[id]"
-                    );
-                } else {
-                    $this->assertEquals(
-                        $expectedValue,
-                        $event->getRequest()->attributes->get( $expectedKey ),
-                        "Error on test $testCase[id]"
-                    );
-                }
+            } else {
+                $this->assertEquals(
+                    $expectedValue,
+                    $event->getRequest()->attributes->get( $expectedKey ),
+                    "Error on test $testCase[id]"
+                );
             }
         }
     }

@@ -15,7 +15,7 @@ use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class UndoHandlerTest extends APTestCase
 {
-    public function testUndoHandler()
+    public function provideTestUndoHandler()
     {
         $followForUndoFollowInbox = TestActivityPubObject::fromArray( array(
             'id' => 'https://elsewhere.com/follows/1',
@@ -67,8 +67,8 @@ class UndoHandlerTest extends APTestCase
                 'id' => 'https://elsewhere.com/notes/1',
             ),
         ) );
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'undoFollowInbox',
                 'objects' => array(
                     'https://elsewhere.com/follows/1' => $followForUndoFollowInbox,
@@ -95,8 +95,8 @@ class UndoHandlerTest extends APTestCase
                 ),
                 'collectionToRemoveFrom' => $followForUndoFollowInbox['object']['followers'],
                 'itemToRemove' => 'https://elsewhere.com/actors/1',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'undoLikeInbox',
                 'objects' => array(
                     'https://elsewhere.com/likes/1' => $likeForUndoLikeInbox,
@@ -116,8 +116,8 @@ class UndoHandlerTest extends APTestCase
                 ),
                 'collectionToRemoveFrom' => $likeForUndoLikeInbox['object']['likes'],
                 'itemToRemove' => 'https://elsewhere.com/likes/1',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'undoFollowOutbox',
                 'objects' => array(
                     'https://example.com/follows/1' => $followForUndoFollowOutbox,
@@ -137,8 +137,8 @@ class UndoHandlerTest extends APTestCase
                 ),
                 'collectionToRemoveFrom' => $followForUndoFollowOutbox['actor']['following'],
                 'itemToRemove' => 'https://elsewhere.com/actors/1',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'undoLikeOutbox',
                 'objects' => array(
                     'https://example.com/likes/1' => $likeForUndoLikeOutbox,
@@ -158,8 +158,8 @@ class UndoHandlerTest extends APTestCase
                 ),
                 'collectionToRemoveFrom' => $likeForUndoLikeOutbox['actor']['liked'],
                 'itemToRemove' => $likeForUndoLikeOutbox['object']['id']
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'undoActorDoesNotMatchObjectActor',
                 'objects' => array(
                     'https://elsewhere.com/follows/1' => TestActivityPubObject::fromArray( array(
@@ -185,43 +185,48 @@ class UndoHandlerTest extends APTestCase
                     Request::create( 'https://example.com/actors/1/inbox' )
                 ),
                 'expectedException' => AccessDeniedHttpException::class,
+            ) )
+        );
+    }
+
+    /**
+     * @dataProvider provideTestUndoHandler
+     */
+    public function testUndoHandler( $testCase )
+    {
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference' )->will(
+            $this->returnCallback(
+                function( $id) use ( $testCase ) {
+                    $objects = $testCase['objects'];
+                    if ( array_key_exists( $id, $objects ) ) {
+                        return $objects[$id];
+                    } else {
+                        return null;
+                    }
+                }
             )
         );
-        foreach ( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference' )->will(
-                $this->returnCallback(
-                    function( $id) use ( $testCase ) {
-                        $objects = $testCase['objects'];
-                        if ( array_key_exists( $id, $objects ) ) {
-                            return $objects[$id];
-                        } else {
-                            return null;
-                        }
-                    }
-                )
-            );
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'removeItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'collectionToRemoveFrom', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'removeItem' )
-                    ->with(
-                        $testCase['collectionToRemoveFrom'],
-                        $testCase['itemToRemove']
-                    );
-            } else {
-                $collectionsService->expects( $this->never() )->method( 'removeItem' );
-            }
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $undoHandler = new UndoHandler( $objectsService, $collectionsService );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $undoHandler );
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'removeItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'collectionToRemoveFrom', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'removeItem' )
+                ->with(
+                    $testCase['collectionToRemoveFrom'],
+                    $testCase['itemToRemove']
+                );
+        } else {
+            $collectionsService->expects( $this->never() )->method( 'removeItem' );
         }
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
+        }
+        $undoHandler = new UndoHandler( $objectsService, $collectionsService );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $undoHandler );
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
     }
 }

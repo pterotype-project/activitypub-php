@@ -11,12 +11,10 @@ use Symfony\Component\HttpFoundation\Request;
 
 class NonActivityHandlerTest extends APTestCase
 {
-    public function testNonActivityHandler()
+    public function provideTestNonActivityHandler()
     {
-        $contextProvider = new ContextProvider();
-        $nonActivityHandler = new NonActivityHandler( $contextProvider );
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'testItWrapsNonObjectActivity',
                 'activity' => array(
                     'type' => 'Note'
@@ -32,8 +30,8 @@ class NonActivityHandlerTest extends APTestCase
                         'type' => 'Note',
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'testItDoesNotWrapActivity',
                 'activity' => array(
                     'type' => 'Update'
@@ -44,8 +42,8 @@ class NonActivityHandlerTest extends APTestCase
                 'expectedActivity' => array(
                     'type' => 'Update',
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'testItPassesAudience',
                 'activity' => array(
                     'type' => 'Note',
@@ -88,20 +86,27 @@ class NonActivityHandlerTest extends APTestCase
                         'baz',
                     ),
                 ),
-            )
+            ) )
         );
-        foreach ( $testCases as $testCase ) {
-            $actor = $testCase['actor'];
-            $activity = $testCase['activity'];
-            $request = Request::create( 'https://example.com/whatever' );
-            $event = new OutboxActivityEvent( $activity, $actor, $request );
-            $nonActivityHandler->handle( $event );
-            $this->assertEquals(
-                $testCase['expectedActivity'],
-                $event->getActivity(),
-                "Error on test $testCase[id]"
-            );
-        }
+    }
+
+    /**
+     * @dataProvider provideTestNonActivityHandler
+     */
+    public function testNonActivityHandler( $testCase )
+    {
+        $contextProvider = new ContextProvider();
+        $nonActivityHandler = new NonActivityHandler( $contextProvider );
+        $actor = $testCase['actor'];
+        $activity = $testCase['activity'];
+        $request = Request::create( 'https://example.com/whatever' );
+        $event = new OutboxActivityEvent( $activity, $actor, $request );
+        $nonActivityHandler->handle( $event );
+        $this->assertEquals(
+            $testCase['expectedActivity'],
+            $event->getActivity(),
+            "Error on test $testCase[id]"
+        );
     }
 }
 

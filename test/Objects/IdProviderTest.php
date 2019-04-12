@@ -30,41 +30,46 @@ class IdProviderTest extends APTestCase
             } ) );
     }
 
-    public function testIdProvider()
+    public function provideTestIdProvider()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'providesId',
                 'providedRnd' => array( 'foo' ),
                 'expectedId' => 'https://example.com/ap/objects/foo',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'checksForExisting',
                 'providedRnd' => array( self::EXISTING_ID_STR, 'bar' ),
                 'expectedId' => 'https://example.com/ap/objects/bar',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'addsPath',
                 'providedRnd' => array( 'foo' ),
                 'path' => 'notes',
                 'expectedId' => 'https://example.com/ap/notes/foo',
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $randomProvider = $this->getMock( RandomProvider::class );
-            call_user_func_array(
-                array( $randomProvider->method( 'randomString' ), 'willReturnOnConsecutiveCalls' ),
-                $testCase['providedRnd']
-            );
-            $idProvider = new IdProvider( $this->objectsService, $randomProvider, 'ap' );
-            $request = Request::create( 'https://example.com' );
-            if ( array_key_exists( 'path', $testCase ) ) {
-                $id = $idProvider->getId( $request, $testCase['path'] );
-            } else {
-                $id = $idProvider->getId( $request );
-            }
-            $this->assertEquals( $testCase['expectedId'], $id, "Error on test $testCase[id]" );
+    }
+
+    /**
+     * @dataProvider provideTestIdProvider
+     */
+    public function testIdProvider( $testCase )
+    {
+        $randomProvider = $this->getMock( RandomProvider::class );
+        call_user_func_array(
+            array( $randomProvider->method( 'randomString' ), 'willReturnOnConsecutiveCalls' ),
+            $testCase['providedRnd']
+        );
+        $idProvider = new IdProvider( $this->objectsService, $randomProvider, 'ap' );
+        $request = Request::create( 'https://example.com' );
+        if ( array_key_exists( 'path', $testCase ) ) {
+            $id = $idProvider->getId( $request, $testCase['path'] );
+        } else {
+            $id = $idProvider->getId( $request );
         }
+        $this->assertEquals( $testCase['expectedId'], $id, "Error on test $testCase[id]" );
     }
 }
 

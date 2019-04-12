@@ -32,10 +32,10 @@ class LikeHandlerTest extends APTestCase
         );
     }
 
-    public function testHandleInbox()
+    public function provideTestHandleInbox()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -61,8 +61,8 @@ class LikeHandlerTest extends APTestCase
                     'type' => 'Like',
                     'object' => 'https://example.com/notes/haslikes'
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'dereferencedObjectInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -92,8 +92,8 @@ class LikeHandlerTest extends APTestCase
                         'id' => 'https://example.com/notes/haslikes',
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'itCreatesLikesInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -123,48 +123,53 @@ class LikeHandlerTest extends APTestCase
                         'id' => 'https://example.com/notes/nolikes',
                     ),
                 ),
-            ),
+            ) ),
         );
-        foreach( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
-                $objects = self::getObjects();
-                if ( array_key_exists( $id, $objects ) ) {
-                    return TestActivityPubObject::fromArray( $objects[$id] );
-                } else {
-                    return null;
-                }
-            });
-            $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
-                return TestActivityPubObject::fromArray( $arr );
-            });
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'addItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'expectedNewLikes', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'addItem' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedNewLikes'] )
-                    );
-            } else {
-                $collectionsService->expects( $this->never() )
-                    ->method( 'addItem' );
-            }
-            $contextProvider = new ContextProvider();
-            $likeHandler = new LikeHandler( $objectsService, $collectionsService, $contextProvider );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $likeHandler );
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
-        }
     }
 
-    public function testHandleOutbox()
+    /**
+     * @dataProvider provideTestHandleInbox
+     */
+    public function testHandleInbox( $testCase )
     {
-        $testCases = array(
-            array(
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
+            $objects = self::getObjects();
+            if ( array_key_exists( $id, $objects ) ) {
+                return TestActivityPubObject::fromArray( $objects[$id] );
+            } else {
+                return null;
+            }
+        });
+        $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
+            return TestActivityPubObject::fromArray( $arr );
+        });
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'addItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'expectedNewLikes', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'addItem' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedNewLikes'] )
+                );
+        } else {
+            $collectionsService->expects( $this->never() )
+                ->method( 'addItem' );
+        }
+        $contextProvider = new ContextProvider();
+        $likeHandler = new LikeHandler( $objectsService, $collectionsService, $contextProvider );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $likeHandler );
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+    }
+
+    public function provideTestHandleOutbox()
+    {
+        return array(
+            array( array(
                 'id' => 'basicOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -194,8 +199,8 @@ class LikeHandlerTest extends APTestCase
                 'expectedNewLiked' => array(
                     'id' => 'https://elsewhere.com/notes/1',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'createsLikedCollectionOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -221,41 +226,46 @@ class LikeHandlerTest extends APTestCase
                 'expectedNewLiked' => array(
                     'id' => 'https://elsewhere.com/notes/1',
                 )
-            ),
+            ) ),
         );
-        foreach( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
-                $objects = self::getObjects();
-                if ( array_key_exists( $id, $objects ) ) {
-                    return TestActivityPubObject::fromArray( $objects[$id] );
-                } else {
-                    return null;
-                }
-            });
-            $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
-                return TestActivityPubObject::fromArray( $arr );
-            });
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'addItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'expectedNewLiked', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'addItem' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedNewLiked'] )
-                    );
+    }
+
+    /**
+     * @dataProvider provideTestHandleOutbox
+     */
+    public function testHandleOutbox( $testCase )
+    {
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
+            $objects = self::getObjects();
+            if ( array_key_exists( $id, $objects ) ) {
+                return TestActivityPubObject::fromArray( $objects[$id] );
             } else {
-                $collectionsService->expects( $this->never() )
-                    ->method( 'addItem' );
+                return null;
             }
-            $contextProvider = new ContextProvider();
-            $likeHandler = new LikeHandler( $objectsService, $collectionsService, $contextProvider );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $likeHandler );
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        });
+        $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
+            return TestActivityPubObject::fromArray( $arr );
+        });
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'addItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'expectedNewLiked', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'addItem' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedNewLiked'] )
+                );
+        } else {
+            $collectionsService->expects( $this->never() )
+                ->method( 'addItem' );
         }
+        $contextProvider = new ContextProvider();
+        $likeHandler = new LikeHandler( $objectsService, $collectionsService, $contextProvider );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $likeHandler );
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
     }
 }

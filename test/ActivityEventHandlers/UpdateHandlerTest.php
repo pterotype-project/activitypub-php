@@ -72,10 +72,10 @@ class UpdateHandlerTest extends APTestCase
         );
     }
 
-    public function testUpdateHandler()
+    public function provideTestUpdateHandler()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -115,8 +115,8 @@ class UpdateHandlerTest extends APTestCase
                         ) ) )
                     )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'basicOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -160,8 +160,8 @@ class UpdateHandlerTest extends APTestCase
                         ) ) )
                     )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'checksInboxAuth',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -185,8 +185,8 @@ class UpdateHandlerTest extends APTestCase
                     )
                 ),
                 'expectedException' => UnauthorizedHttpException::class,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'checksOutboxAuth',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -210,19 +210,24 @@ class UpdateHandlerTest extends APTestCase
                     )
                 ),
                 'expectedException' => UnauthorizedHttpException::class,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $event = $testCase['event'];
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
-            if ( array_key_exists( 'expectedEvent', $testCase ) ) {
-                $this->assertEquals(
-                    $testCase['expectedEvent'], $event, "Error on test $testCase[id]"
-                );
-            }
+    }
+
+    /**
+     * @dataProvider provideTestUpdateHandler
+     */
+    public function testUpdateHandler( $testCase )
+    {
+        $event = $testCase['event'];
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
+        }
+        $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
+        if ( array_key_exists( 'expectedEvent', $testCase ) ) {
+            $this->assertEquals(
+                $testCase['expectedEvent'], $event, "Error on test $testCase[id]"
+            );
         }
     }
 }

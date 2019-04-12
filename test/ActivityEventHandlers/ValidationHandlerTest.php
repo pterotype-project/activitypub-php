@@ -25,10 +25,10 @@ class ValidationHandlerTest extends APTestCase
         $this->eventDispatcher->addSubscriber( $validationHandler );
     }
 
-    public function testValidationHandler()
+    public function provideTestValidationHandler()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'inboxRequiredFields',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -41,8 +41,8 @@ class ValidationHandlerTest extends APTestCase
                 ),
                 'expectedException' => BadRequestHttpException::class,
                 'expectedExceptionMessage' => 'Missing activity fields: type,id,actor',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxRequiredFields',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -55,8 +55,8 @@ class ValidationHandlerTest extends APTestCase
                 ),
                 'expectedException' => BadRequestHttpException::class,
                 'expectedExceptionMessage' => 'Missing activity fields: type,actor',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'inboxPassesValidActivity',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -74,8 +74,8 @@ class ValidationHandlerTest extends APTestCase
                     ) ),
                     Request::create( 'https://example.com' )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxPassesValidActivity',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -92,12 +92,13 @@ class ValidationHandlerTest extends APTestCase
                     ) ),
                     Request::create( 'https://example.com' )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxRequiresObjectFields',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
                     array(
+                        'id' => 'https://example.com/creates/1',
                         'type' => 'Create',
                         'actor' => 'https://example.com/actor/1',
                     ),
@@ -109,13 +110,15 @@ class ValidationHandlerTest extends APTestCase
                 ),
                 'expectedException' => BadRequestHttpException::class,
                 'expectedExceptionMessage' => 'Missing activity fields: object',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'inboxRequiresObjectFields',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
                     array(
+                        'id' => 'https://elsewhere.com/activities/1',
                         'type' => 'Create',
+                        'actor' => 'https://elsewhere.com/actors/1'
                     ),
                     TestActivityPubObject::fromArray( array(
                         'id' => 'https://notexample.com/actor/1',
@@ -125,12 +128,15 @@ class ValidationHandlerTest extends APTestCase
                 ),
                 'expectedException' => BadRequestHttpException::class,
                 'expectedExceptionMessage' => 'Missing activity fields: object',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'inboxRequiresTargetFields',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
                     array(
+                        'id' => 'https://elsewhere.com/activities/1',
+                        'actor' => 'https://elsewhere.com/actors/1',
+                        'object' => 'https://elsewhere.com/collections/1',
                         'type' => 'Add',
                     ),
                     TestActivityPubObject::fromArray( array(
@@ -141,12 +147,14 @@ class ValidationHandlerTest extends APTestCase
                 ),
                 'expectedException' => BadRequestHttpException::class,
                 'expectedExceptionMessage' => 'Missing activity fields: target',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxRequiresTargetFields',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
                     array(
+                        'id' => 'https://example.com/activities/1',
+                        'object' => 'https://example.com/collections/1',
                         'type' => 'Remove',
                         'actor' => 'https://example.com/actor/1',
                     ),
@@ -158,21 +166,26 @@ class ValidationHandlerTest extends APTestCase
                 ),
                 'expectedException' => BadRequestHttpException::class,
                 'expectedExceptionMessage' => 'Missing activity fields: target',
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $event = $testCase['event'];
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $expectedExceptionMessage = '';
-                if ( array_key_exists( 'expectedExceptionMessage', $testCase ) ) {
-                    $expectedExceptionMessage = $testCase['expectedExceptionMessage'];
-                }
-                $this->setExpectedException(
-                    $testCase['expectedException'], $expectedExceptionMessage
-                );
+    }
+
+    /**
+     * @dataProvider provideTestValidationHandler
+     */
+    public function testValidationHandler( $testCase )
+    {
+        $event = $testCase['event'];
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $expectedExceptionMessage = '';
+            if ( array_key_exists( 'expectedExceptionMessage', $testCase ) ) {
+                $expectedExceptionMessage = $testCase['expectedExceptionMessage'];
             }
-            $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
+            $this->setExpectedException(
+                $testCase['expectedException'], $expectedExceptionMessage
+            );
         }
+        $this->eventDispatcher->dispatch( $testCase['eventName'], $event );
     }
 }
 

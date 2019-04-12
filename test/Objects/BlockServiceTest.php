@@ -50,10 +50,10 @@ class BlockServiceTest extends SQLiteTestCase
         $this->blockService = new BlockService( $this->objectsService );
     }
 
-    public function testGetBlockedActorIds()
+    public function provideTestGetBlockedActorIds()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'blocksExist',
                 'initialData' => array(
                     array(
@@ -69,13 +69,13 @@ class BlockServiceTest extends SQLiteTestCase
                 ),
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/1' ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noBlocksExist',
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array(),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'multipleBlocksExist',
                 'initialData' => array(
                     array(
@@ -101,8 +101,8 @@ class BlockServiceTest extends SQLiteTestCase
                 ),
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/1', 'https://elsewhere.com/actors/2' ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'blocksExistsFromDifferentActor',
                 'initialData' => array(
                     array(
@@ -128,8 +128,8 @@ class BlockServiceTest extends SQLiteTestCase
                 ),
                 'blockingActorId' => 'https://example.com/actors/2',
                 'expectedBlockedActorIds' => array(),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'differentTypesOfActivitiesExistWithSameObjectAndActor',
                 'initialData' => array(
                     array(
@@ -155,8 +155,8 @@ class BlockServiceTest extends SQLiteTestCase
                 ),
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/2' ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'undoneBlocks',
                 'initialData' => array(
                     array(
@@ -199,8 +199,8 @@ class BlockServiceTest extends SQLiteTestCase
                 ),
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/2' ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'irrelevantUndonBlocks',
                 'initialData' => array(
                     array(
@@ -243,21 +243,24 @@ class BlockServiceTest extends SQLiteTestCase
                 ),
                 'blockingActorId' => 'https://example.com/actors/1',
                 'expectedBlockedActorIds' => array( 'https://elsewhere.com/actors/1', 'https://elsewhere.com/actors/2' ),
-            )
+            ) )
         );
-        foreach ( $testCases as $testCase ) {
-            self::setUp();
-            if ( array_key_exists( 'initialData', $testCase ) ) {
-                foreach ( $testCase['initialData'] as $object ) {
-                    $this->objectsService->persist( $object );
-                }
+    }
+
+    /**
+     * @dataProvider provideTestGetBlockedActorIds
+     */
+    public function testGetBlockedActorIds( $testCase )
+    {
+        if ( array_key_exists( 'initialData', $testCase ) ) {
+            foreach ( $testCase['initialData'] as $object ) {
+                $this->objectsService->persist( $object );
             }
-            $blockedActorIds = $this->blockService->getBlockedActorIds( $testCase['blockingActorId'] );
-            $this->assertEquals(
-                $testCase['expectedBlockedActorIds'], $blockedActorIds, "Error on test $testCase[id]"
-            );
-            self::tearDown();
         }
+        $blockedActorIds = $this->blockService->getBlockedActorIds( $testCase['blockingActorId'] );
+        $this->assertEquals(
+            $testCase['expectedBlockedActorIds'], $blockedActorIds, "Error on test $testCase[id]"
+        );
     }
 
     /**

@@ -49,78 +49,78 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
         $this->httpSignatureService = new HttpSignatureService( $dateTimeProvider );
     }
 
-    public function testItVerifies()
+    public function provideTestItVerifies()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'defaultTest',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",signature="SjWJWbWN7i0wzBvtPl8rbASWz5xQW6mcJmn+ibttBqtifLN7Sazz6m79cNfwwb8DMJ5cou1s7uEGKKCs+FLEEaDV5lp7q25WqS+lavg7T8hc0GppauB6hbgEKTwblDHYGEtbGmtdHgVCk9SuS13F0hZ8FD0k/5OxEPXe5WozsbM="',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'basicTest',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'allHeadersTest',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date content-type digest content-length",signature="vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE="',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'defaultTestSigHeader',
                 'headers' => array(
                     'Signature' => 'keyId="Test",algorithm="rsa-sha256",signature="SjWJWbWN7i0wzBvtPl8rbASWz5xQW6mcJmn+ibttBqtifLN7Sazz6m79cNfwwb8DMJ5cou1s7uEGKKCs+FLEEaDV5lp7q25WqS+lavg7T8hc0GppauB6hbgEKTwblDHYGEtbGmtdHgVCk9SuS13F0hZ8FD0k/5OxEPXe5WozsbM="',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'basicTestSigHeader',
                 'headers' => array(
                     'Signature' => 'keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'allHeadersTestSigHeader',
                 'headers' => array(
                     'Signature' => 'keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date content-type digest content-length",signature="vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE="',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noHeaders',
                 'headers' => array(),
                 'expectedResult' => false,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'headerMissing',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date content-type digest content-length x-foo-header",signature="vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE="',
                 ),
                 'expectedResult' => false,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'malformedHeader',
                 'headers' => array(
                     'Authorization' => 'not a real auth header',
                 ),
                 'expectedResult' => false,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'partlyMalformedHeader',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers-malformed="(request-target) host date content-type digest content-length",signature="vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE="',
                 ),
                 'expectedResult' => false,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'dateTooFarInPast',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
@@ -129,8 +129,8 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                 'currentDatetime' => DateTime::createFromFormat(
                     DateTime::RFC2822, 'Sun, 05 Jan 2014 21:36:41 GMT'
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'dateTooFarInFuture',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
@@ -139,24 +139,29 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                 'currentDatetime' => DateTime::createFromFormat(
                     DateTime::RFC2822, 'Sun, 05 Jan 2014 21:26:39 GMT'
                 ),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            if ( array_key_exists( 'currentDatetime', $testCase ) ) {
-                $dateTimeProvider = new TestDateTimeProvider( array(
-                    'http-signature.verify' => $testCase['currentDatetime'],
-                ) );
-                $this->httpSignatureService = new HttpSignatureService( $dateTimeProvider );
-            }
-            $request = self::getSymfonyRequest();
-            foreach ( $testCase['headers'] as $header => $value ) {
-                $request->headers->set( $header, $value );
-            }
-            $actual = $this->httpSignatureService->verify( $request, self::PUBLIC_KEY );
-            $this->assertEquals(
-                $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
-            );
+    }
+
+    /**
+     * @dataProvider provideTestItVerifies
+     */
+    public function testItVerifies( $testCase )
+    {
+        if ( array_key_exists( 'currentDatetime', $testCase ) ) {
+            $dateTimeProvider = new TestDateTimeProvider( array(
+                'http-signature.verify' => $testCase['currentDatetime'],
+            ) );
+            $this->httpSignatureService = new HttpSignatureService( $dateTimeProvider );
         }
+        $request = self::getSymfonyRequest();
+        foreach ( $testCase['headers'] as $header => $value ) {
+            $request->headers->set( $header, $value );
+        }
+        $actual = $this->httpSignatureService->verify( $request, self::PUBLIC_KEY );
+        $this->assertEquals(
+            $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
+        );
     }
 
     private static function getSymfonyRequest()
@@ -180,15 +185,15 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
         return $request;
     }
 
-    public function testItSigns()
+    public function provideTestItSigns()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'keyId' => 'Test',
                 'expected' => 'keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date",signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'allHeadersTest',
                 'keyId' => 'Test',
                 'headers' => array(
@@ -200,23 +205,28 @@ G6aFKaqQfOXKCyWoUiVknQJAXrlgySFci/2ueKlIE1QqIiLSZ8V8OlpFLRnb1pzI
                     'content-length',
                 ),
                 'expected' => 'keyId="Test",algorithm="rsa-sha256",headers="(request-target) host date content-type digest content-length",signature="vSdrb+dS3EceC9bcwHSo4MlyKS59iFIrhgYkz8+oVLEEzmYZZvRs8rgOp+63LEM3v+MFHB32NfpB2bEKBIvB1q52LaEUHFv120V01IL+TAD48XaERZFukWgHoBTLMhYS2Gb51gWxpeIq8knRmPnYePbF5MOkR0Zkly4zKH7s1dE="',
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $request = self::getPsrRequest();
-            if ( array_key_exists( 'headers', $testCase ) ) {
-                $actual = $this->httpSignatureService->sign(
-                    $request, self::PRIVATE_KEY, $testCase['keyId'], $testCase['headers']
-                );
-            } else {
-                $actual = $this->httpSignatureService->sign(
-                    $request, self::PRIVATE_KEY, $testCase['keyId']
-                );
-            }
-            $this->assertEquals(
-                $testCase['expected'], $actual, "Error on test $testCase[id]"
+    }
+
+    /**
+     * @dataProvider provideTestItSigns
+     */
+    public function testItSigns( $testCase )
+    {
+        $request = self::getPsrRequest();
+        if ( array_key_exists( 'headers', $testCase ) ) {
+            $actual = $this->httpSignatureService->sign(
+                $request, self::PRIVATE_KEY, $testCase['keyId'], $testCase['headers']
+            );
+        } else {
+            $actual = $this->httpSignatureService->sign(
+                $request, self::PRIVATE_KEY, $testCase['keyId']
             );
         }
+        $this->assertEquals(
+            $testCase['expected'], $actual, "Error on test $testCase[id]"
+        );
     }
 
     private static function getPsrRequest()

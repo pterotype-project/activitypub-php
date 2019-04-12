@@ -55,10 +55,10 @@ class CollectionsServiceTest extends APTestCase
         );
     }
 
-    public function testCollectionPaging()
+    public function provideTestCollectionPaging()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'lessThanOnePage',
                 'collection' => array(
                     '@context' => array(
@@ -112,8 +112,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'moreThanOnePage',
                 'collection' => array(
                     '@context' => array(
@@ -177,8 +177,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'notFirstPage',
                 'collection' => array(
                     '@context' => array(
@@ -227,8 +227,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'authFilteringPublic',
                 'collection' => array(
                     '@context' => array(
@@ -292,8 +292,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'authFilteringSpecificActor',
                 'collection' => array(
                     '@context' => array(
@@ -364,8 +364,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'sortAsc',
                 'collection' => array(
                     '@context' => array(
@@ -429,8 +429,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'authFilteringSpecificActorSortAsc',
                 'collection' => array(
                     '@context' => array(
@@ -501,8 +501,8 @@ class CollectionsServiceTest extends APTestCase
                         ),
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'nonExistentPage',
                 'collection' => array(
                     '@context' => array(
@@ -528,58 +528,63 @@ class CollectionsServiceTest extends APTestCase
                     Request::METHOD_GET
                 ),
                 'expectedException' => NotFoundHttpException::class,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $this->authService = new AuthService();
-            $contextProvider = new ContextProvider();
-            $httpClient = $this->getMock( Client::class );
-            $httpClient->method( 'send' )->willReturn(
-                new Psr7Response( 200, array(), json_encode( array(
-                    'type' => 'OrderedCollectionPage',
-                    'orderedItems' => array(
-                        'item3',
-                        'item4',
-                    ),
-                ) ) )
-            );
-            $entityManager = $this->getMock( EntityManager::class );
-            $collection = $testCase['collection'];
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'update' )->willReturn( TestActivityPubObject::fromArray( $collection ) );
-            $this->collectionsService = new CollectionsService(
-                4,
-                $this->authService,
-                $contextProvider,
-                $httpClient,
-                new SimpleDateTimeProvider(),
-                $entityManager,
-                $objectsService
-            );
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $request = $testCase['request'];
-            if ( array_key_exists( 'requestAttributes', $testCase ) ) {
-                $request->attributes->add( $testCase['requestAttributes'] );
-            }
-            $actual = $this->collectionsService->pageAndFilterCollection(
-                $testCase['request'],
-                TestActivityPubObject::fromArray( $testCase['collection'] ),
-                function( ActivityPubObject $item ) use ( $testCase ) {
-                    return $this->authService->isAuthorized( $testCase['request'], $item );
-                }
-            );
-            $this->assertEquals(
-                $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
-            );
-        }
     }
 
-    public function testCollectionNormalizing()
+    /**
+     * @dataProvider provideTestCollectionPaging
+     */
+    public function testCollectionPaging( $testCase )
     {
-        $testCases = array(
-            array(
+        $this->authService = new AuthService();
+        $contextProvider = new ContextProvider();
+        $httpClient = $this->getMock( Client::class );
+        $httpClient->method( 'send' )->willReturn(
+            new Psr7Response( 200, array(), json_encode( array(
+                'type' => 'OrderedCollectionPage',
+                'orderedItems' => array(
+                    'item3',
+                    'item4',
+                ),
+            ) ) )
+        );
+        $entityManager = $this->getMock( EntityManager::class );
+        $collection = $testCase['collection'];
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'update' )->willReturn( TestActivityPubObject::fromArray( $collection ) );
+        $this->collectionsService = new CollectionsService(
+            4,
+            $this->authService,
+            $contextProvider,
+            $httpClient,
+            new SimpleDateTimeProvider(),
+            $entityManager,
+            $objectsService
+        );
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
+        }
+        $request = $testCase['request'];
+        if ( array_key_exists( 'requestAttributes', $testCase ) ) {
+            $request->attributes->add( $testCase['requestAttributes'] );
+        }
+        $actual = $this->collectionsService->pageAndFilterCollection(
+            $testCase['request'],
+            TestActivityPubObject::fromArray( $testCase['collection'] ),
+            function( ActivityPubObject $item ) use ( $testCase ) {
+                return $this->authService->isAuthorized( $testCase['request'], $item );
+            }
+        );
+        $this->assertEquals(
+            $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
+        );
+    }
+
+    public function provideTestCollectionNormalizing()
+    {
+        return array(
+            array( array(
                 'id' => 'basicNormalizingTest',
                 'collection' => array(
                     'type' => 'Collection',
@@ -598,8 +603,8 @@ class CollectionsServiceTest extends APTestCase
                         'item2',
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'orderedNormalizingTest',
                 'collection' => array(
                     'type' => 'OrderedCollection',
@@ -618,8 +623,8 @@ class CollectionsServiceTest extends APTestCase
                         'item2',
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'pageTraversal',
                 'collection' => array(
                     'type' => 'OrderedCollection',
@@ -647,8 +652,8 @@ class CollectionsServiceTest extends APTestCase
                         'item4',
                     ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'pageTraversal',
                 'collection' => array(
                     'type' => 'OrderedCollection',
@@ -670,18 +675,23 @@ class CollectionsServiceTest extends APTestCase
                         'item4',
                     ),
                 ),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $collection = $testCase['collection'];
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $actual = $this->collectionsService->normalizeCollection( $collection );
-            $this->assertEquals(
-                $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
-            );
+    }
+
+    /**
+     * @dataProvider provideTestCollectionNormalizing
+     */
+    public function testCollectionNormalizing( $testCase )
+    {
+        $collection = $testCase['collection'];
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
         }
+        $actual = $this->collectionsService->normalizeCollection( $collection );
+        $this->assertEquals(
+            $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
+        );
     }
 }
 

@@ -26,10 +26,10 @@ class RemoveHandlerTest extends APTestCase
         );
     }
 
-    public function testHandleRemove()
+    public function provideTestHandleRemove()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -56,8 +56,8 @@ class RemoveHandlerTest extends APTestCase
                     )
                 ),
                 'expectedRemovedItemId' => 'https://elsewhere.com/notes/1',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -84,8 +84,8 @@ class RemoveHandlerTest extends APTestCase
                     )
                 ),
                 'expectedRemovedItemId' => 'https://example.com/notes/1',
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'notAuthorizedTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -112,40 +112,45 @@ class RemoveHandlerTest extends APTestCase
                     )
                 ),
                 'expectedException' => AccessDeniedHttpException::class,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
-                $objects = self::getObjects();
-                if ( array_key_exists( $id, $objects ) ) {
-                    return TestActivityPubObject::fromArray( $objects[$id] );
-                } else {
-                    return null;
-                }
-            });
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'removeItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'expectedRemovedItemId', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'removeItem' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedRemovedItemId'] )
-                    );
+    }
+
+    /**
+     * @dataProvider provideTestHandleRemove
+     */
+    public function testHandleRemove( $testCase )
+    {
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
+            $objects = self::getObjects();
+            if ( array_key_exists( $id, $objects ) ) {
+                return TestActivityPubObject::fromArray( $objects[$id] );
             } else {
-                $collectionsService->expects( $this->never() )
-                    ->method( 'removeItem' );
+                return null;
             }
-            $removeHandler = new RemoveHandler( $objectsService, $collectionsService );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $removeHandler );
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        });
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'removeItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'expectedRemovedItemId', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'removeItem' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedRemovedItemId'] )
+                );
+        } else {
+            $collectionsService->expects( $this->never() )
+                ->method( 'removeItem' );
         }
+        $removeHandler = new RemoveHandler( $objectsService, $collectionsService );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $removeHandler );
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
+        }
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
     }
 }

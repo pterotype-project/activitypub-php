@@ -31,40 +31,47 @@ class RouterTest extends APTestCase
         $this->kernel = $this->getMock( HttpKernel::class );
     }
 
-    public function testRouter()
+    public function provideTestRouter()
     {
-        $testCases = array(
-            array(
+        $this->getController = $this->getMock( GetController::class );
+        $this->postController = $this->getMock( PostController::class );
+        return array(
+            array( array(
                 'id' => 'GET',
                 'request' => Request::create( 'https://foo.com', Request::METHOD_GET ),
                 'expectedController' => array( $this->getController, 'handle' ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'POST',
                 'request' => Request::create( 'https://foo.com', Request::METHOD_POST ),
                 'expectedController' => array( $this->postController, 'handle' ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'MethodNotAllowed',
                 'request' => Request::create( 'https://foo.com', Request::METHOD_PUT ),
                 'expectedException' => MethodNotAllowedHttpException::class,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $request = $testCase['request'];
-            $event = new GetResponseEvent(
-                $this->kernel, $request, HttpKernelInterface::MASTER_REQUEST
-            );
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            }
-            $this->router->route( $event );
-            $this->assertEquals(
-                $testCase['expectedController'],
-                $request->attributes->get( '_controller' ),
-                "Error on test $testCase[id]"
-            );
+    }
+
+    /**
+     * @dataProvider provideTestRouter
+     */
+    public function testRouter( $testCase )
+    {
+        $request = $testCase['request'];
+        $event = new GetResponseEvent(
+            $this->kernel, $request, HttpKernelInterface::MASTER_REQUEST
+        );
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
         }
+        $this->router->route( $event );
+        $this->assertEquals(
+            $testCase['expectedController'],
+            $request->attributes->get( '_controller' ),
+            "Error on test $testCase[id]"
+        );
     }
 }
 

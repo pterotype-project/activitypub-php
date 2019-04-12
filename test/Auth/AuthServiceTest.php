@@ -19,32 +19,32 @@ class AuthServiceTest extends APTestCase
         $this->authService = new AuthService();
     }
 
-    public function testAuthService()
+    public function provideTestAuthService()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'addressedTo',
                 'actor' => 'https://example.com/actor/1',
                 'object' => array(
                     'to' => 'https://example.com/actor/1',
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noAuth',
                 'object' => array(
                     'to' => 'https://example.com/actor/1',
                 ),
                 'expectedResult' => false,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noAudience',
                 'object' => array(
                     'type' => 'Note'
                 ),
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'actor',
                 'object' => array(
                     'actor' => 'https://example.com/actor/1',
@@ -52,8 +52,8 @@ class AuthServiceTest extends APTestCase
                 ),
                 'actor' => 'https://example.com/actor/1',
                 'expectedResult' => true,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'attributedTo',
                 'object' => array(
                     'attributedTo' => 'https://example.com/actor/1',
@@ -61,19 +61,24 @@ class AuthServiceTest extends APTestCase
                 ),
                 'actor' => 'https://example.com/actor/1',
                 'expectedResult' => true,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $request = Request::create( 'https://example.com/objects/1' );
-            if ( array_key_exists( 'actor', $testCase ) ) {
-                $request->attributes->set( 'actor', $testCase['actor'] );
-            }
-            $object = TestActivityPubObject::fromArray( $testCase['object'] );
-            $actual = $this->authService->isAuthorized( $request, $object );
-            $this->assertEquals(
-                $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
-            );
+    }
+
+    /**
+     * @dataProvider provideTestAuthService
+     */
+    public function testAuthService( $testCase )
+    {
+        $request = Request::create( 'https://example.com/objects/1' );
+        if ( array_key_exists( 'actor', $testCase ) ) {
+            $request->attributes->set( 'actor', $testCase['actor'] );
         }
+        $object = TestActivityPubObject::fromArray( $testCase['object'] );
+        $actual = $this->authService->isAuthorized( $request, $object );
+        $this->assertEquals(
+            $testCase['expectedResult'], $actual, "Error on test $testCase[id]"
+        );
     }
 }
 

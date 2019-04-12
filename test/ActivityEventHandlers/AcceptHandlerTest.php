@@ -69,10 +69,10 @@ class AcceptHandlerTest extends APTestCase
         );
     }
 
-    public function testHandleInbox()
+    public function provideTestHandleInbox()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -102,8 +102,8 @@ class AcceptHandlerTest extends APTestCase
                 'expectedNewFollowing' => array(
                     'id' => 'https://elsewhere.com/actors/1',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'acceptForSomeoneElsesFollow',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -130,8 +130,8 @@ class AcceptHandlerTest extends APTestCase
                         ) ) )
                     )
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noFollowingTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -158,48 +158,53 @@ class AcceptHandlerTest extends APTestCase
                 'expectedNewFollowing' => array(
                     'id' => 'https://elsewhere.com/actors/1',
                 )
-            ),
+            ) ),
         );
-        foreach( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
-                $objects = self::getObjects();
-                if ( array_key_exists( $id, $objects ) ) {
-                    return TestActivityPubObject::fromArray( $objects[$id] );
-                } else {
-                    return null;
-                }
-            });
-            $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
-                return TestActivityPubObject::fromArray( $arr );
-            });
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'addItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'expectedNewFollowing', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'addItem' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedNewFollowing'] )
-                    );
-            } else {
-                $collectionsService->expects( $this->never() )
-                    ->method( 'addItem' );
-            }
-            $contextProvider = new ContextProvider();
-            $acceptHandler = new AcceptHandler( $objectsService, $collectionsService, $contextProvider );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $acceptHandler );
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
-        }
     }
 
-    public function testHandleOutbox()
+    /**
+     * @dataProvider provideTestHandleInbox
+     */
+    public function testHandleInbox( $testCase )
     {
-        $testCases = array(
-            array(
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
+            $objects = self::getObjects();
+            if ( array_key_exists( $id, $objects ) ) {
+                return TestActivityPubObject::fromArray( $objects[$id] );
+            } else {
+                return null;
+            }
+        });
+        $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
+            return TestActivityPubObject::fromArray( $arr );
+        });
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'addItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'expectedNewFollowing', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'addItem' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedNewFollowing'] )
+                );
+        } else {
+            $collectionsService->expects( $this->never() )
+                ->method( 'addItem' );
+        }
+        $contextProvider = new ContextProvider();
+        $acceptHandler = new AcceptHandler( $objectsService, $collectionsService, $contextProvider );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $acceptHandler );
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+    }
+
+    public function provideTestHandleOutbox()
+    {
+        return array(
+            array( array(
                 'id' => 'notAutoAccepted',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -231,8 +236,8 @@ class AcceptHandlerTest extends APTestCase
                 'expectedNewFollower' => array(
                     'id' => 'https://elsewhere.com/actors/1',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'autoAccepted',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -277,8 +282,8 @@ class AcceptHandlerTest extends APTestCase
                 'expectedNewFollower' => array(
                     'id' => 'https://elsewhere.com/actors/1',
                 )
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noFollowersCollection',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -304,42 +309,47 @@ class AcceptHandlerTest extends APTestCase
                 'expectedNewFollower' => array(
                     'id' => 'https://elsewhere.com/actors/1',
                 )
-            ),
+            ) ),
         );
-        foreach( $testCases as $testCase ) {
-            $objectsService = $this->getMock( ObjectsService::class );
-            $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
-                $objects = self::getObjects();
-                if ( array_key_exists( $id, $objects ) ) {
-                    return TestActivityPubObject::fromArray( $objects[$id] );
-                } else {
-                    return null;
-                }
-            });
-            $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
-                return TestActivityPubObject::fromArray( $arr );
-            });
-            $collectionsService = $this->getMockBuilder( CollectionsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'addItem' ) )
-                ->getMock();
-            if ( array_key_exists( 'expectedNewFollower', $testCase ) ) {
-                $collectionsService->expects( $this->once() )
-                    ->method( 'addItem' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedNewFollower'] )
-                    );
+    }
+
+    /**
+     * @dataProvider provideTestHandleOutbox
+     */
+    public function testHandleOutbox( $testCase )
+    {
+        $objectsService = $this->getMock( ObjectsService::class );
+        $objectsService->method( 'dereference')->willReturnCallback( function( $id ) {
+            $objects = self::getObjects();
+            if ( array_key_exists( $id, $objects ) ) {
+                return TestActivityPubObject::fromArray( $objects[$id] );
             } else {
-                $collectionsService->expects( $this->never() )
-                    ->method( 'addItem' );
+                return null;
             }
-            $contextProvider = new ContextProvider();
-            $acceptHandler = new AcceptHandler( $objectsService, $collectionsService, $contextProvider );
-            $eventDispatcher = new EventDispatcher();
-            $eventDispatcher->addSubscriber( $acceptHandler );
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        });
+        $objectsService->method( 'update')->willReturnCallback( function( $id, $arr ) {
+            return TestActivityPubObject::fromArray( $arr );
+        });
+        $collectionsService = $this->getMockBuilder( CollectionsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'addItem' ) )
+            ->getMock();
+        if ( array_key_exists( 'expectedNewFollower', $testCase ) ) {
+            $collectionsService->expects( $this->once() )
+                ->method( 'addItem' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedNewFollower'] )
+                );
+        } else {
+            $collectionsService->expects( $this->never() )
+                ->method( 'addItem' );
         }
+        $contextProvider = new ContextProvider();
+        $acceptHandler = new AcceptHandler( $objectsService, $collectionsService, $contextProvider );
+        $eventDispatcher = new EventDispatcher();
+        $eventDispatcher->addSubscriber( $acceptHandler );
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
     }
 }
 

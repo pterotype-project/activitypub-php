@@ -62,10 +62,10 @@ oYi+1hqp1fIekaxsyQIDAQAB
         return array( 'id' => self::ACTOR_ID );
     }
 
-    public function testSignatureListener()
+    public function provideTestSignatureListener()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicTest',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
@@ -76,8 +76,8 @@ oYi+1hqp1fIekaxsyQIDAQAB
                         'id' => 'https://example.com/actor/1',
                     ) ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'existingActorTest',
                 'headers' => array(
                     'Authorization' => 'Signature keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
@@ -93,8 +93,8 @@ oYi+1hqp1fIekaxsyQIDAQAB
                         'id' => 'https://example.com/actor/2',
                     ) ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'signatureHeaderTest',
                 'headers' => array(
                     'Signature' => 'keyId="https://example.com/actor/1/key",algorithm="rsa-sha256",headers="(request-target) host date", signature="qdx+H7PHHDZgy4y/Ahn9Tny9V3GP6YgBPyUXMmoxWtLbHpUnXS2mg2+SbrQDMCJypxBLSPQR2aAjn7ndmw2iicw3HMbe8VfEdKFYRqzic+efkb3nndiv/x1xSHDJWeSWkx3ButlYSuBskLu6kd9Fswtemr3lgdDEmn04swr2Os0="',
@@ -105,31 +105,36 @@ oYi+1hqp1fIekaxsyQIDAQAB
                         'id' => 'https://example.com/actor/1',
                     ) ),
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'noSignatureTest',
                 'expectedAttributes' => array(),
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $event = $this->getEvent();
-            if ( array_key_exists( 'headers', $testCase ) ) {
-                foreach ( $testCase['headers'] as $header => $value ) {
-                    $event->getRequest()->headers->set( $header, $value );
-                }
+    }
+
+    /**
+     * @dataProvider provideTestSignatureListener
+     */
+    public function testSignatureListener( $testCase )
+    {
+        $event = $this->getEvent();
+        if ( array_key_exists( 'headers', $testCase ) ) {
+            foreach ( $testCase['headers'] as $header => $value ) {
+                $event->getRequest()->headers->set( $header, $value );
             }
-            if ( array_key_exists( 'requestAttributes', $testCase ) ) {
-                foreach ( $testCase['requestAttributes'] as $attribute => $value ) {
-                    $event->getRequest()->attributes->set( $attribute, $value );
-                }
-            }
-            $this->signatureListener->validateHttpSignature( $event );
-            $this->assertEquals(
-                $testCase['expectedAttributes'],
-                $event->getRequest()->attributes->all(),
-                "Error on test $testCase[id]"
-            );
         }
+        if ( array_key_exists( 'requestAttributes', $testCase ) ) {
+            foreach ( $testCase['requestAttributes'] as $attribute => $value ) {
+                $event->getRequest()->attributes->set( $attribute, $value );
+            }
+        }
+        $this->signatureListener->validateHttpSignature( $event );
+        $this->assertEquals(
+            $testCase['expectedAttributes'],
+            $event->getRequest()->attributes->all(),
+            "Error on test $testCase[id]"
+        );
     }
 
     private function getEvent()

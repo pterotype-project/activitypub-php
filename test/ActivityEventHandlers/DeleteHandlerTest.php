@@ -16,10 +16,10 @@ use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class DeleteHandlerTest extends APTestCase
 {
-    public function testDeleteHandler()
+    public function provideTestDeleteHandler()
     {
-        $testCases = array(
-            array(
+        return array(
+            array( array(
                 'id' => 'basicInboxTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -45,8 +45,8 @@ class DeleteHandlerTest extends APTestCase
                     'type' => 'Tombstone',
                     'deleted' => '2014-01-05T21:31:40+0000',
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'basicOutboxTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -72,8 +72,8 @@ class DeleteHandlerTest extends APTestCase
                     'type' => 'Tombstone',
                     'deleted' => '2014-01-05T21:31:40+0000',
                 ),
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'outboxAuthTest',
                 'eventName' => OutboxActivityEvent::NAME,
                 'event' => new OutboxActivityEvent(
@@ -93,8 +93,8 @@ class DeleteHandlerTest extends APTestCase
                     )
                 ),
                 'expectedException' => UnauthorizedHttpException::class,
-            ),
-            array(
+            ) ),
+            array( array(
                 'id' => 'inboxAuthTest',
                 'eventName' => InboxActivityEvent::NAME,
                 'event' => new InboxActivityEvent(
@@ -114,42 +114,47 @@ class DeleteHandlerTest extends APTestCase
                     )
                 ),
                 'expectedException' => UnauthorizedHttpException::class,
-            ),
+            ) ),
         );
-        foreach ( $testCases as $testCase ) {
-            $eventDispatcher = new EventDispatcher();
-            $dateTimeProvider = new TestDateTimeProvider( array(
-                'activities.delete' => DateTime::createFromFormat(
-                    DateTime::RFC2822, 'Sun, 05 Jan 2014 21:31:40 GMT'
-                ),
-            ) );
-            $objectsService = $this->getMockBuilder( ObjectsService::class )
-                ->disableOriginalConstructor()
-                ->setMethods( array( 'dereference', 'replace' ) )
-                ->getMock();
-            $objectsService->method( 'dereference' )->will( $this->returnCallback(
-                function ( $id ) {
-                    if ( array_key_exists( $id, self::getObjects() ) ) {
-                        $objects = self::getObjects();
-                        return TestActivityPubObject::fromArray( $objects[$id] );
-                    }
-                    return null;
+    }
+
+    /**
+     * @dataProvider provideTestDeleteHandler
+     */
+    public function testDeleteHandler( $testCase )
+    {
+        $eventDispatcher = new EventDispatcher();
+        $dateTimeProvider = new TestDateTimeProvider( array(
+            'activities.delete' => DateTime::createFromFormat(
+                DateTime::RFC2822, 'Sun, 05 Jan 2014 21:31:40 GMT'
+            ),
+        ) );
+        $objectsService = $this->getMockBuilder( ObjectsService::class )
+            ->disableOriginalConstructor()
+            ->setMethods( array( 'dereference', 'replace' ) )
+            ->getMock();
+        $objectsService->method( 'dereference' )->will( $this->returnCallback(
+            function ( $id ) {
+                if ( array_key_exists( $id, self::getObjects() ) ) {
+                    $objects = self::getObjects();
+                    return TestActivityPubObject::fromArray( $objects[$id] );
                 }
-            ) );
-            if ( array_key_exists( 'expectedException', $testCase ) ) {
-                $this->setExpectedException( $testCase['expectedException'] );
-            } else {
-                $objectsService->expects( $this->once() )
-                    ->method( 'replace' )
-                    ->with(
-                        $this->anything(),
-                        $this->equalTo( $testCase['expectedTombstone'] )
-                    );
+                return null;
             }
-            $deleteHandler = new DeleteHandler( $dateTimeProvider, $objectsService );
-            $eventDispatcher->addSubscriber( $deleteHandler );
-            $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
+        ) );
+        if ( array_key_exists( 'expectedException', $testCase ) ) {
+            $this->setExpectedException( $testCase['expectedException'] );
+        } else {
+            $objectsService->expects( $this->once() )
+                ->method( 'replace' )
+                ->with(
+                    $this->anything(),
+                    $this->equalTo( $testCase['expectedTombstone'] )
+                );
         }
+        $deleteHandler = new DeleteHandler( $dateTimeProvider, $objectsService );
+        $eventDispatcher->addSubscriber( $deleteHandler );
+        $eventDispatcher->dispatch( $testCase['eventName'], $testCase['event'] );
     }
 
     private static function getObjects()
