@@ -416,21 +416,9 @@ class CollectionsService
         if ( $collection->hasField( 'totalItems' ) && is_numeric( $collection['totalItems'] ) ) {
             return intval( $collection['totalItems'] );
         } else {
-            $itemsField = 'items';
-            if ( $collection->hasField( 'type' ) && $collection['type'] == 'OrderedCollection' ) {
-                $itemsField = 'orderedItems';
-            }
-            if ( ! ( $collection->hasField( $itemsField ) && $collection[$itemsField] instanceof ActivityPubObject ) ) {
-                return 0;
-            }
-            $items = $collection[$itemsField];
             $count = 0;
-            $idx = 0;
-            $currentItem = $items[$idx];
-            while ( $currentItem ) {
-                $count++;
-                $idx++;
-                $currentItem = $items[$idx];
+            foreach ( CollectionIterator::iterateCollection( $collection ) as $item ) {
+                $count += 1;
             }
             $collection = $this->objectsService->update( $collection['id'], array( 'totalItems' => strval( $count ) ) );
             return $count;
