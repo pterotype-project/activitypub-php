@@ -293,6 +293,14 @@ class ActivityPubObject implements ArrayAccess
     }
 
     /**
+     * @return PrivateKey
+     */
+    public function getPrivateKey()
+    {
+        return $this->privateKey;
+    }
+
+    /**
      * Returns true if this object has an associated private key, false if otherwise
      *
      * @return bool

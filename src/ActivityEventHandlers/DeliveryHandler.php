@@ -2,9 +2,16 @@
 
 namespace ActivityPub\ActivityEventHandlers;
 
+use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\CollectionIterator;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Utils\DateTimeProvider;
+use GuzzleHttp\Client;
+use GuzzleHttp\Promise\Promise;
+use function GuzzleHttp\Promise\settle;
+use GuzzleHttp\Psr7\Request;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class DeliveryHandler implements EventSubscriberInterface
@@ -14,6 +21,26 @@ class DeliveryHandler implements EventSubscriberInterface
      */
     private $objectsService;
 
+    /**
+     * @var Client
+     */
+    private $httpClient;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var HttpSignatureService
+     */
+    private $signatureService;
+
+    /**
+     * @var DateTimeProvider
+     */
+    private $dateTimeProvider;
+
     public static function getSubscribedEvents()
     {
         return array(
@@ -22,9 +49,17 @@ class DeliveryHandler implements EventSubscriberInterface
         );
     }
 
-    public function __construct( ObjectsService $objectsService )
+    public function __construct( ObjectsService $objectsService,
+                                 Client $httpClient,
+                                 LoggerInterface $logger,
+                                 HttpSignatureService $signatureService,
+                                 DateTimeProvider $dateTimeProvider )
     {
         $this->objectsService = $objectsService;
+        $this->httpClient = $httpClient;
+        $this->logger = $logger;
+        $this->signatureService = $signatureService;
+        $this->dateTimeProvider = $dateTimeProvider;
     }
 
     public function handleInboxForwarding( InboxActivityEvent $event )
@@ -67,7 +102,31 @@ class DeliveryHandler implements EventSubscriberInterface
                 unset( $activity[$privateField] );
             }
         }
-        // deliver activity to all inboxes, signing the request and not blocking
+        $actor = $event->getReceivingActor();
+        $requestPromises = array();
+        foreach ( $inboxes as $inbox ) {
+            $headers = array(
+                'Content-Type' => 'application/ld+json',
+                'Date' => $this->dateTimeProvider->getTime( 'delivery-handler.deliver' ),
+            );
+            $request = new Request( 'POST', $inbox, $headers );
+            $publicKeyId = $actor['publicKey'];
+            if ( $publicKeyId instanceof ActivityPubObject ) {
+                $publicKeyId = $publicKeyId['id'];
+            }
+            if ( $actor->hasPrivateKey() && is_string( $publicKeyId ) ) {
+                $signature = $this->signatureService->sign( $request, $actor->getPrivateKey(), $publicKeyId );
+                $request = $request->withHeader( 'Signature', $signature );
+            } else {
+                $this->logger->warning(
+                    'Unable to find a keypair for actor {id}; delivering without signature',
+                    array( 'id' => $actor['id'] )
+                );
+            }
+            $requestPromises[$inbox] = $this->httpClient->sendAsync( $request, array( 'timeout' => 3 ) );
+        }
+        $responses = settle( $requestPromises )->wait();
+        // TODO handle responses by logging any errors
     }
 
     /**
