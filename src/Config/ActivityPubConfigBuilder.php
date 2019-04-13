@@ -4,9 +4,8 @@ namespace ActivityPub\Config;
 
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
+use ActivityPub\Utils\Logger;
 use Exception;
-use Monolog\Handler\ErrorLogHandler;
-use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -296,10 +295,9 @@ class ActivityPubConfigBuilder
      * This config parameter can be used to customize the log level and log destination via the PSR-3 LoggerInterface
      * specification.
      *
-     * Default: a Monolog Logger that prints all messages of level Info or higher to the SAPI logging handler.
-     *          See https://github.com/Seldaek/monolog.
+     * Default: a logger that prints all messages of level Info or higher to the SAPI logging handler.
      *
-     * @param LoggerInterface $logger A PSR3 LoggerInterface instance
+     * @param LoggerInterface $logger A PSR-3 LoggerInterface instance
      * @return ActivityPubConfigBuilder The builder instance
      */
     public function setLogger( LoggerInterface $logger )
@@ -313,9 +311,7 @@ class ActivityPubConfigBuilder
      */
     private function getDefaultLogger()
     {
-        $logger = new Logger( 'ActivityPub-PHP' );
-        $logger->pushHandler( new ErrorLogHandler( ErrorLogHandler::SAPI ) );
-        return $logger;
+        return new Logger( 'ActivityPub-PHP' );
     }
 }
 
