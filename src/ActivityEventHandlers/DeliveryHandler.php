@@ -9,7 +9,6 @@ use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\DateTimeProvider;
 use GuzzleHttp\Client;
 use GuzzleHttp\Promise\Promise;
-use function GuzzleHttp\Promise\settle;
 use GuzzleHttp\Psr7\Request;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -119,14 +118,22 @@ class DeliveryHandler implements EventSubscriberInterface
                 $request = $request->withHeader( 'Signature', $signature );
             } else {
                 $this->logger->warning(
-                    'Unable to find a keypair for actor {id}; delivering without signature',
-                    array( 'id' => $actor['id'] )
+                    'Unable to find a keypair for actor; delivering without signature',
+                    array( 'actorId' => $actor['id'] )
                 );
             }
             $requestPromises[$inbox] = $this->httpClient->sendAsync( $request, array( 'timeout' => 3 ) );
         }
-        $responses = settle( $requestPromises )->wait();
-        // TODO handle responses by logging any errors
+        $responses = \GuzzleHttp\Promise\settle( $requestPromises )->wait();
+        foreach ( $responses as $inbox => $response ) {
+            if ( $response['state'] === 'rejected' ) {
+                $e = $response['reason'];
+                $this->logger->error(
+                    'Error delivering activity',
+                    array( 'inboxUri' => $inbox, 'errorMessage' => $e->getMessage() )
+                );
+            }
+        }
     }
 
     /**
