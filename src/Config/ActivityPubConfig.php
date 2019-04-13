@@ -2,6 +2,8 @@
 
 namespace ActivityPub\Config;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * The ActivityPubConfig is a data class to hold ActivityPub configuration options
  */
@@ -43,6 +45,11 @@ class ActivityPubConfig
     private $autoAcceptsFollows;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * Don't call this directly - instead, use
      * ActivityPubConfig->createBuilder()->build()
      *
@@ -57,6 +64,7 @@ class ActivityPubConfig
         $this->jsonLdContext = $builder->getJsonLdContext();
         $this->idPathPrefix = $builder->getIdPathPrefix();
         $this->autoAcceptsFollows = $builder->getAutoAcceptsFollows();
+        $this->logger = $builder->getLogger();
     }
 
     public static function createBuilder()
@@ -119,6 +127,14 @@ class ActivityPubConfig
     public function getAutoAcceptsFollows()
     {
         return $this->autoAcceptsFollows;
+    }
+
+    /**
+     * @return LoggerInterface
+     */
+    public function getLogger()
+    {
+        return $this->logger;
     }
 }
 

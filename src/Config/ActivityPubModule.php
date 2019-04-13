@@ -35,6 +35,7 @@ use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Tools\Setup;
 use GuzzleHttp\Client;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\EventDispatcher\EventDispatcher;
@@ -51,9 +52,19 @@ class ActivityPubModule
      */
     private $injector;
 
+    /**
+     * @var ActivityPubConfig
+     */
+    private $config;
+
     public function __construct( ActivityPubConfig $config )
     {
+        $this->config = $config;
+
         $this->injector = new ContainerBuilder;
+
+        $this->injector->register( LoggerInterface::class, LoggerInterface::class )
+            ->setFactory( array( $this, 'getLogger' ) );
 
         $dbConfig = Setup::createAnnotationMetadataConfiguration(
             array( __DIR__ . '/../Entities' ), $config->getIsDevMode()
@@ -193,6 +204,14 @@ class ActivityPubModule
     public function get( $id )
     {
         return $this->injector->get( $id );
+    }
+
+    /**
+     * @return LoggerInterface
+     */
+    private function getLogger()
+    {
+        return $this->config->getLogger();
     }
 }
 

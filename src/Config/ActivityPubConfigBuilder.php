@@ -5,6 +5,9 @@ namespace ActivityPub\Config;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
 use Exception;
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 
 /**
  * The ActivityPubConfigBuilder is a builder class to create ActivityPub config data
@@ -59,6 +62,11 @@ class ActivityPubConfigBuilder
     private $autoAcceptsFollows;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * Creates a new ActivityPubConfig instance with default values
      *
      * See the `set*` methods below for individual option defaults.
@@ -73,6 +81,7 @@ class ActivityPubConfigBuilder
         $this->jsonLdContext = ContextProvider::getDefaultContext();
         $this->idPathPrefix = IdProvider::DEFAULT_ID_PATH_PREFIX;
         $this->autoAcceptsFollows = false;
+        $this->logger = $this->getDefaultLogger();
     }
 
     /**
@@ -272,6 +281,41 @@ class ActivityPubConfigBuilder
     {
         $this->autoAcceptsFollows = $autoAcceptsFollows;
         return $this;
+    }
+
+    /**
+     * @return LoggerInterface
+     */
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+
+    /**
+     * The `logger` is used to log all debug, info, and error messages from the ActivityPub-PHP library.
+     * This config parameter can be used to customize the log level and log destination via the PSR-3 LoggerInterface
+     * specification.
+     *
+     * Default: a Monolog Logger that prints all messages of level Info or higher to the SAPI logging handler.
+     *          See https://github.com/Seldaek/monolog.
+     *
+     * @param LoggerInterface $logger A PSR3 LoggerInterface instance
+     * @return ActivityPubConfigBuilder The builder instance
+     */
+    public function setLogger( LoggerInterface $logger )
+    {
+        $this->logger = $logger;
+        return $this;
+    }
+
+    /**
+     * @return Logger
+     */
+    private function getDefaultLogger()
+    {
+        $logger = new Logger( 'ActivityPub-PHP' );
+        $logger->pushHandler( new ErrorLogHandler( ErrorLogHandler::SAPI ) );
+        return $logger;
     }
 }
 
