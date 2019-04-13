@@ -8,7 +8,6 @@ use ActivityPub\Objects\CollectionIterator;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\DateTimeProvider;
 use GuzzleHttp\Client;
-use GuzzleHttp\Promise\Promise;
 use GuzzleHttp\Psr7\Request;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;

@@ -10,6 +10,7 @@ use ActivityPub\ActivityEventHandlers\AddHandler;
 use ActivityPub\ActivityEventHandlers\AnnounceHandler;
 use ActivityPub\ActivityEventHandlers\CreateHandler;
 use ActivityPub\ActivityEventHandlers\DeleteHandler;
+use ActivityPub\ActivityEventHandlers\DeliveryHandler;
 use ActivityPub\ActivityEventHandlers\FollowHandler;
 use ActivityPub\ActivityEventHandlers\LikeHandler;
 use ActivityPub\ActivityEventHandlers\NonActivityHandler;
@@ -30,6 +31,7 @@ use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\ContextProvider;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
+use ActivityPub\Utils\DateTimeProvider;
 use ActivityPub\Utils\RandomProvider;
 use ActivityPub\Utils\SimpleDateTimeProvider;
 use Doctrine\ORM\EntityManager;
@@ -85,17 +87,17 @@ class ActivityPubModule
         $this->injector->register( EventDispatcher::class, EventDispatcher::class );
 
         $this->injector->register(
-            SimpleDateTimeProvider::class, SimpleDateTimeProvider::class
+            DateTimeProvider::class, SimpleDateTimeProvider::class
         );
 
         $this->injector->register( ObjectsService::class, ObjectsService::class )
             ->addArgument( new Reference( EntityManager::class ) )
-            ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
+            ->addArgument( new Reference( DateTimeProvider::class ) )
             ->addArgument( new Reference( Client::class ) );
 
         $this->injector->register(
             HttpSignatureService::class, HttpSignatureService::class
-        )->addArgument( new Reference( SimpleDateTimeProvider::class ) );
+        )->addArgument( new Reference( DateTimeProvider::class ) );
 
         $this->injector->register( SignatureListener::class, SignatureListener::class )
             ->addArgument( new Reference( HttpSignatureService::class ) )
@@ -114,7 +116,7 @@ class ActivityPubModule
             ->addArgument( new Reference( AuthService::class ) )
             ->addArgument( new Reference( ContextProvider::class ) )
             ->addArgument( new Reference( Client::class ) )
-            ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
+            ->addArgument( new Reference( DateTimeProvider::class ) )
             ->addArgument( new Reference( EntityManager::class ) )
             ->addArgument( new Reference( ObjectsService::class ) );
 
@@ -155,7 +157,7 @@ class ActivityPubModule
             ->addArgument( new Reference( ObjectsService::class ) );
 
         $this->injector->register( DeleteHandler::class, DeleteHandler::class )
-            ->addArgument( new Reference( SimpleDateTimeProvider::class ) )
+            ->addArgument( new Reference( DateTimeProvider::class ) )
             ->addArgument( new Reference( ObjectsService::class ) );
 
         $this->injector->register( FollowHandler::class, FollowHandler::class )
@@ -193,6 +195,13 @@ class ActivityPubModule
             ->addArgument( new Reference( CollectionsService::class ) )
             ->addArgument( new Reference( ObjectsService::class ) )
             ->addArgument( new Reference( IdProvider::class ) );
+
+        $this->injector->register( DeliveryHandler::class, DeliveryHandler::class )
+            ->addArgument( new Reference( ObjectsService::class ) )
+            ->addArgument( new Reference( Client::class ) )
+            ->addArgument( new Reference( LoggerInterface::class ) )
+            ->addArgument( new Reference( HttpSignatureService::class ) )
+            ->addArgument( new Reference( DateTimeProvider::class ) );
     }
 
     /**
