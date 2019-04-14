@@ -6,6 +6,7 @@ use ActivityPub\Objects\CollectionsService;
 use ActivityPub\Objects\IdProvider;
 use ActivityPub\Objects\ObjectsService;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\HttpFoundation\Response;
 
 class ActivityPersister implements EventSubscriberInterface
 {
@@ -50,6 +51,7 @@ class ActivityPersister implements EventSubscriberInterface
         } else {
             $this->objectsService->persist( $activity );
         }
+        $event->setResponse( new Response( 'Activity accepted', Response::HTTP_OK ) );
     }
 
     public function persistActivityToOutbox( OutboxActivityEvent $event )
@@ -64,5 +66,8 @@ class ActivityPersister implements EventSubscriberInterface
         } else {
             $this->objectsService->persist( $activity );
         }
+        $event->setResponse( new Response(
+            'Activity accepted', Response::HTTP_CREATED, array( 'Location' => $activity['id'] )
+        ) );
     }
 }
