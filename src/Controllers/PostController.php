@@ -55,6 +55,8 @@ class PostController
         // TODO this assumes that every actor has a unique inbox URL
         // and will break if multiple actors have the same inbox
         // TODO also handle sharedInbox here
+        // A potential solution to both problems is to refactor things so that activities are posted directly to an
+        // inbox collection, without any conception of a "receiving actor". Lots of details to work out there though.
         $inboxField = $object->getReferencingField( 'inbox' );
         if ( $inboxField ) {
             $activity = json_decode( $request->getContent(), true );
