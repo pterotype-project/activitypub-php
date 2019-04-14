@@ -42,9 +42,10 @@
     "zendframework/zend-diactoros": "1.4.1"
   },
   "require-dev": {
+    "ext-pdo": "*",
     "phpunit/dbunit": "^2.0",
     "phpunit/phpunit": "^4.0",
-    "ext-pdo": "*"
+    "squizlabs/php_codesniffer": "3.4.2"
   },
   "autoload": {
     "psr-4": {
