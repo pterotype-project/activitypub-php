@@ -138,10 +138,14 @@ class DeliveryHandler implements EventSubscriberInterface
     /**
      * Given an ActivityPubObject to deliver to, returns an array of inbox URLs
      * @param ActivityPubObject $recipient
+     * @param int $depth The depth to which we will unpack nested collection references
      * @return array
      */
-    private function resolveRecipient( ActivityPubObject $recipient )
+    private function resolveRecipient( ActivityPubObject $recipient, $depth = 5 )
     {
+        if ( $depth < 0 ) {
+            return array();
+        }
         if ( $recipient && $recipient->hasField( 'inbox' ) ) {
             $inbox = $recipient['inbox'];
             if ( $inbox instanceof ActivityPubObject && $inbox->hasField( 'id' ) ) {
@@ -158,7 +162,7 @@ class DeliveryHandler implements EventSubscriberInterface
             $inboxes = array();
             foreach ( CollectionIterator::iterateCollection( $recipient ) as $item ) {
                 if ( $item instanceof ActivityPubObject ) {
-                    $inboxes = array_unique( array_merge( $inboxes, $this->resolveRecipient( $item ) ) );
+                    $inboxes = array_unique( array_merge( $inboxes, $this->resolveRecipient( $item, $depth - 1 ) ) );
                 }
             }
             return $inboxes;
