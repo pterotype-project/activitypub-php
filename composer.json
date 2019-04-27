@@ -31,6 +31,7 @@
     "doctrine/orm": "2.5.14",
     "friendica/json-ld": "^1.1",
     "guzzlehttp/guzzle": "^6.3",
+    "ml/json-ld": "1.1.0",
     "monolog/monolog": "^1.0",
     "phpseclib/phpseclib": "^2.0",
     "psr/http-message": "^1.0",
@@ -42,9 +43,9 @@
     "zendframework/zend-diactoros": "1.4.1"
   },
   "require-dev": {
+    "ext-pdo": "*",
     "phpunit/dbunit": "^2.0",
-    "phpunit/phpunit": "^4.0",
-    "ext-pdo": "*"
+    "phpunit/phpunit": "^4.0"
   },
   "autoload": {
     "psr-4": {
