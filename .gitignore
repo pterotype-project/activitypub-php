@@ -2,3 +2,4 @@ vendor/
 test/db.sqlite
 ./.idea/
 /.idea
+composer.lock
