@@ -2,26 +2,41 @@
 
 namespace ActivityPub\JsonLd;
 
+use ActivityPub\JsonLd\Dereferencer\DereferencerInterface;
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ArrayAccess;
+use InvalidArgumentException;
+use ML\JsonLD\Graph;
 use ML\JsonLD\JsonLD;
 use ML\JsonLD\Node;
 use ML\JsonLD\Value;
+use stdClass;
 
 /**
  * Class JsonLdNode
  * @package ActivityPub\JsonLd
  *
- * A representation of a node in a JSON-LD graph. Supports lazy-loading linked nodes and persisting RDF triples to
- * a storage backend.
+ * A representation of a node in a JSON-LD graph. Supports lazy-loading linked nodes.
  */
 class JsonLdNode implements ArrayAccess
 {
     /**
-     * The internal representation of the node.
+     * The Node within $this->graph that represents this JsonLdNode.
      * @var Node
      */
     private $node;
+
+    /**
+     * The portion of the JSON-LD graph that this node knows about.
+     * @var Graph
+     */
+    private $graph;
+
+    /**
+     * The factory used to construct this node.
+     * @var JsonLdNodeFactory
+     */
+    private $factory;
 
     /**
      * The JSON-LD context that should be used when getting/setting properties on this node.
@@ -30,20 +45,31 @@ class JsonLdNode implements ArrayAccess
     private $context;
 
     /**
-     * JsonLdNode constructor.
-     * @param \stdClass $jsonLd The JSON-LD input as a stdClass.
-     * @param string $context This node's JSON-LD context.
+     * The dereferencer, used to dereference foreign nodes based on their IRIs.
+     * @var DereferencerInterface
      */
-    public function __construct( $jsonLd, $context )
+    private $dereferencer;
+
+    /**
+     * JsonLdNode constructor.
+     * @param Node|\stdClass $jsonLd The JSON-LD input as a stdClass or an existing \ML\JsonLD\Node instance.
+     * @param string $context This node's JSON-LD context.
+     * @param DereferencerInterface $dereferencer
+     */
+    public function __construct( $jsonLd, $context, JsonLdNodeFactory $factory, DereferencerInterface $dereferencer )
     {
-        $doc = JsonLD::getDocument( $jsonLd );
-        $graph = $doc->getGraph();
-        $id = empty( $doc->getIri() ) ? '_:b0' : $doc->getIri();
-        $this->node = $graph->getNode( $id );
-        if ( is_null( $this->node ) ) {
-            $this->node = $graph->createNode();
-        }
+        $this->factory = $factory;
+        $this->dereferencer = $dereferencer;
         $this->context = $context;
+        if ( $jsonLd instanceof Node ) {
+            $this->node = $jsonLd;
+            $this->graph = $jsonLd->getGraph();
+        } else {
+            $doc = JsonLD::getDocument( $jsonLd );
+            $this->graph = $doc->getGraph();
+            $nodes = $this->graph->getNodes();
+            $this->node = count( $nodes ) > 0 ? $nodes[0] : $this->graph->createNode();
+        }
     }
 
     /**
@@ -117,9 +143,20 @@ class JsonLdNode implements ArrayAccess
             return $property->getValue();
         } else if ( is_array( $property ) ) {
             return array_map( array( $this, 'resolveProperty' ), $property );
+        } else if ( $property instanceof Node ) {
+            if ( count( $property->getProperties() ) > 0 ) {
+                return $this->factory->newNode( $property );
+            } else {
+                // dereference the node to get its properties, then update $property's props with the retrieved values
+                $dereferenced = $this->dereferencer->dereference( $property->getId() );
+                $newNode = JsonLD::getDocument( $dereferenced )->getGraph()->getNode( $property->getId() );
+                foreach ( $newNode->getProperties() as $name => $value ) {
+                    $property->setProperty( $name, $value );
+                }
+                return $this->factory->newNode( $property );
+            }
         }
-        // TODO handle lazy-loading linked nodes here
-        // also, figure out what to do about as:items -- the vocab says it should be a node but the JsonLD lib
+        // TODO figure out what to do about as:items -- the vocab says it should be a node but the JsonLD lib
         // seems to resolve it to an array if it comes in as an array of string values...
     }
 
@@ -132,12 +169,18 @@ class JsonLdNode implements ArrayAccess
     public function setProperty( $name, $value )
     {
         $expandedName = $this->expand_name( $name );
-        if ( $value instanceof \stdClass || is_array( $value ) ) {
-            // TODO handle adding a new linked node here
-            // should instantiate a new JsonLdNode and recursively call __set
+        if ( is_array( $value ) ) {
+            $this->clearProperty( $expandedName );
+            foreach ( $value as $v ) {
+                $this->addPropertyValue( $expandedName, $v );
+            }
+        } else if ( $value instanceof stdClass ) {
+            $newDoc = JsonLD::getDocument( $value );
+            $newNodes = $newDoc->getGraph()->getNodes();
+            $newNode = count( $newNodes ) > 0 ? $newNodes[0] : $this->graph->createNode();
+            $this->node->setProperty( $expandedName, $newNode );
         } else if ( $value instanceof JsonLdNode ) {
-            // TODO handle adding a new linked node here
-            // by getting the \ML\JsonLD\Node instance from the $value and calling $this->node->addPropertyValue()
+            $this->setProperty( $expandedName, $value->asObject() );
         } else {
             $this->node->setProperty( $expandedName, $value );
         }
@@ -159,17 +202,21 @@ class JsonLdNode implements ArrayAccess
      * If the property already exists, the new value is added onto the existing values rather than
      * overwriting them.
      * @param string $name
-     * @param string|\stdClass|array $value
+     * @param string|stdClass $value
      */
     public function addPropertyValue( $name, $value )
     {
         $expandedName = $this->expand_name( $name );
-        if ( $value instanceof \stdClass || is_array( $value ) ) {
-            // TODO handle adding a new linked node here
-            // should instantiate a new JsonLdNode and recursively call __set
+        if ( is_array( $value ) ) {
+            $err = "Can't add array value to a property. To add multiple values call addPropertyValue multiple times or use setProperty";
+            throw new InvalidArgumentException( $err );
+        } else if ( $value instanceof stdClass ) {
+            $newDoc = JsonLD::getDocument( $value );
+            $newNodes = $newDoc->getGraph()->getNodes();
+            $newNode = count( $newNodes ) > 0 ? $newNodes[0] : $this->graph->createNode();
+            $this->node->addPropertyValue( $expandedName, $newNode );
         } else if ( $value instanceof JsonLdNode ) {
-            // TODO handle adding a new linked node here
-            // by getting the \ML\JsonLD\Node instance from the $value and calling $this->node->addPropertyValue()
+            $this->addPropertyValue( $expandedName, $value->asObject() );
         } else {
             $this->node->addPropertyValue( $expandedName, $value );
         }
@@ -182,6 +229,11 @@ class JsonLdNode implements ArrayAccess
     public function clearProperty( $name )
     {
         return $this->setProperty( $name, null );
+    }
+
+    public function asObject()
+    {
+        return $this->node->toJsonLd();
     }
 
     /**

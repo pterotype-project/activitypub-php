@@ -5,13 +5,13 @@ namespace ActivityPub\JsonLd\Dereferencer;
 
 
 use ActivityPub\JsonLd\Exceptions\NodeNotFoundException;
-use ActivityPub\JsonLd\JsonLdNode;
+use stdClass;
 
 interface DereferencerInterface
 {
     /**
      * @param string $iri The IRI to dereference.
-     * @return JsonLdNode The dereferenced node.
+     * @return stdClass|array The dereferenced node.
      * @throws NodeNotFoundException If a node with the IRI could not be found.
      */
     public function dereference( $iri );
