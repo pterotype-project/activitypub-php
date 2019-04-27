@@ -45,6 +45,9 @@ class ActivityPersister implements EventSubscriberInterface
     public function persistActivityToInbox( InboxActivityEvent $event )
     {
         $activity = $event->getActivity();
+        if ( ! $this->objectsService->getObject( $activity['id'] ) ) {
+            $event->getRequest()->attributes->set( 'firstTimeSeen', true );
+        }
         $receivingActor = $event->getReceivingActor();
         if ( $receivingActor->hasField( 'inbox' ) ) {
             $this->collectionsService->addItem( $receivingActor['inbox'], $activity );

@@ -68,13 +68,13 @@ class ObjectsService
     /**
      * Gets an object from the DB by its ActivityPub id
      *
-     * For internal use only - external callers should use dereference()
+     * You probably want dereference() instead of this.
      *
      * @param string $id The object's id
      * @return ActivityPubObject|null The object or null
      *   if no object exists with that id
      */
-    protected function getObject( $id )
+    public function getObject( $id )
     {
         $results = $this->query( array( 'id' => $id ) );
         if ( !empty( $results ) ) {

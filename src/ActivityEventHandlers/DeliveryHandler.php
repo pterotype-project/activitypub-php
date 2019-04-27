@@ -7,6 +7,7 @@ use ActivityPub\Entities\ActivityPubObject;
 use ActivityPub\Objects\CollectionIterator;
 use ActivityPub\Objects\ObjectsService;
 use ActivityPub\Utils\DateTimeProvider;
+use ActivityPub\Utils\Util;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Request;
 use Psr\Log\LoggerInterface;
@@ -62,7 +63,52 @@ class DeliveryHandler implements EventSubscriberInterface
 
     public function handleInboxForwarding( InboxActivityEvent $event )
     {
-
+        // Forward the activity if:
+        // - this is the first time we've seen the activity
+        // - AND the values of to, cc, or audience contain a Collection that we own
+        // - AND (according to Kaninii) if the 'object' of the activity is NOT an actor
+        // - AND the values of inReplyTo, object, target, or tag are objects that we own, recursing through
+        //       the objects in these value chains up to some reasonable limit
+        $activity = $event->getActivity();
+        if ( ! $event->getRequest()->attributes->get( 'firstTimeSeen' ) ) {
+            $this->logger->debug(
+                'Not forwarding activity because we\'ve seen it before', array( 'activity' => $activity )
+            );
+            return;
+        }
+        if ( array_key_exists( 'object', $activity ) && $this->isActor( $activity['object'] ) ) {
+            $this->logger->debug(
+                'Not forwarding activity with an actor as its object', array( 'activity' => $activity )
+            );
+            return;
+        }
+        $forwardingTargets = array();
+        $recipients = array_intersect( $activity, array_flip( array( 'to', 'cc', 'audience' ) ) );
+        foreach ( $recipients as $recip ) {
+            $recipId = $recip;
+            if ( is_array( $recipId ) && array_key_exists( 'id', $recipId ) ) {
+                $recipId = $recipId['id'];
+            }
+            if ( is_string( $recipId ) ) {
+                $recipient = $this->objectsService->dereference( $recipId );
+                if (
+                    $recipient->hasField( 'type' ) &&
+                    in_array( $recipient['type'], array( 'Collection', 'OrderedCollection') ) &&
+                    Util::isLocalUri( $recipient['id'] )
+                ) {
+                    $forwardingTargets = array_unique( array_merge(
+                        $forwardingTargets, $this->resolveRecipient( $recipient )
+                    ) );
+                }
+            }
+        }
+        if ( count( $forwardingTargets ) === 0 ) {
+            $this->logger->debug(
+                'No collections we own in recipients, not forwarding', array( 'activity' => $activity )
+            );
+            return;
+        }
+        // TODO recurse through inReplyTo, object, target, and tags looking for object we own
     }
 
     public function deliverActivity( OutboxActivityEvent $event )
@@ -168,5 +214,20 @@ class DeliveryHandler implements EventSubscriberInterface
             return $inboxes;
         }
         return array();
+    }
+
+    private function isActor( $objectId )
+    {
+        if ( is_array( $objectId ) && array_key_exists( 'id', $objectId ) ) {
+            $objectId = $objectId['id'];
+        }
+        if ( ! is_string( $objectId ) ) {
+            return false;
+        }
+        $object = $this->objectsService->dereference( $objectId );
+        if ( ! $object ) {
+            return false;
+        }
+        return $object->hasField( 'inbox' ) && $object->hasField( 'outbox' );
     }
 }
