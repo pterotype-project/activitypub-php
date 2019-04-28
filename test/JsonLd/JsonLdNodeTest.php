@@ -2,6 +2,7 @@
 
 namespace ActivityPub\Test\JsonLd;
 
+use ActivityPub\JsonLd\Exceptions\NodeNotFoundException;
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ActivityPub\JsonLd\JsonLdNode;
 use ActivityPub\JsonLd\JsonLdNodeFactory;
@@ -316,6 +317,70 @@ class JsonLdNodeTest extends APTestCase
                     'type' => 'Note',
                 ),
             ),
+            array(
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'type' => 'Announce',
+                    'object' => 'https://example.org/objects/1',
+                ),
+                $this->asContext,
+                array(),
+                'object',
+                null,
+                NodeNotFoundException::class,
+            ),
+            array(
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'type' => 'Announce',
+                    'object' => 'https://example.org/objects/1',
+                ),
+                $this->asContext,
+                array(
+                    'https://example.org/objects/1' => (object) array(
+                        '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                        'id' => 'https://example.org/objects/1',
+                        'type' => 'Note',
+                        'inReplyTo' => (object) array(
+                            'id' => 'https://example.org/articles/1',
+                            'type' => 'Article',
+                        ),
+                    ),
+                ),
+                'object',
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'id' => 'https://example.org/objects/1',
+                    'type' => 'Note',
+                    'inReplyTo' => (object) array(
+                        'id' => 'https://example.org/articles/1',
+                        'type' => 'Article',
+                    ),
+                ),
+            ),
+            array(
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'type' => 'Announce',
+                    'object' => 'https://example.org/objects/1',
+                ),
+                $this->asContext,
+                array(
+                    'https://example.org/objects/1' => (object) array(
+                        '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                        'id' => 'https://example.org/objects/1',
+                        'type' => 'Note',
+                        'inReplyTo' => 'https://example.org/articles/1',
+                    ),
+                ),
+                'object',
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'id' => 'https://example.org/objects/1',
+                    'type' => 'Note',
+                    'inReplyTo' => 'https://example.org/articles/1',
+                ),
+            ),
         );
     }
 
@@ -333,6 +398,12 @@ class JsonLdNodeTest extends APTestCase
             $actualValue = $actualValue->asObject();
         }
         $this->assertEquals( $expectedValue, $actualValue );
+    }
+
+    public function testBackreferences()
+    {
+        // TODO implement me
+        $this->assertTrue( false );
     }
 
     private function makeJsonLdNode( $inputObj, $context, $nodeGraph = array() )

@@ -3,6 +3,7 @@
 namespace ActivityPub\JsonLd;
 
 use ActivityPub\JsonLd\Dereferencer\DereferencerInterface;
+use ActivityPub\JsonLd\Exceptions\NodeNotFoundException;
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ArrayAccess;
 use BadMethodCallException;
@@ -47,7 +48,14 @@ class JsonLdNode implements ArrayAccess
      */
     private $graph;
 
-    // TODO support backreferences
+    /**
+     * An array mapping property names to JsonLdNodes, where each entry
+     * represents a backreference from the node in the array to this node
+     * via named property (e.g. a backreference from "as:inReplyTo" => nodeA means
+     * that nodeA["as:inReplyTo"] == this node).
+     * @var array
+     */
+    private $backreferences;
 
     /**
      * JsonLdNode constructor.
@@ -57,7 +65,12 @@ class JsonLdNode implements ArrayAccess
      * @param DereferencerInterface $dereferencer
      * @param JsonLdGraph $graph The JSON-LD graph this node is a part of.
      */
-    public function __construct( $jsonLd, $context, JsonLdNodeFactory $factory, DereferencerInterface $dereferencer, JsonLdGraph $graph )
+    public function __construct( $jsonLd,
+                                 $context,
+                                 JsonLdNodeFactory $factory,
+                                 DereferencerInterface $dereferencer,
+                                 JsonLdGraph $graph,
+                                 $backreferences = array() )
     {
         $this->factory = $factory;
         $this->dereferencer = $dereferencer;
@@ -73,6 +86,7 @@ class JsonLdNode implements ArrayAccess
         $this->context = $context;
         $this->graph = $graph;
         $this->graph->addNode( $this );
+        $this->backreferences = $backreferences;
     }
 
     /**
@@ -103,12 +117,13 @@ class JsonLdNode implements ArrayAccess
      * @param string $name The property name to get.
      * @return mixed  A single property value.
      * @throws PropertyNotDefinedException If no property named $name exists.
+     * @throws NodeNotFoundException If lazy-loading a linked node fails.
      */
     public function get( $name )
     {
         $expandedName = $this->expandName( $name );
         if ( property_exists( $this->expanded, $expandedName ) ) {
-            return $this->resolveProperty( $this->expanded->$expandedName[0] );
+            return $this->resolveProperty( $expandedName, $this->expanded->$expandedName[0] );
         }
         throw new PropertyNotDefinedException( $name );
     }
@@ -119,12 +134,13 @@ class JsonLdNode implements ArrayAccess
      * @param string $name The property name to get.
      * @return mixed  A single property value.
      * @throws PropertyNotDefinedException If no property named $name exists.
+     * @throws NodeNotFoundException If lazy-loading a linked node fails.
      */
     public function getMany( $name )
     {
         $expandedName = $this->expandName( $name );
         if ( property_exists( $this->expanded, $expandedName ) ) {
-            return $this->resolveProperty( $this->expanded->$expandedName );
+            return $this->resolveProperty( $expandedName, $this->expanded->$expandedName );
         }
         throw new PropertyNotDefinedException( $name );
     }
@@ -140,15 +156,28 @@ class JsonLdNode implements ArrayAccess
         return $this->get( $name );
     }
 
-    private function resolveProperty( &$property )
+    /**
+     * Takes a raw value from $this->expanded and turns it into something useful.
+     * If its a node, lazy-load the node and wrap it in a JsonLdNode. If it's a value object,
+     * return the value. If it's an array, recursively resolve the values in the array.
+     * @param string $expandedName The name of the property we are resolving.
+     * @param mixed $property The property value.
+     * @return JsonLdNode|array|mixed
+     * @throws NodeNotFoundException If lazy-loading the node fails because the node does not exist.
+     */
+    private function resolveProperty( $expandedName, &$property )
     {
         if ( is_array( $property ) ) {
-            return array_map( array( $this, 'resolveProperty'), $property );
+            for ( $i = 0; $i < count( $property); $i += 1) {
+                $names[] = $expandedName;
+            }
+            return array_map( array( $this, 'resolveProperty'), $names, $property );
         } else if ( $property instanceof stdClass && property_exists( $property, '@id') ) {
             // Only dereference if @id is the only property present
             if ( count( get_object_vars( $property ) ) > 1 ) {
                 return $property;
             }
+            // Otherwise lazy-load the referenced node
             $idProp = '@id';
             $iri = $property->$idProp;
             $dereferenced = $this->dereferencer->dereference( $iri );
@@ -156,7 +185,8 @@ class JsonLdNode implements ArrayAccess
             $property = $expanded;
             $referencedNode = $this->graph->getNode( $property->$idProp );
             if ( is_null( $referencedNode) ) {
-                $referencedNode = $this->factory->newNode( $property, $this->graph );
+                $backrefs = array( $expandedName => array( $this ) );
+                $referencedNode = $this->factory->newNode( $property, $this->graph, $backrefs );
             }
             return $referencedNode;
         } else if ( $property instanceof stdClass && property_exists( $property, '@value' ) ) {
@@ -183,6 +213,7 @@ class JsonLdNode implements ArrayAccess
             throw new InvalidArgumentException( 'This node already has an id.' );
         }
         $expandedValue = $this->expandValue( $expandedName, $value );
+        $this->addNewValueToGraph( $expandedName, $expandedValue );
         $this->expanded->$expandedName = $expandedValue;
         if ( $expandedName === '@id' ) {
             $this->graph->nameBlankNode( $this->getId(), $expandedValue );
@@ -197,10 +228,31 @@ class JsonLdNode implements ArrayAccess
             throw new InvalidArgumentException( 'Cannot add to the @id property.' );
         }
         $expandedValue = $this->expandValue( $expandedName, $value );
+        $this->addNewValueToGraph( $expandedName, $expandedValue );
         if ( property_exists( $this->expanded, $expandedName ) ) {
             $this->expanded->$expandedName = array_merge( $this->expanded->$expandedName, $expandedValue );
         } else {
             $this->expanded->$expandedName = $expandedValue;
+        }
+    }
+
+    private function addNewValueToGraph( $expandedName, $expandedValue )
+    {
+        if ( is_array( $expandedValue ) ) {
+            for ( $i = 0; $i < count( $expandedValue ); $i += 1 ) {
+                $names[] = $expandedName;
+            }
+            array_map( array( $this, 'addNewValueToGraph' ), $names, $expandedValue );
+        } else if ( $expandedValue instanceof stdClass && property_exists( $expandedValue, '@id' ) ) {
+            $idProp = '@id';
+            $id = $expandedValue->$idProp;
+            $referencedNode = $this->graph->getNode( $id );
+            if ( is_null( $referencedNode ) ) {
+                $backrefs = array( $expandedName => array( $this ) );
+                $referencedNode = $this->factory->newNode( $expandedValue, $this->graph, $backrefs );
+            } else {
+                $referencedNode->addBackReference( $expandedName, $this );
+            }
         }
     }
 
@@ -261,6 +313,11 @@ class JsonLdNode implements ArrayAccess
     public function isBlankNode()
     {
         return property_exists( $this->expanded, '@id' );
+    }
+
+    public function addBackReference( $expandedName, JsonLdNode $referencingNode )
+    {
+        $this->backreferences[$expandedName][] = $referencingNode;
     }
 
     /**
