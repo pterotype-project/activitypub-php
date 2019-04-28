@@ -441,6 +441,21 @@ class JsonLdNodeTest extends APTestCase
                     'id' => 'https://example.org/articles/1',
                     'type' => 'Article',
                 )
+            ),
+            array(
+                new stdClass(),
+                $this->asContext,
+                'to',
+                array(
+                    (object) array(
+                        'id' => 'https://example.org/sally',
+                        'type' => 'Person',
+                    ),
+                    (object) array(
+                        'id' => 'https://example.org/bob',
+                        'type' => 'Person',
+                    )
+                ),
             )
         );
     }
@@ -452,9 +467,11 @@ class JsonLdNodeTest extends APTestCase
     {
         $parentNode = $this->makeJsonLdNode( $inputObj, $context );
         $parentNode->set( $newPropertyName, $newNodeValue );
-        $childNode = $parentNode->get( $newPropertyName );
-        $this->assertInstanceOf( JsonLdNode::class, $childNode );
-        $this->assertEquals( $childNode->getBackReferences( $newPropertyName ), array( $parentNode ) );
+        $childNodes = $parentNode->getMany( $newPropertyName );
+        foreach ( $childNodes as $childNode ) {
+            $this->assertInstanceOf( JsonLdNode::class, $childNode );
+            $this->assertEquals( $childNode->getBackReferences( $newPropertyName ), array( $parentNode ) );
+        }
     }
 
     private function makeJsonLdNode( $inputObj, $context, $nodeGraph = array() )
