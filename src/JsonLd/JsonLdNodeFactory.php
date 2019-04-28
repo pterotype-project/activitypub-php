@@ -31,11 +31,15 @@ class JsonLdNodeFactory
 
     /**
      * Construct and return a new JsonLdNode.
-     * @param Node|\stdClass $jsonLd The JSON-LD object input
+     * @param Node|\stdClass $jsonLd The JSON-LD object input.
+     * @param JsonLdGraph|null $graph The JSON-LD graph.
      * @return JsonLdNode
      */
-    public function newNode( $jsonLd )
+    public function newNode( $jsonLd, $graph = null )
     {
-        return new JsonLdNode( $jsonLd, $this->context, $this, $this->dereferencer );
+        if ( is_null( $graph ) ) {
+            $graph = new JsonLdGraph();
+        }
+        return new JsonLdNode( $jsonLd, $this->context, $this, $this->dereferencer, $graph );
     }
 }

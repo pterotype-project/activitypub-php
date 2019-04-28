@@ -4,6 +4,7 @@ namespace ActivityPub\Test\JsonLd;
 
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ActivityPub\JsonLd\JsonLdNode;
+use ActivityPub\JsonLd\JsonLdNodeFactory;
 use ActivityPub\Test\TestConfig\APTestCase;
 use stdClass;
 
@@ -224,7 +225,7 @@ class JsonLdNodeTest extends APTestCase
         if ( $expectedException ) {
             $this->setExpectedException( $expectedException );
         }
-        $node->setProperty( $propertyName, $newValue );
+        $node->set( $propertyName, $newValue );
         $this->assertEquals( $expectedValue, $node->$getPropertyName );
     }
 
@@ -287,12 +288,56 @@ class JsonLdNodeTest extends APTestCase
         if ( $expectedException ) {
             $this->setExpectedException( $expectedException );
         }
-        $node->addPropertyValue( $propertyName, $newValue );
+        $node->add( $propertyName, $newValue );
         $this->assertEquals( $expectedValue, $node->getMany( $getPropertyName ) );
     }
 
-    private function makeJsonLdNode( $inputObj, $context )
+    public function provideForGetLinkedNode()
     {
-        return new JsonLdNode( $inputObj, $context );
+        return array(
+            array(
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'type' => 'Announce',
+                    'object' => 'https://example.org/objects/1',
+                ),
+                $this->asContext,
+                array(
+                    'https://example.org/objects/1' => (object) array(
+                        '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                        'id' => 'https://example.org/objects/1',
+                        'type' => 'Note',
+                    ),
+                ),
+                'object',
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'id' => 'https://example.org/objects/1',
+                    'type' => 'Note',
+                ),
+            ),
+        );
+    }
+
+    /**
+     * @dataProvider provideForGetLinkedNode
+     */
+    public function testGetLinkedNode( $inputObj, $context, $nodeGraph, $propertyName, $expectedValue, $expectedException = null )
+    {
+        $node = $this->makeJsonLdNode( $inputObj, $context, $nodeGraph );
+        if ( $expectedException ) {
+            $this->setExpectedException( $expectedException );
+        }
+        $actualValue = $node->get( $propertyName );
+        if ( $actualValue instanceof JsonLdNode ) {
+            $actualValue = $actualValue->asObject();
+        }
+        $this->assertEquals( $expectedValue, $actualValue );
+    }
+
+    private function makeJsonLdNode( $inputObj, $context, $nodeGraph = array() )
+    {
+        $factory = new JsonLdNodeFactory( $context, new TestDereferencer( $nodeGraph ) );
+        return $factory->newNode( $inputObj );
     }
 }

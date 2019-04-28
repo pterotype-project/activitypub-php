@@ -5,32 +5,30 @@ namespace ActivityPub\JsonLd;
 use ActivityPub\JsonLd\Dereferencer\DereferencerInterface;
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ArrayAccess;
+use BadMethodCallException;
 use InvalidArgumentException;
-use ML\JsonLD\Graph;
 use ML\JsonLD\JsonLD;
-use ML\JsonLD\Node;
-use ML\JsonLD\Value;
 use stdClass;
 
-/**
- * Class JsonLdNode
- * @package ActivityPub\JsonLd
- *
- * A representation of a node in a JSON-LD graph. Supports lazy-loading linked nodes.
- */
 class JsonLdNode implements ArrayAccess
 {
     /**
-     * The Node within $this->graph that represents this JsonLdNode.
-     * @var Node
+     * This node's id. May be null or a temporary id if this is a blank node.
+     * @var string|null
      */
-    private $node;
+    private $id;
 
     /**
-     * The portion of the JSON-LD graph that this node knows about.
-     * @var Graph
+     * The JSON-LD expanded representation of the node.
+     * @var stdClass
      */
-    private $graph;
+    private $expanded;
+
+    /**
+     * The JSON-LD context.
+     * @var array|stdClass|string
+     */
+    private $context;
 
     /**
      * The factory used to construct this node.
@@ -39,37 +37,64 @@ class JsonLdNode implements ArrayAccess
     private $factory;
 
     /**
-     * The JSON-LD context that should be used when getting/setting properties on this node.
-     * @var array|\stdClass|string
-     */
-    private $context;
-
-    /**
-     * The dereferencer, used to dereference foreign nodes based on their IRIs.
      * @var DereferencerInterface
      */
     private $dereferencer;
 
     /**
-     * JsonLdNode constructor.
-     * @param Node|\stdClass $jsonLd The JSON-LD input as a stdClass or an existing \ML\JsonLD\Node instance.
-     * @param string $context This node's JSON-LD context.
-     * @param DereferencerInterface $dereferencer
+     * This node's view of the JSON-LD graph.
+     * @var JsonLdGraph
      */
-    public function __construct( $jsonLd, $context, JsonLdNodeFactory $factory, DereferencerInterface $dereferencer )
+    private $graph;
+
+    // TODO support backreferences
+
+    /**
+     * JsonLdNode constructor.
+     * @param stdClass $jsonLd The JSON-LD input.
+     * @param string|array|stdClass $context The JSON-LD context.
+     * @param JsonLdNodeFactory $factory The factory used to construct this instance.
+     * @param DereferencerInterface $dereferencer
+     * @param JsonLdGraph $graph The JSON-LD graph this node is a part of.
+     */
+    public function __construct( $jsonLd, $context, JsonLdNodeFactory $factory, DereferencerInterface $dereferencer, JsonLdGraph $graph )
     {
         $this->factory = $factory;
         $this->dereferencer = $dereferencer;
-        $this->context = $context;
-        if ( $jsonLd instanceof Node ) {
-            $this->node = $jsonLd;
-            $this->graph = $jsonLd->getGraph();
+        if ( $jsonLd == new stdClass() ) {
+            $this->expanded = new stdClass();
         } else {
-            $doc = JsonLD::getDocument( $jsonLd );
-            $this->graph = $doc->getGraph();
-            $nodes = $this->graph->getNodes();
-            $this->node = count( $nodes ) > 0 ? $nodes[0] : $this->graph->createNode();
+            $this->expanded = JsonLD::expand( $jsonLd )[0];
         }
+        if ( property_exists( $this->expanded, '@id' ) ) {
+            $idProp = '@id';
+            $this->id = $this->expanded->$idProp;
+        }
+        $this->context = $context;
+        $this->graph = $graph;
+        $this->graph->addNode( $this );
+    }
+
+    /**
+     * Gets this node's id, if it has one. Could be null or a temporary id if this is a blank node.
+     * @return string|null
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Sets this node's ID to $id.
+     * @param string $id
+     * @throws BadMethodCallException If this node already has an ID set.
+     */
+    public function setId( $id )
+    {
+        if ( ! is_null( $this->getId() ) ) {
+            throw new BadMethodCallException( 'Node already has an ID' );
+        }
+        $this->id = $id;
     }
 
     /**
@@ -81,11 +106,11 @@ class JsonLdNode implements ArrayAccess
      */
     public function get( $name )
     {
-        $property = $this->getNodeProperty( $name );
-        if ( is_array( $property ) ) {
-            $property = $property[0];
+        $expandedName = $this->expandName( $name );
+        if ( property_exists( $this->expanded, $expandedName ) ) {
+            return $this->resolveProperty( $this->expanded->$expandedName[0] );
         }
-        return $this->resolveProperty( $property );
+        throw new PropertyNotDefinedException( $name );
     }
 
     /**
@@ -97,11 +122,11 @@ class JsonLdNode implements ArrayAccess
      */
     public function getMany( $name )
     {
-        $property = $this->getNodeProperty( $name );
-        if ( ! is_array( $property ) ) {
-            $property = array( $property );
+        $expandedName = $this->expandName( $name );
+        if ( property_exists( $this->expanded, $expandedName ) ) {
+            return $this->resolveProperty( $this->expanded->$expandedName );
         }
-        return $this->resolveProperty( $property );
+        throw new PropertyNotDefinedException( $name );
     }
 
     /**
@@ -115,140 +140,127 @@ class JsonLdNode implements ArrayAccess
         return $this->get( $name );
     }
 
-    /**
-     * Gets the value of the property named $name.
-     * @param string $name
-     * @return mixed
-     * @throws PropertyNotDefinedException if no property named $name exists.
-     */
-    private function getNodeProperty( $name )
+    private function resolveProperty( &$property )
     {
-        $expandedName = $this->expand_name( $name );
-        $property = $this->node->getProperty( $expandedName );
-        if ( is_null( $property ) ) {
-            throw new PropertyNotDefinedException( $name );
-        }
-        return $property;
-    }
-
-
-    /**
-     * Resolves the result of $this->node->getProperty() to something the application can use.
-     * @param mixed $property
-     * @return array|string
-     */
-    private function resolveProperty( $property )
-    {
-        if ( $property instanceof Value ) {
-            return $property->getValue();
-        } else if ( is_array( $property ) ) {
-            return array_map( array( $this, 'resolveProperty' ), $property );
-        } else if ( $property instanceof Node ) {
-            if ( count( $property->getProperties() ) > 0 ) {
-                return $this->factory->newNode( $property );
-            } else {
-                // dereference the node to get its properties, then update $property's props with the retrieved values
-                $dereferenced = $this->dereferencer->dereference( $property->getId() );
-                $newNode = JsonLD::getDocument( $dereferenced )->getGraph()->getNode( $property->getId() );
-                foreach ( $newNode->getProperties() as $name => $value ) {
-                    $property->setProperty( $name, $value );
-                }
-                return $this->factory->newNode( $property );
+        if ( is_array( $property ) ) {
+            return array_map( array( $this, 'resolveProperty'), $property );
+        } else if ( $property instanceof stdClass && property_exists( $property, '@id') ) {
+            // Only dereference if @id is the only property present
+            if ( count( get_object_vars( $property ) ) > 1 ) {
+                return $property;
             }
+            $idProp = '@id';
+            $iri = $property->$idProp;
+            $dereferenced = $this->dereferencer->dereference( $iri );
+            $expanded = JsonLD::expand( $dereferenced )[0];
+            $property = $expanded;
+            $referencedNode = $this->graph->getNode( $property->$idProp );
+            if ( is_null( $referencedNode) ) {
+                $referencedNode = $this->factory->newNode( $property, $this->graph );
+            }
+            return $referencedNode;
+        } else if ( $property instanceof stdClass && property_exists( $property, '@value' ) ) {
+            $value = '@value';
+            return $property->$value;
+        } else if ( $property instanceof stdClass ) {
+            $referencedNode = $this->factory->newNode( $property, $this->graph );
+            return $referencedNode;
+        } else {
+            return $property;
         }
-        // TODO figure out what to do about as:items -- the vocab says it should be a node but the JsonLD lib
-        // seems to resolve it to an array if it comes in as an array of string values...
     }
 
     /**
      * Sets the value for a new or existing property on the node.
      * If the property already exists, the new value overwrites the old value(s).
      * @param string $name
-     * @param string|\stdClass|array $value
+     * @param string|stdClass|array $value
      */
-    public function setProperty( $name, $value )
+    public function set( $name, $value )
     {
-        $expandedName = $this->expand_name( $name );
-        if ( is_array( $value ) ) {
-            $this->clearProperty( $expandedName );
-            foreach ( $value as $v ) {
-                $this->addPropertyValue( $expandedName, $v );
-            }
-        } else if ( $value instanceof stdClass ) {
-            $newDoc = JsonLD::getDocument( $value );
-            $newNodes = $newDoc->getGraph()->getNodes();
-            $newNode = count( $newNodes ) > 0 ? $newNodes[0] : $this->graph->createNode();
-            $this->node->setProperty( $expandedName, $newNode );
-        } else if ( $value instanceof JsonLdNode ) {
-            $this->setProperty( $expandedName, $value->asObject() );
+        $expandedName = $this->expandName( $name );
+        if ( $expandedName === '@id' && ! $this->isBlankNode() ) {
+            throw new InvalidArgumentException( 'This node already has an id.' );
+        }
+        $expandedValue = $this->expandValue( $expandedName, $value );
+        $this->expanded->$expandedName = $expandedValue;
+        if ( $expandedName === '@id' ) {
+            $this->graph->nameBlankNode( $this->getId(), $expandedValue );
+            $this->id = $expandedValue;
+        }
+    }
+
+    public function add( $name, $value )
+    {
+        $expandedName = $this->expandName( $name );
+        if ( $expandedName === '@id' ) {
+            throw new InvalidArgumentException( 'Cannot add to the @id property.' );
+        }
+        $expandedValue = $this->expandValue( $expandedName, $value );
+        if ( property_exists( $this->expanded, $expandedName ) ) {
+            $this->expanded->$expandedName = array_merge( $this->expanded->$expandedName, $expandedValue );
         } else {
-            $this->node->setProperty( $expandedName, $value );
+            $this->expanded->$expandedName = $expandedValue;
         }
     }
 
     /**
-     * Convenience wrapper around $this->setProperty().
+     * Convenience wrapper around $this->set().
      * If the property already exists, the new value overwrites the old value(s).
      * @param string $name
-     * @param string|\stdClass|array $value
+     * @param string|stdClass|array $value
      */
     public function __set( $name, $value )
     {
-        return $this->setProperty( $name, $value );
+        return $this->set( $name, $value );
+    }
+
+    public function has( $name )
+    {
+        $expandedName = $this->expandName( $name );
+        return property_exists( $this->expanded, $expandedName );
     }
 
     /**
-     * Adds a new value to a new or existing property on the node.
-     * If the property already exists, the new value is added onto the existing values rather than
-     * overwriting them.
-     * @param string $name
-     * @param string|stdClass $value
+     * Given an already-expanded name and the current context, expands value so that it can be stored in $expanded.
+     * @param string $expandedName
+     * @param string|stdClass|array $value
+     * @return array|stdClass
      */
-    public function addPropertyValue( $name, $value )
+    private function expandValue( $expandedName, $value )
     {
-        $expandedName = $this->expand_name( $name );
-        if ( is_array( $value ) ) {
-            $err = "Can't add array value to a property. To add multiple values call addPropertyValue multiple times or use setProperty";
-            throw new InvalidArgumentException( $err );
-        } else if ( $value instanceof stdClass ) {
-            $newDoc = JsonLD::getDocument( $value );
-            $newNodes = $newDoc->getGraph()->getNodes();
-            $newNode = count( $newNodes ) > 0 ? $newNodes[0] : $this->graph->createNode();
-            $this->node->addPropertyValue( $expandedName, $newNode );
-        } else if ( $value instanceof JsonLdNode ) {
-            $this->addPropertyValue( $expandedName, $value->asObject() );
-        } else {
-            $this->node->addPropertyValue( $expandedName, $value );
-        }
+        $nameToValue = (object) array( '@context' => $this->context, $expandedName => $value );
+        $expanded = JsonLD::expand( $nameToValue )[0];
+        $expandedValue = $expanded->$expandedName;
+        return $expandedValue;
     }
 
     /**
-     * Clears the property named $name, if it exists.
+     * Clears the property named $name.
      * @param string $name
      */
-    public function clearProperty( $name )
+    public function clear( $name )
     {
-        return $this->setProperty( $name, null );
+        $expandedName = $this->expandName( $name );
+        unset( $this->expanded->expandedName );
     }
 
+    /**
+     * Returns the node as an object.
+     * @return stdClass
+     */
     public function asObject()
     {
-        return $this->node->toJsonLd();
+        return JsonLD::compact( $this->expanded, $this->context );
     }
 
     /**
-     * Resolves $name to a full IRI given the JSON-LD context of this node.
-     * @param string $name The name of the property to resolve.
-     * @return string The expanded name.
+     * Returns true if this node is a blank node (even if it has a temporary id).
+     * @return bool
      */
-    private function expand_name( $name )
+    public function isBlankNode()
     {
-        $dummyObj = (object) array(
-            '@context' => $this->context,
-            $name => '_dummyValue',
-        );
-        $expanded = (array) JsonLD::expand( $dummyObj )[0];
-        return array_keys( $expanded )[0];
+        return property_exists( $this->expanded, '@id' );
     }
 
     /**
@@ -265,11 +277,11 @@ class JsonLdNode implements ArrayAccess
      */
     public function offsetExists( $offset )
     {
-        $expandedName = $this->expand_name( (string) $offset );
-        return !is_null( $this->node->getProperty( $expandedName ) );
+        return property_exists( $this->expanded, (string) $offset );
     }
 
     /**
+     * A convenience wrapper around $this->get(). Cardinality-one.
      * Offset to retrieve
      * @link https://php.net/manual/en/arrayaccess.offsetget.php
      * @param mixed $offset <p>
@@ -298,7 +310,7 @@ class JsonLdNode implements ArrayAccess
      */
     public function offsetSet( $offset, $value )
     {
-        return $this->setProperty( (string) $offset, $value );
+        $this->set( (string) $offset, $value );
     }
 
     /**
@@ -312,6 +324,22 @@ class JsonLdNode implements ArrayAccess
      */
     public function offsetUnset( $offset )
     {
-        return $this->clearProperty( (string) $offset );
+        $this->clear( (string) $offset );
+    }
+
+    /**
+     * Resolves $name to a full IRI given the JSON-LD context of this node.
+     * @param string $name The name of the property to resolve.
+     * @return string The expanded name.
+     */
+    private function expandName( $name )
+    {
+        // TODO memoize this function
+        $dummyObj = (object) array(
+            '@context' => $this->context,
+            $name => '_dummyValue',
+        );
+        $expanded = (array) JsonLD::expand( $dummyObj )[0];
+        return array_keys( $expanded )[0];
     }
 }
