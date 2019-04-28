@@ -4,6 +4,7 @@ namespace ActivityPub\JsonLd\Dereferencer;
 
 use ActivityPub\Crypto\HttpSignatureService;
 use ActivityPub\JsonLd\Exceptions\NodeNotFoundException;
+use ActivityPub\Utils\DateTimeProvider;
 use ActivityPub\Utils\Util;
 use DateTime;
 use DateTimeZone;
@@ -45,6 +46,11 @@ class CachingDereferencer implements DereferencerInterface
     private $httpSignatureService;
 
     /**
+     * @var DateTimeProvider
+     */
+    private $dateTimeProvider;
+
+    /**
      * The keyId for signing requests, if there is one.
      * @var null|string
      */
@@ -58,9 +64,11 @@ class CachingDereferencer implements DereferencerInterface
 
     /**
      * CachingDereferencer constructor.
+     * @param LoggerInterface $logger
      * @param CacheItemPoolInterface $cache
      * @param Client $httpClient
      * @param HttpSignatureService $httpSignatureService
+     * @param DateTimeProvider $dateTimeProvider
      * @param null|string $keyId
      * @param null|string $privateKey
      */
@@ -68,6 +76,7 @@ class CachingDereferencer implements DereferencerInterface
                                  CacheItemPoolInterface $cache,
                                  Client $httpClient,
                                  HttpSignatureService $httpSignatureService,
+                                 DateTimeProvider $dateTimeProvider,
                                  $keyId = null,
                                  $privateKey = null )
     {
@@ -75,6 +84,7 @@ class CachingDereferencer implements DereferencerInterface
         $this->cache = $cache;
         $this->httpClient = $httpClient;
         $this->httpSignatureService = $httpSignatureService;
+        $this->dateTimeProvider = $dateTimeProvider;
         $this->keyId = $keyId;
         $this->privateKey = $privateKey;
     }
@@ -113,7 +123,7 @@ class CachingDereferencer implements DereferencerInterface
                 $signature = $this->httpSignatureService->sign( $request, $this->privateKey, $this->keyId );
                 $request = $request->withHeader( 'Signature', $signature );
             }
-            $response = $this->httpClient->send( $request );
+            $response = $this->httpClient->send( $request, array( 'http_errors' => false ) );
             if ( $response->getStatusCode() >= 400 ) {
                 $statusCode = $response->getStatusCode();
                 $this->logger->error(
@@ -154,7 +164,8 @@ class CachingDereferencer implements DereferencerInterface
 
     private function getNowRFC1123()
     {
-        $now = new DateTime( 'now', new DateTimeZone( 'GMT' ) );
+        $now = $this->dateTimeProvider->getTime( 'caching-dereferencer.dereference' );
+        $now->setTimezone( new DateTimeZone( 'GMT' ) );
         return $now->format( 'D, d M Y H:i:s T' );
     }
 }
