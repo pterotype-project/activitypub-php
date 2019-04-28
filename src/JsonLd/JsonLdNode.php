@@ -173,16 +173,14 @@ class JsonLdNode implements ArrayAccess
             }
             return array_map( array( $this, 'resolveProperty'), $names, $property );
         } else if ( $property instanceof stdClass && property_exists( $property, '@id') ) {
-            // Only dereference if @id is the only property present
-            if ( count( get_object_vars( $property ) ) > 1 ) {
-                return $property;
-            }
-            // Otherwise lazy-load the referenced node
+            // Lazy-load if we only have the @id property
             $idProp = '@id';
-            $iri = $property->$idProp;
-            $dereferenced = $this->dereferencer->dereference( $iri );
-            $expanded = JsonLD::expand( $dereferenced )[0];
-            $property = $expanded;
+            if ( count( get_object_vars( $property ) ) <= 1 ) {
+                $iri = $property->$idProp;
+                $dereferenced = $this->dereferencer->dereference( $iri );
+                $expanded = JsonLD::expand( $dereferenced )[0];
+                $property = $expanded;
+            }
             $referencedNode = $this->graph->getNode( $property->$idProp );
             if ( is_null( $referencedNode) ) {
                 $backrefs = array( $expandedName => array( $this ) );
@@ -315,6 +313,26 @@ class JsonLdNode implements ArrayAccess
         return property_exists( $this->expanded, '@id' );
     }
 
+    /**
+     * Returns the list of nodes which reference this node as the field $name.
+     * @param string $name
+     * @return array
+     */
+    public function getBackReferences( $name )
+    {
+        $expandedName = $this->expandName( $name );
+        if ( array_key_exists( $expandedName, $this->backreferences ) ) {
+            return $this->backreferences[$expandedName];
+        } else {
+            return array();
+        }
+    }
+
+    /**
+     * Adds a new backreference to this node.
+     * @param string $expandedName
+     * @param JsonLdNode $referencingNode
+     */
     public function addBackReference( $expandedName, JsonLdNode $referencingNode )
     {
         $this->backreferences[$expandedName][] = $referencingNode;

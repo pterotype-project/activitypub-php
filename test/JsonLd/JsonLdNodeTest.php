@@ -400,10 +400,61 @@ class JsonLdNodeTest extends APTestCase
         $this->assertEquals( $expectedValue, $actualValue );
     }
 
-    public function testBackreferences()
+    public function provideForBackreferencesOnGet()
     {
-        // TODO implement me
-        $this->assertTrue( false );
+        return array(
+            array(
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'id' => 'https://example.org/objects/1',
+                    'type' => 'Note',
+                    'inReplyTo' => (object) array(
+                        'id' => 'https://example.org/articles/1',
+                        'type' => 'Article',
+                    ),
+                ),
+                $this->asContext,
+                'inReplyTo',
+            ),
+        );
+    }
+
+    /**
+     * @dataProvider provideForBackreferencesOnGet
+     */
+    public function testBackreferencesOnGet( $inputObj, $context, $childNodeField, $nodeGraph = array() )
+    {
+        $parentNode = $this->makeJsonLdNode( $inputObj, $context, $nodeGraph );
+        $childNode = $parentNode->$childNodeField;
+        $this->assertInstanceOf( JsonLdNode::class, $childNode );
+        $this->assertEquals( $childNode->getBackReferences( $childNodeField ), array( $parentNode ) );
+    }
+
+    public function provideForBackreferencesOnSet()
+    {
+        return array(
+            array(
+                new stdClass(),
+                $this->asContext,
+                'inReplyTo',
+                (object) array(
+                    'id' => 'https://example.org/articles/1',
+                    'type' => 'Article',
+                )
+            )
+        );
+    }
+
+    /**
+     * @dataProvider provideForBackreferencesOnSet
+     */
+    public function testBackreferencesOnSet( $inputObj, $context, $newPropertyName, $newNodeValue )
+    {
+        $parentNode = $this->makeJsonLdNode( $inputObj, $context );
+        $parentNode->set( $newPropertyName, $newNodeValue );
+        $childNode = $parentNode->get( $newPropertyName );
+        $this->assertInstanceOf( JsonLdNode::class, $childNode );
+        $this->assertEquals( $childNode->getBackReferences( $newPropertyName ), array( $parentNode ) );
     }
 
     private function makeJsonLdNode( $inputObj, $context, $nodeGraph = array() )
