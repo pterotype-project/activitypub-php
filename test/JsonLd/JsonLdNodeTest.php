@@ -6,11 +6,27 @@ use ActivityPub\JsonLd\Exceptions\NodeNotFoundException;
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ActivityPub\JsonLd\JsonLdNode;
 use ActivityPub\JsonLd\JsonLdNodeFactory;
+use ActivityPub\JsonLd\TripleStore\TypedRdfTriple;
 use ActivityPub\Test\TestConfig\APTestCase;
+use ActivityPub\Test\TestUtils\TestUuidProvider;
+use ActivityPub\Utils\Logger;
 use stdClass;
 
 class JsonLdNodeTest extends APTestCase
 {
+    private $uuids = array(
+        'ae699da1-2d11-4b60-91f9-e3e594fa0df9',
+        '5fb2dd08-be6f-4008-be9e-879ce072d308',
+        '5390f3ff-9ec4-40f2-9583-5d03a4782016',
+        'e560ea21-6d95-4dec-8646-6b3180544287',
+        'ee8a5dc0-e53b-4397-9f38-6f70551a4a2d',
+        '7e74832d-1ff7-46e7-94ad-77e0e69f6c8a',
+        'ff46dbe9-99f2-4378-bec1-99b9ceb09d2f',
+        '27e81733-e587-4b8e-9991-305e56df426e',
+        'aedfa3dc-cc55-45ca-ad37-156a3c45b7bb',
+        '8cd764f7-4463-463a-8271-697a42b6e7a7',
+    );
+
     private $asContext = array(
         'https://www.w3.org/ns/activitystreams',
     );
@@ -474,9 +490,130 @@ class JsonLdNodeTest extends APTestCase
         }
     }
 
+    public function provideToRdfTriple()
+    {
+        return array(
+            array(
+                (object) array(
+                    '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                    'id' => 'https://example.org/collections/1',
+                    'type' => 'Collection',
+                    'name' => 'MyCollection',
+                    'published' => '2019-05-01',
+                    'items' => array(
+                        'https://example.org/collections/1/items/1',
+                        'https://example.org/collections/1/items/2',
+                    )
+                ),
+                $this->asContext,
+                array(
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1',
+                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                        'https://www.w3.org/ns/activitystreams#Collection',
+                        '@id'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1',
+                        'https://www.w3.org/ns/activitystreams#items',
+                        'https://example.org/collections/1/items/1',
+                        '@id'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1',
+                        'https://www.w3.org/ns/activitystreams#items',
+                        'https://example.org/collections/1/items/2',
+                        '@id'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1',
+                        'https://www.w3.org/ns/activitystreams#name',
+                        'MyCollection',
+                        'http://www.w3.org/2001/XMLSchema#string'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1',
+                        'https://www.w3.org/ns/activitystreams#published',
+                        '2019-05-01',
+                        'http://www.w3.org/2001/XMLSchema#dateTime'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1/items/1',
+                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                        'https://www.w3.org/ns/activitystreams#Note',
+                        '@id'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1/items/2',
+                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                        'https://www.w3.org/ns/activitystreams#Note',
+                        '@id'
+                    ),
+                ),
+                array(
+                    'https://example.org/collections/1/items/1' => (object) array(
+                        '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                        'id' => 'https://example.org/collections/1/items/1',
+                        'type' => 'Note',
+                    ),
+                    'https://example.org/collections/1/items/2' => (object) array(
+                        '@context' => array( 'https://www.w3.org/ns/activitystreams' ),
+                        'id' => 'https://example.org/collections/1/items/2',
+                        'type' => 'Note',
+                    ),
+                ),
+            ),
+            array(
+                (object) array(
+                    '@context' => array(
+                        'https://www.w3.org/ns/activitystreams',
+                        'https://w3id.org/security/v1',
+                    ),
+                    'id' => 'https://example.org/sally',
+                    'type' => 'Actor',
+                    'publicKey' => (object) array(
+                        'publicKeyPem' => 'the_public_key',
+                    )
+                ),
+                $this->asContext,
+                array(
+                    TypedRdfTriple::create(
+                        'https://example.org/sally',
+                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
+                        'https://www.w3.org/ns/activitystreams#Actor',
+                        '@id'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/sally',
+                        'https://w3id.org/security/v1#publicKey',
+                        $this->uuids[0]
+                    ),
+                    TypedRdfTriple::create(
+                        $this->uuids[0],
+                        'https://w3id.org/security/v1#publicKeyPem',
+                        'the_public_key',
+                        '@id'
+                    ),
+                ),
+            ),
+        );
+    }
+
+    /**
+     * @dataProvider provideToRdfTriple
+     */
+    public function testToRdfTriple( $inputObj, $context, $expectedTriples, $nodeGraph = array() )
+    {
+        $node = $this->makeJsonLdNode( $inputObj, $context, $nodeGraph );
+        $triples = $node->toRdfTriples();
+        $this->assertEquals( $expectedTriples, $triples );
+    }
+
     private function makeJsonLdNode( $inputObj, $context, $nodeGraph = array() )
     {
-        $factory = new JsonLdNodeFactory( $context, new TestDereferencer( $nodeGraph ) );
+        $factory = new JsonLdNodeFactory(
+            $context, new TestDereferencer( $nodeGraph ), new Logger(), new TestUuidProvider( $this->uuids )
+        );
         return $factory->newNode( $inputObj );
     }
 }

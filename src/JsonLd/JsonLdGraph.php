@@ -2,7 +2,9 @@
 
 namespace ActivityPub\JsonLd;
 
+use ActivityPub\Utils\UuidProvider;
 use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 
 /**
  * A view of a JSON-LD graph. Maps ids to JsonLdNode instances.
@@ -12,26 +14,26 @@ use InvalidArgumentException;
 class JsonLdGraph
 {
     /**
-     * @var int
-     */
-    private $nextBlankId;
-
-    /**
      * @var array
      */
     private $graph;
 
-    public function __construct()
+    /**
+     * @var UuidProvider
+     */
+    private $uuidProvider;
+
+    public function __construct( UuidProvider $uuidProvider )
     {
-        $this->nextBlankId = 0;
         $this->graph = array();
+        $this->uuidProvider = $uuidProvider;
     }
 
     public function addNode( JsonLdNode $node )
     {
         $id = $node->getId();
         if ( is_null( $id ) ) {
-            $id = $this->getNextBlankId();
+            $id = $this->uuidProvider->uuid();
             $node->setId( $id );
         }
         $this->graph[$id] = $node;
@@ -53,12 +55,5 @@ class JsonLdGraph
         }
         $this->graph[$newNodeName] = $this->graph[$blankNodeName];
         unset( $this->graph[$blankNodeName] );
-    }
-
-    private function getNextBlankId()
-    {
-        $nextId = $this->nextBlankId;
-        $this->nextBlankId += 1;
-        return "_:b$nextId";
     }
 }
