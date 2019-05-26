@@ -6,6 +6,7 @@ use ActivityPub\JsonLd\Dereferencer\DereferencerInterface;
 use ActivityPub\JsonLd\Exceptions\NodeNotFoundException;
 use ActivityPub\JsonLd\Exceptions\PropertyNotDefinedException;
 use ActivityPub\JsonLd\TripleStore\TypedRdfTriple;
+use ActivityPub\Utils\Util;
 use ArrayAccess;
 use BadMethodCallException;
 use InvalidArgumentException;
@@ -136,7 +137,11 @@ class JsonLdNode implements ArrayAccess
     {
         $expandedName = $this->expandName( $name );
         if ( property_exists( $this->expanded, $expandedName ) ) {
-            return $this->resolveProperty( $expandedName, $this->expanded->$expandedName[0] );
+            $resolved = $this->resolveProperty( $expandedName, $this->expanded->$expandedName[0] );
+            if ( is_array( $resolved ) ) {
+                $resolved = $resolved[0];
+            }
+            return $resolved;
         }
         throw new PropertyNotDefinedException( $name );
     }
@@ -153,7 +158,11 @@ class JsonLdNode implements ArrayAccess
     {
         $expandedName = $this->expandName( $name );
         if ( property_exists( $this->expanded, $expandedName ) ) {
-            return $this->resolveProperty( $expandedName, $this->expanded->$expandedName );
+            $resolved = $this->resolveProperty( $expandedName, $this->expanded->$expandedName );
+            if ( ! is_array( $resolved ) ) {
+                $resolved = array( $resolved );
+            }
+            return $resolved;
         }
         throw new PropertyNotDefinedException( $name );
     }
@@ -181,10 +190,11 @@ class JsonLdNode implements ArrayAccess
     private function resolveProperty( $expandedName, &$property )
     {
         if ( is_array( $property ) ) {
-            for ( $i = 0; $i < count( $property); $i += 1) {
-                $names[] = $expandedName;
+            $properties = [];
+            foreach ( $property as $subProperty ) {
+                $properties[] = $this->resolveProperty( $expandedName, $subProperty );
             }
-            return array_map( array( $this, 'resolveProperty'), $names, $property );
+            return $properties;
         } else if ( $property instanceof stdClass && property_exists( $property, '@id') ) {
             // Lazy-load if we only have the @id property
             $idProp = '@id';
@@ -201,6 +211,8 @@ class JsonLdNode implements ArrayAccess
             }
             return $referencedNode;
         } else if ( $property instanceof stdClass && property_exists( $property, '@value' ) ) {
+            // TODO check for an @type and return an appropriate object type if present, e.g. Datetime for dates or
+            // number for nonNegativeInteger etc.
             $value = '@value';
             return $property->$value;
         } else if ( $property instanceof stdClass ) {
@@ -260,7 +272,7 @@ class JsonLdNode implements ArrayAccess
             $referencedNode = $this->graph->getNode( $id );
             if ( is_null( $referencedNode ) ) {
                 $backrefs = array( $expandedName => array( $this ) );
-                $referencedNode = $this->factory->newNode( $expandedValue, $this->graph, $backrefs );
+                $this->factory->newNode( $expandedValue, $this->graph, $backrefs );
             } else {
                 $referencedNode->addBackReference( $expandedName, $this );
             }
@@ -323,7 +335,7 @@ class JsonLdNode implements ArrayAccess
      */
     public function isBlankNode()
     {
-        return property_exists( $this->expanded, '@id' );
+        return ! property_exists( $this->expanded, '@id' );
     }
 
     /**
@@ -357,40 +369,39 @@ class JsonLdNode implements ArrayAccess
      */
     public function toRdfTriples()
     {
-        $cloned = clone $this->expanded;
-        // First serialize this node
-        $quads = JsonLD::toRdf( $cloned );
+        $idProp = '@id';
+        $valueProp = '@value';
+        $typeProp = '@type';
         $triples = array();
-        foreach ( $quads as $quad ) {
-            if ( (string)$quad->getSubject() === $this->getId() ) {
-                $objectType = null;
-                if ( $quad->getObject() instanceof Value ) {
-                    $object = $quad->getObject()->getValue();
-                    if ( $quad->getObject() instanceof TypedValue ) {
-                        $objectType = $quad->getObject()->getType();
-                    }
-                } else {
-                    $objectIri = $quad->getObject();
-                    if ( $objectIri->getScheme() === '_' ) {
-                        // TODO resolve the associated value to force the generation of a UUID, then set $object to the uuid
-                    } else {
-                        $object = (string)$quad->getObject();
-                    }
-                    $objectType = '@id';
-                }
-                $triples[] = TypedRdfTriple::create(
-                    (string)$quad->getSubject(), (string)$quad->getProperty(), $object, $objectType
-                );
-            }
-        }
-        // Then serialize any sub-nodes
-        foreach ( $this->expanded as $name => $values ) {
-            if ( $name === '@id' ) {
+        foreach ( get_object_vars( $this->expanded ) as $attribute => $values ) {
+            if ( ! is_array( $values ) ) {
+                // If $values is not an array, this is the @id property
+                $triples[] = TypedRdfTriple::create( $this->getId(), $attribute, $values );
                 continue;
             }
-            foreach ( $this->getMany( $name ) as $subNode ) {
-                if ( $subNode instanceof JsonLdNode ) {
-                    $triples = array_merge( $triples, $subNode->toRdfTriples() );
+            foreach ( $values as $value ) {
+                if ( ! is_object( $value ) ) {
+                    // If $value is not an object, this is the @type property
+                    $triples[] = TypedRdfTriple::create( $this->getId(), $attribute, $value );
+                }
+                if ( property_exists( $value, '@id' ) ) {
+                    $triples[] = TypedRdfTriple::create( $this->getId(), $attribute, $value->$idProp, '@id' );
+                } else if ( property_exists( $value, '@value' ) ) {
+                    $jsonLdValue = Value::fromJsonLd( $value );
+                    $triple = TypedRdfTriple::create( $this->getId(), $attribute, $jsonLdValue->getValue() );
+                    if ( $jsonLdValue instanceof TypedValue ) {
+                        $triple->setObjectType( $jsonLdValue->getType() );
+                    }
+                    $triples[] = $triple;
+                }
+            }
+            // Check if we should serialize any child nodes
+            foreach ( $this->getMany( $attribute ) as $childNode ) {
+                if ( $childNode instanceof JsonLdNode ) {
+                    // Serialize the child node if it is local, i.e. has a local URI or is anonymous
+                    if ( $childNode->isBlankNode() || Util::isLocalUri( $childNode->getId() ) ) {
+                        $triples = array_merge( $triples, $childNode->toRdfTriples() );
+                    }
                 }
             }
         }

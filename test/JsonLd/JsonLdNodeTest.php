@@ -11,6 +11,7 @@ use ActivityPub\Test\TestConfig\APTestCase;
 use ActivityPub\Test\TestUtils\TestUuidProvider;
 use ActivityPub\Utils\Logger;
 use stdClass;
+use Symfony\Component\HttpFoundation\Request;
 
 class JsonLdNodeTest extends APTestCase
 {
@@ -509,9 +510,8 @@ class JsonLdNodeTest extends APTestCase
                 array(
                     TypedRdfTriple::create(
                         'https://example.org/collections/1',
-                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-                        'https://www.w3.org/ns/activitystreams#Collection',
-                        '@id'
+                        '@id',
+                        'https://example.org/collections/1'
                     ),
                     TypedRdfTriple::create(
                         'https://example.org/collections/1',
@@ -524,6 +524,26 @@ class JsonLdNodeTest extends APTestCase
                         'https://www.w3.org/ns/activitystreams#items',
                         'https://example.org/collections/1/items/2',
                         '@id'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1/items/1',
+                        '@id',
+                        'https://example.org/collections/1/items/1'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1/items/1',
+                        '@type',
+                        'https://www.w3.org/ns/activitystreams#Note',
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1/items/2',
+                        '@id',
+                        'https://example.org/collections/1/items/2'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/collections/1/items/2',
+                        '@type',
+                        'https://www.w3.org/ns/activitystreams#Note',
                     ),
                     TypedRdfTriple::create(
                         'https://example.org/collections/1',
@@ -538,16 +558,9 @@ class JsonLdNodeTest extends APTestCase
                         'http://www.w3.org/2001/XMLSchema#dateTime'
                     ),
                     TypedRdfTriple::create(
-                        'https://example.org/collections/1/items/1',
-                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-                        'https://www.w3.org/ns/activitystreams#Note',
-                        '@id'
-                    ),
-                    TypedRdfTriple::create(
-                        'https://example.org/collections/1/items/2',
-                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-                        'https://www.w3.org/ns/activitystreams#Note',
-                        '@id'
+                        'https://example.org/collections/1',
+                        '@type',
+                        'https://www.w3.org/ns/activitystreams#Collection',
                     ),
                 ),
                 array(
@@ -575,24 +588,28 @@ class JsonLdNodeTest extends APTestCase
                         'publicKeyPem' => 'the_public_key',
                     )
                 ),
-                $this->asContext,
+                array( 'https://www.w3.org/ns/activitystreams', 'https://w3id.org/security/v1' ),
                 array(
                     TypedRdfTriple::create(
                         'https://example.org/sally',
-                        'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-                        'https://www.w3.org/ns/activitystreams#Actor',
-                        '@id'
+                        '@id',
+                        'https://example.org/sally'
+                    ),
+                    TypedRdfTriple::create(
+                        $this->uuids[0],
+                        'https://w3id.org/security#publicKeyPem',
+                        'the_public_key',
+                        'http://www.w3.org/2001/XMLSchema#string'
+                    ),
+                    TypedRdfTriple::create(
+                        'https://example.org/sally',
+                        '@type',
+                        'https://www.w3.org/ns/activitystreams#Actor'
                     ),
                     TypedRdfTriple::create(
                         'https://example.org/sally',
                         'https://w3id.org/security/v1#publicKey',
                         $this->uuids[0]
-                    ),
-                    TypedRdfTriple::create(
-                        $this->uuids[0],
-                        'https://w3id.org/security/v1#publicKeyPem',
-                        'the_public_key',
-                        '@id'
                     ),
                 ),
             ),
@@ -604,6 +621,8 @@ class JsonLdNodeTest extends APTestCase
      */
     public function testToRdfTriple( $inputObj, $context, $expectedTriples, $nodeGraph = array() )
     {
+        $r = Request::create( 'https://example.org' );
+        $r->overrideGlobals();
         $node = $this->makeJsonLdNode( $inputObj, $context, $nodeGraph );
         $triples = $node->toRdfTriples();
         $this->assertEquals( $expectedTriples, $triples );

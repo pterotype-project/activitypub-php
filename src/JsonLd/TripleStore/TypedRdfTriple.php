@@ -4,8 +4,8 @@ namespace ActivityPub\JsonLd\TripleStore;
 
 /**
  * A triple represents a single fact in an RDF graph. A triple is made up a subject, a predicate, and an object.
- * The object can also have a type, e.g. @id for references to other resources or
- * http://www.w3.org/2001/XMLSchema#dateTime for date-time values.
+ * The object can also have a type, e.g. "@id" for references to other resources or
+ * "http://www.w3.org/2001/XMLSchema#dateTime" for date-time values.
  *
  * See https://www.w3.org/TR/rdf11-concepts/#data-model.
  *
